@@ -10,8 +10,13 @@ import {
   ListPeminjaman,
   ListPemberkasan,
   ListPemusnahan,
+  ListPenyusutan,
+  ListRetensiExpiring,
   ListActivityLogs,
   ListUsers,
+  GetArsipGrowth,
+  GetBlockchainVerify,
+  ListRoles,
   CreatePeminjaman,
   GetDashboardStats,
   GetDashboardExtras,
@@ -55,6 +60,18 @@ export async function listPemusnahan(): Promise<any[]> {
   return (await ListPemusnahan()) as unknown as any[];
 }
 
+export async function listPenyusutan(): Promise<any[]> {
+  return (await ListPenyusutan()) as unknown as any[];
+}
+
+export async function listRetensiExpiring(days: number): Promise<any[]> {
+  return (await ListRetensiExpiring(days)) as unknown as any[];
+}
+
+export async function listRoles(): Promise<any[]> {
+  return (await ListRoles()) as unknown as any[];
+}
+
 export async function listActivityLogs(): Promise<any[]> {
   return (await ListActivityLogs()) as unknown as any[];
 }
@@ -69,6 +86,14 @@ export async function createPeminjaman(arsipId: string, userId: string, keperlua
 
 export async function getDashboardStats(): Promise<Record<string, any>> {
   return (await GetDashboardStats()) as unknown as Record<string, any>;
+}
+
+export async function getArsipGrowth(): Promise<Array<Record<string, any>>> {
+  return (await GetArsipGrowth()) as unknown as Array<Record<string, any>>;
+}
+
+export async function getBlockchainVerify(): Promise<Record<string, any>> {
+  return (await GetBlockchainVerify()) as unknown as Record<string, any>;
 }
 
 export async function getDashboardExtras(): Promise<Record<string, any>> {

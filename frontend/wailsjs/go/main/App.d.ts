@@ -3,6 +3,10 @@
 
 export function CreatePeminjaman(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<Record<string, any>>;
 
+export function GetArsipGrowth():Promise<Array<Record<string, any>>>;
+
+export function GetBlockchainVerify():Promise<Record<string, any>>;
+
 export function GetDashboardExtras():Promise<Record<string, any>>;
 
 export function GetDashboardStats():Promise<Record<string, any>>;
@@ -24,6 +28,12 @@ export function ListPemberkasan():Promise<Array<Record<string, any>>>;
 export function ListPeminjaman():Promise<Array<Record<string, any>>>;
 
 export function ListPemusnahan():Promise<Array<Record<string, any>>>;
+
+export function ListPenyusutan():Promise<Array<Record<string, any>>>;
+
+export function ListRetensiExpiring(arg1:number):Promise<Array<Record<string, any>>>;
+
+export function ListRoles():Promise<Array<Record<string, any>>>;
 
 export function ListUsers():Promise<Array<Record<string, any>>>;
 

@@ -17,6 +17,7 @@ import (
 	"arsippro/internal/config"
 	"arsippro/internal/database"
 	"arsippro/internal/models"
+	"arsippro/internal/services"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -622,6 +623,145 @@ func (a *App) CreatePeminjaman(arsipId, userId, keperluan, tanggalPinjam, tangga
 		return map[string]interface{}{"error": err.Error()}, err
 	}
 	return map[string]interface{}{"id": p.ID, "status": p.Status}, nil
+}
+
+// ListPenyusutan returns arsip yang kriteria retensinya sudah habis (siap diproses pemusnahan).
+func (a *App) ListPenyusutan() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if database.DB == nil {
+		return result
+	}
+	arsipList := (&services.SmartDisposalService{}).GetEligibleArsip()
+	for _, ar := range arsipList {
+		unit := "-"
+		if ar.UnitKerja != nil && ar.UnitKerja.NamaUnit != "" {
+			unit = ar.UnitKerja.NamaUnit
+		}
+		kategori := "Umum"
+		if ar.JenisArsipRel != nil && ar.JenisArsipRel.NamaJenis != "" {
+			kategori = ar.JenisArsipRel.NamaJenis
+		}
+		tanggal := ""
+		if ar.TanggalDibuat != nil {
+			tanggal = ar.TanggalDibuat.Format("2006-01-02")
+		}
+		retensi := ""
+		if ar.TanggalRetensiAkhir != nil {
+			retensi = ar.TanggalRetensiAkhir.Format("2006-01-02")
+		}
+		result = append(result, map[string]interface{}{
+			"id":                  ar.ID,
+			"nomor":               ar.NomorArsip,
+			"nama":                ar.NamaArsip,
+			"uraian":              ar.Uraian,
+			"status":              ar.StatusArsip,
+			"unit":                unit,
+			"kategori":            kategori,
+			"jenisName":           kategori,
+			"tanggal":             tanggal,
+			"tanggalRetensiBerakhir": retensi,
+			"jumlah":              ar.Jumlah,
+			"satuan":              ar.Satuan,
+			"nilai":               ar.NilaiAnggaran,
+			"nomor_spm":           ar.NomorSPM,
+			"berkas":              ar.FilePath != "",
+			"created":             ar.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":             ar.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	return result
+}
+
+// ListRetensiExpiring returns arsip yang retensi berakhir dalam rentang hari.
+func (a *App) ListRetensiExpiring(days int) []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if database.DB == nil {
+		return result
+	}
+	if days <= 0 {
+		days = 90
+	}
+	arsipList := (&services.RetentionSchedulerService{}).GetExpiringArsip(days)
+	for _, ar := range arsipList {
+		unit := "-"
+		if ar.UnitKerja != nil && ar.UnitKerja.NamaUnit != "" {
+			unit = ar.UnitKerja.NamaUnit
+		}
+		kategori := "Umum"
+		if ar.JenisArsipRel != nil && ar.JenisArsipRel.NamaJenis != "" {
+			kategori = ar.JenisArsipRel.NamaJenis
+		}
+		tanggal := ""
+		if ar.TanggalDibuat != nil {
+			tanggal = ar.TanggalDibuat.Format("2006-01-02")
+		}
+		retensi := ""
+		if ar.TanggalRetensiAkhir != nil {
+			retensi = ar.TanggalRetensiAkhir.Format("2006-01-02")
+		}
+		result = append(result, map[string]interface{}{
+			"id":                  ar.ID,
+			"nomor":               ar.NomorArsip,
+			"nama":                ar.NamaArsip,
+			"uraian":              ar.Uraian,
+			"status":              ar.StatusArsip,
+			"unit":                unit,
+			"kategori":            kategori,
+			"jenisName":           kategori,
+			"tanggal":             tanggal,
+			"tanggalRetensiBerakhir": retensi,
+			"jumlah":              ar.Jumlah,
+			"satuan":              ar.Satuan,
+			"nilai":               ar.NilaiAnggaran,
+			"nomor_spm":           ar.NomorSPM,
+			"berkas":              ar.FilePath != "",
+			"created":             ar.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":             ar.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	return result
+}
+
+// GetBlockchainVerify runs the blockchain hash-chain verification.
+func (a *App) GetBlockchainVerify() map[string]interface{} {
+	if database.DB == nil {
+		return map[string]interface{}{
+			"total_blocks":          0,
+			"invalid_blocks":        0,
+			"invalid_block_numbers": []uint64{},
+			"is_valid":              true,
+		}
+	}
+	return (&services.BlockchainAuditService{}).VerifyChain()
+}
+
+// GetArsipGrowth returns archive creation growth per month (last N months).
+func (a *App) GetArsipGrowth() []map[string]interface{} {
+	if database.DB == nil {
+		return []map[string]interface{}{}
+	}
+	return (&services.AnalyticsService{}).GetArsipGrowth(12)
+}
+
+// ListRoles returns system roles.
+func (a *App) ListRoles() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if database.DB == nil {
+		return result
+	}
+	var roles []models.Role
+	database.DB.Order("created_at desc").Find(&roles)
+	for _, r := range roles {
+		result = append(result, map[string]interface{}{
+			"id":         r.ID,
+			"name":       r.Name,
+			"namaRole":  r.NamaRole,
+			"keterangan": r.Keterangan,
+			"created":   r.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":   r.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	return result
 }
 
 // GetDashboardExtras returns the remaining dashboard data:

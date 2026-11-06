@@ -18,6 +18,13 @@ import { UnitKerjaPage } from './pages/UnitKerjaPage';
 import { LokasiArsipPage } from './pages/LokasiArsipPage';
 import { KodeKlasifikasiPage } from './pages/KodeKlasifikasiPage';
 import { JenisArsipPage } from './pages/JenisArsipPage';
+import { DisposalPage } from './pages/DisposalPage';
+import { MonitoringRetensiPage } from './pages/MonitoringRetensiPage';
+import { BlockchainPage } from './pages/BlockchainPage';
+import { AdvancedPage } from './pages/AdvancedPage';
+import { RolesPage } from './pages/RolesPage';
+import { StatistikPage } from './pages/StatistikPage';
+import { SearchPage } from './pages/SearchPage';
 import { ITEM_BY_KEY, type PageKey } from './components/AppSidebar';
 import { getProfile, getStatus, pingBackend, type Status, type Profile } from './lib/bindings';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -79,6 +86,20 @@ const App: React.FC = () => {
         return <KodeKlasifikasiPage />;
       case 'jenis-arsip':
         return <JenisArsipPage />;
+      case 'disposal':
+        return <DisposalPage />;
+      case 'monitoring-retensi':
+        return <MonitoringRetensiPage />;
+      case 'blockchain':
+        return <BlockchainPage />;
+      case 'advanced':
+        return <AdvancedPage />;
+      case 'roles':
+        return <RolesPage />;
+      case 'statistik':
+        return <StatistikPage />;
+      case 'search':
+        return <SearchPage />;
       case 'public-search':
         return (
           <PublicSearchPage

@@ -6,6 +6,14 @@ export function CreatePeminjaman(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['CreatePeminjaman'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function GetArsipGrowth() {
+  return window['go']['main']['App']['GetArsipGrowth']();
+}
+
+export function GetBlockchainVerify() {
+  return window['go']['main']['App']['GetBlockchainVerify']();
+}
+
 export function GetDashboardExtras() {
   return window['go']['main']['App']['GetDashboardExtras']();
 }
@@ -48,6 +56,18 @@ export function ListPeminjaman() {
 
 export function ListPemusnahan() {
   return window['go']['main']['App']['ListPemusnahan']();
+}
+
+export function ListPenyusutan() {
+  return window['go']['main']['App']['ListPenyusutan']();
+}
+
+export function ListRetensiExpiring(arg1) {
+  return window['go']['main']['App']['ListRetensiExpiring'](arg1);
+}
+
+export function ListRoles() {
+  return window['go']['main']['App']['ListRoles']();
 }
 
 export function ListUsers() {
