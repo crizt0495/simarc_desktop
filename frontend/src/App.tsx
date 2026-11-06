@@ -44,7 +44,7 @@ const App: React.FC = () => {
     document.title = `${ITEM_BY_KEY[page as PageKey]?.label ?? 'SIMARC'} — SIMARC-Arsip Record Center`;
   }, [page]);
 
-  const renderPage = () => {
+  const renderBody = () => {
     switch (page) {
       case 'dashboard':
         return <Dashboard status={status} userName={profile?.name ?? 'Pengguna'} />;
@@ -54,7 +54,7 @@ const App: React.FC = () => {
         return (
           <PublicSearchPage
             onLogin={() => setPage('login')}
-            sessionName={null} // landing selalu mode viewer; profil tampil di topbar
+            sessionName={null}
           />
         );
       case 'login':
@@ -72,14 +72,26 @@ const App: React.FC = () => {
     }
   };
 
+  // Landing page publik & login tampil full-screen (tanpa sidebar/shell),
+  // sesuai desain viewer tanpa login. Halaman aplikasi lain pakai AppLayout.
+  const isPublic = page === 'public-search' || page === 'login';
+
+  if (isPublic) {
+    return (
+      <ErrorBoundary>
+        {renderBody()}
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <AppLayout
-      page={page}
-      onNavigate={setPage}
+      page={page as PageKey}
+      onNavigate={(p) => setPage(p)}
       user={profile}
     >
       <ErrorBoundary>
-        {renderPage()}
+        {renderBody()}
       </ErrorBoundary>
     </AppLayout>
   );
