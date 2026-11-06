@@ -239,7 +239,7 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 		Preload("KodeKlasifikasi").
 		Preload("Pemberkasan").
 		Preload("LokasiArsip").
-		Order("created_at desc").Limit(200).Find(&arsip)
+		Order("created_at desc").Find(&arsip)
 	for _, ar := range arsip {
 		unit, kategori := "-", "Umum"
 		if ar.UnitKerja != nil && ar.UnitKerja.NamaUnit != "" {
