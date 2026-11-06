@@ -27,21 +27,40 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
   const [page, setPage] = useState(1);
   const perPage = 15;
 
-  /* ── load data (bawa semua arsip) ── */
+  /* ── load data (bawa semua arsip) dengan retry sampai DB backend siap ── */
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    let attempt = 0;
+    const maxAttempts = 12;
+
+    const load = async () => {
+      attempt += 1;
       setLoading(true);
       try {
         const [r, o] = await Promise.all([listArsipDetail(), getMasterOptions()]);
-        setRows(r);
-        setOpts(o);
+        if (cancelled) return;
+        setRows(Array.isArray(r) ? r : []);
+        setOpts(o || {});
         setError(null);
-      } catch (e) {
-        setError(String(e));
-      } finally {
+        // Jika DB belum siap, r kosong — jadwalkan retry (kecuali percobaan terakhir).
+        if ((!Array.isArray(r) || r.length === 0) && attempt < maxAttempts) {
+          setTimeout(load, Math.min(300 * attempt, 1500));
+          return;
+        }
         setLoading(false);
+      } catch (e) {
+        if (cancelled) return;
+        setError(String(e));
+        if (attempt < maxAttempts) {
+          setTimeout(load, Math.min(300 * attempt, 1500));
+        } else {
+          setLoading(false);
+        }
       }
-    })();
+    };
+
+    void load();
+    return () => { cancelled = true; };
   }, []);
 
   /* ── filter klien (dataset data penuh, filter lokal) ──

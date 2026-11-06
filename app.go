@@ -292,6 +292,9 @@ func derefStr(p *string) string {
 // GetMasterOptions returns master-data dropdown options for the arsip filter panel.
 func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 	out := map[string][]map[string]interface{}{}
+	if database.DB == nil {
+		return out
+	}
 	opts := func(rows []map[string]interface{}) []map[string]interface{} {
 		if rows == nil {
 			return []map[string]interface{}{}
