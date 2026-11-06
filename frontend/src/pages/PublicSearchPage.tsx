@@ -10,6 +10,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getMasterOptions, listArsipDetail } from '../lib/bindings';
 import PublicHeader from '../components/PublicHeader';
 
+/* ── warna badge status arsip ── */
+const statusBadge = (s: unknown): string => {
+  const v = String(s ?? '').toLowerCase();
+  if (v === 'aktif' || v === 'diberkaskan') return 'bg-success-subtle text-success-emphasis border border-success-subtle';
+  if (v === 'inaktif') return 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle';
+  if (v === 'siap_penyusutan') return 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+  if (v === 'musnah') return 'bg-danger-subtle text-danger-emphasis border border-danger-subtle';
+  return 'bg-info-subtle text-info-emphasis border border-info-subtle';
+};
+
 export interface PublicSearchPageProps {
   onLogin?: () => void;
   sessionName?: string | null;
@@ -205,49 +215,55 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
 
         {/* RESULTS */}
         {loading ? (
-          <div className="card-body text-center py-5"><div className="spinner-border text-primary" role="status" aria-label="Loading..."></div></div>
+          <div className="card-body text-center py-5">
+            <div className="spinner-border text-primary" role="status" aria-label="Loading..."></div>
+            <div className="text-muted small mt-2">Memuat daftar arsip…</div>
+          </div>
         ) : error ? (
           <div className="card-body text-center py-5">
-            <h6 className="text-danger mb-2">Gagal memuat data</h6>
-            <p className="text-muted small">{error}</p>
+            <i className="bi bi-exclamation-triangle-fill text-danger fs-3 d-block mb-2"></i>
+            <h6 className="text-danger mb-1">Gagal memuat data</h6>
+            <p className="text-muted small mb-0">{error}</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="card-body text-center py-5">
-            <i className="bi bi-inbox fs-3 d-block mb-2"></i>
-            <p className="text-muted">Tidak ditemukan hasil sesuai kriteria</p>
+            <i className="bi bi-inbox fs-2 d-block mb-2 text-muted"></i>
+            <p className="text-muted mb-0">Tidak ditemukan hasil sesuai kriteria</p>
           </div>
         ) : (
           <>
-            <div className="card-body px-0 pb-0">
-              <table className="table table-hover table-sm align-middle mb-0">
-                <thead className="table-light border-bottom sticky-top">
+            <div className="table-responsive">
+              <table className="table table-hover table-striped table-sm align-middle mb-0">
+                <thead className="table-light sticky-top">
                   <tr>
-                    <th className="text-center w-100 text-start">#</th>
-                    <th className="w-25 text-start">Nomor</th>
-                    <th className="text-start">Nama</th>
-                    <th className="text-start">Unit Kerja</th>
-                    <th className="text-start">Kategori</th>
-                    <th className="text-start">Jenis</th>
-                    <th className="text-center w-20">Tanggal</th>
-                    <th className="text-center w-20">Berkas</th>
-                    <th className="text-center w-20">Status</th>
+                    <th className="text-center" style={{ width: 46 }}>#</th>
+                    <th style={{ width: 150 }}>Nomor</th>
+                    <th>Nama Arsip</th>
+                    <th style={{ width: 150 }}>Unit Kerja</th>
+                    <th style={{ width: 130 }}>Kategori</th>
+                    <th style={{ width: 120 }}>Jenis</th>
+                    <th className="text-center" style={{ width: 96 }}>Tanggal</th>
+                    <th className="text-center" style={{ width: 60 }}>Berkas</th>
+                    <th className="text-center" style={{ width: 110 }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageRows.map((ar, i) => (
                     <tr key={ar.id}>
                       <td className="text-center text-muted small">{String(startIdx + i + 1).padStart(3, '0')}</td>
-                      <td className="fw-semibold small">{ar.nomor || '-'}</td>
-                      <td className="small">{(ar.nama || '—').slice(0, 48)}</td>
-                      <td className="small">{ar.unit || '-'}</td>
-                      <td className="small">{ar.kategori || '-'}</td>
-                      <td className="small">{ar.jenisName || '-'}</td>
+                      <td className="fw-semibold small text-truncate" style={{ maxWidth: 150 }} title={ar.nomor || ''}>{ar.nomor || '—'}</td>
+                      <td className="small" title={ar.nama || ''}>{(ar.nama || '—').slice(0, 52)}</td>
+                      <td className="small text-truncate" style={{ maxWidth: 150 }} title={ar.unit || ''}>{ar.unit || '—'}</td>
+                      <td className="small text-truncate" style={{ maxWidth: 130 }} title={ar.kategori || ''}>{ar.kategori || '—'}</td>
+                      <td className="small text-truncate" style={{ maxWidth: 120 }} title={ar.jenisName || ''}>{ar.jenisName || '—'}</td>
                       <td className="text-center small text-muted">{ar.tanggal || '—'}</td>
                       <td className="text-center">
-                        {ar.berkas ? <i className="bi bi-file-earmark text-success" title="Berkas tersedia"></i> : <i className="bi bi-file-earmark-question-fill text-warning" title="Tidak ada berkas"></i>}
+                        {ar.berkas
+                          ? <i className="bi bi-file-earmark-check text-success" title="Berkas tersedia"></i>
+                          : <i className="bi bi-file-earmark-x text-warning" title="Tidak ada berkas"></i>}
                       </td>
                       <td className="text-center">
-                        <span className="badge bg-info text-dark">{ar.status ? ar.status.replace(/_/g, ' ') : '—'}</span>
+                        <span className={`badge ${statusBadge(ar.status)}`}>{ar.status ? ar.status.replace(/_/g, ' ') : '—'}</span>
                       </td>
                     </tr>
                   ))}
@@ -256,25 +272,25 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
             </div>
 
             {/* PAGINATION */}
-            <div className="card-body d-flex align-items-center justify-content-between flex-wrap gap-2 py-2">
+            <div className="card-body d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 border-top">
               <span className="text-muted small">
-                {filtered.length} hasil dari {rows.length} total
-                {applied.q ? <><span className="ms-2">— keyword “{applied.q}”</span></> : null}
+                Menampilkan <strong>{pageRows.length}</strong> dari <strong>{filtered.length}</strong> hasil (total {rows.length})
+                {activeFilterCount > 0 && <span className="ms-2 badge bg-danger">{activeFilterCount} filter aktif</span>}
               </span>
-              <nav>
-                <ul className="pagination pagination-sm justify-content-center mb-0">
-                  <li className="page-item disabled"><a className="page-link" href="#">«</a></li>
-                  <li className={`page-item${curPage === 1 ? ' active' : ''}`}>
-                    <a className="page-link" href="#" onClick={(e) => { e.preventDefault(); setPage(curPage - 1); }}>«</a>
+              <nav aria-label="Navigasi halaman">
+                <ul className="pagination pagination-sm mb-0">
+                  <li className={`page-item${curPage === 1 ? ' disabled' : ''}`}>
+                    <a className="page-link" href="#" onClick={(e) => { e.preventDefault(); if (curPage > 1) setPage(curPage - 1); }}>‹</a>
                   </li>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).slice(Math.max(1, curPage - 2), curPage + 2)
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .slice(Math.max(0, curPage - 3), Math.min(totalPages, curPage + 2))
                     .map((p) => (
                       <li key={p} className={`page-item${p === curPage ? ' active' : ''}`}>
                         <a className="page-link" href="#" onClick={(e) => { e.preventDefault(); setPage(p); }}>{p}</a>
                       </li>
                     ))}
-                  <li className={`page-item${curPage === totalPages ? ' active' : ''}`}>
-                    <a className="page-link" href="#" onClick={(e) => { e.preventDefault(); setPage(curPage + 1); }}>»</a>
+                  <li className={`page-item${curPage === totalPages ? ' disabled' : ''}`}>
+                    <a className="page-link" href="#" onClick={(e) => { e.preventDefault(); if (curPage < totalPages) setPage(curPage + 1); }}>›</a>
                   </li>
                 </ul>
               </nav>
