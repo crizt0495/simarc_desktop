@@ -233,7 +233,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
         ) : (
           <>
             <div className="table-responsive">
-              <table className="table table-hover table-striped table-sm align-middle mb-0">
+              <table className="table table-hover table-striped table-sm align-middle mb-0" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead className="table-light sticky-top">
                   <tr>
                     <th className="text-center" style={{ width: 46 }}>#</th>
@@ -252,12 +252,12 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                   {pageRows.map((ar, i) => (
                     <tr key={ar.id}>
                       <td className="text-center text-muted small">{String(startIdx + i + 1).padStart(3, '0')}</td>
-                      <td className="fw-semibold small text-truncate" style={{ maxWidth: 150 }} title={ar.nomor || ''}>{ar.nomor || '—'}</td>
-                      <td className="small" title={ar.nama || ''}>{(ar.nama || '—').slice(0, 40)}</td>
-                      <td className="small text-truncate" style={{ maxWidth: 200 }} title={ar.uraian || ''}>{ar.uraian ? String(ar.uraian).slice(0, 60) : '—'}</td>
-                      <td className="small text-truncate" style={{ maxWidth: 150 }} title={ar.unit || ''}>{ar.unit || '—'}</td>
-                      <td className="small text-truncate" style={{ maxWidth: 130 }} title={ar.kategori || ''}>{ar.kategori || '—'}</td>
-                      <td className="small text-truncate" style={{ maxWidth: 120 }} title={ar.jenisName || ''}>{ar.jenisName || '—'}</td>
+                      <td className="fw-semibold small" style={{ wordBreak: 'break-word' }}>{ar.nomor || '—'}</td>
+                      <td className="small" style={{ wordBreak: 'break-word' }}>{ar.nama || '—'}</td>
+                      <td className="small" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>{ar.uraian || '—'}</td>
+                      <td className="small" style={{ wordBreak: 'break-word' }}>{ar.unit || '—'}</td>
+                      <td className="small" style={{ wordBreak: 'break-word' }}>{ar.kategori || '—'}</td>
+                      <td className="small" style={{ wordBreak: 'break-word' }}>{ar.jenisName || '—'}</td>
                       <td className="text-center small text-muted">{ar.tanggal || '—'}</td>
                       <td className="text-center">
                         {ar.berkas

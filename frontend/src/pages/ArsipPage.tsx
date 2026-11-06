@@ -424,7 +424,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
                       <td>
                         <div>
                           <a href="#" onClick={(e) => { e.preventDefault(); push('info', `Detail ${a.nomor || a.nama}`); }} className="fw-800 text-decoration-none hover-primary" style={{ fontSize: '0.88rem', color: 'var(--ink-2)' }}>{a.nama}</a>
-                          {a.uraian && <div className="text-muted mt-1" style={{ fontSize: '0.7rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{String(a.uraian).slice(0, 80)}</div>}
+                          {a.uraian && <div className="text-muted mt-1" style={{ fontSize: '0.7rem', whiteSpace: 'normal', wordBreak: 'break-word' }}>{String(a.uraian)}</div>}
                         </div>
                       </td>
                       <td className="text-end">{a.nilai != null && Number(a.nilai) !== 0 ? <span className="fw-800 font-monospace" style={{ color: 'var(--ink-2)', fontSize: '0.78rem' }}>Rp {nf.format(Number(a.nilai))}</span> : <span className="text-muted">-</span>}</td>
