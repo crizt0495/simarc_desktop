@@ -239,6 +239,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                     <th className="text-center" style={{ width: 46 }}>#</th>
                     <th style={{ width: 150 }}>Nomor</th>
                     <th>Nama Arsip</th>
+                    <th style={{ width: 200 }}>Uraian</th>
                     <th style={{ width: 150 }}>Unit Kerja</th>
                     <th style={{ width: 130 }}>Kategori</th>
                     <th style={{ width: 120 }}>Jenis</th>
@@ -252,7 +253,8 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                     <tr key={ar.id}>
                       <td className="text-center text-muted small">{String(startIdx + i + 1).padStart(3, '0')}</td>
                       <td className="fw-semibold small text-truncate" style={{ maxWidth: 150 }} title={ar.nomor || ''}>{ar.nomor || '—'}</td>
-                      <td className="small" title={ar.nama || ''}>{(ar.nama || '—').slice(0, 52)}</td>
+                      <td className="small" title={ar.nama || ''}>{(ar.nama || '—').slice(0, 40)}</td>
+                      <td className="small text-truncate" style={{ maxWidth: 200 }} title={ar.uraian || ''}>{ar.uraian ? String(ar.uraian).slice(0, 60) : '—'}</td>
                       <td className="small text-truncate" style={{ maxWidth: 150 }} title={ar.unit || ''}>{ar.unit || '—'}</td>
                       <td className="small text-truncate" style={{ maxWidth: 130 }} title={ar.kategori || ''}>{ar.kategori || '—'}</td>
                       <td className="small text-truncate" style={{ maxWidth: 120 }} title={ar.jenisName || ''}>{ar.jenisName || '—'}</td>
