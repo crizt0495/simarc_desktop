@@ -632,6 +632,74 @@ func (a *App) CreatePeminjaman(arsipId, userId, keperluan, tanggalPinjam, tangga
 	return map[string]interface{}{"id": p.ID, "status": p.Status}, nil
 }
 
+// CreateArsip creates a new arsip record.
+func (a *App) CreateArsip(nomor, nama, uraian, status, kelas, unit, lokasi string, nilai float64) (map[string]interface{}, error) {
+	// Generate UUID for ID
+	id := uuid.New().String()
+
+	// Parse status
+	statusEnum := "aktif"
+	if status != "" {
+		statusEnum = status
+	}
+
+	// Parse kelas (kode klasifikasi)
+	kelasID := kelas
+
+	// Parse unit (unit kerja)
+	unitID := unit
+
+	// Create arsip record
+	var lokasiPtr *string = nil
+	if lokasi != "" {
+		lokasiPtr = &lokasi
+	}
+
+	var nilaiPtr *float64 = nil
+	if nilai != 0 {
+		nilaiPtr = &nilai
+	}
+
+	var tanggalDibuat time.Time = time.Now().Local()
+	tanggalDibuatPtr := &tanggalDibuat
+
+	arsip := models.Arsip{
+		ID:                  id,
+		NomorArsip:          nomor,
+		NamaArsip:           nama,
+		Uraian:              uraian,
+		StatusArsip:         statusEnum,
+		KodeKlasifikasiID:   kelasID,
+		UnitKerjaID:         unitID,
+		LokasiArsipID:       lokasiPtr,
+		TanggalDibuat:       tanggalDibuatPtr,
+		TanggalRetensiAkhir: nil,
+		NilaiAnggaran:       nilaiPtr,
+		Nominal:             nil,
+		JenisArsip:          "",
+		NomorSPM:            "",
+		FilePath:            "",
+		FileName:            "",
+		OcrText:             "",
+		OcrFullText:         "",
+		Tags:                "",
+		StatusReview:        false,
+		Jumlah:              1,
+		Satuan:              "Berkas",
+		GoogleDriveFileID:   "",
+		GoogleDriveURL:      "",
+		CreatedAt:           time.Now().Local(),
+		UpdatedAt:           time.Now().Local(),
+		DeletedAt:           gorm.DeletedAt{},
+	}
+
+	if err := database.DB.Create(&arsip).Error; err != nil {
+		return map[string]interface{}{"error": err.Error()}, err
+	}
+
+	return map[string]interface{}{"id": arsip.ID, "status": arsip.StatusArsip, "nomor": arsip.NomorArsip}, nil
+}
+
 // ListPenyusutan returns arsip yang kriteria retensinya sudah habis (siap diproses pemusnahan).
 func (a *App) ListPenyusutan() []map[string]interface{} {
 	result := []map[string]interface{}{}

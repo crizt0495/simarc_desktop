@@ -18,6 +18,7 @@ import {
   GetBlockchainVerify,
   ListRoles,
   CreatePeminjaman,
+  CreateArsip,
   GetDashboardStats,
   GetDashboardExtras,
   GetMasterOptions,
@@ -82,6 +83,10 @@ export async function listUsers(): Promise<any[]> {
 
 export async function createPeminjaman(arsipId: string, userId: string, keperluan: string, tanggalPinjam: string, tanggalKembaliRencana: string): Promise<Record<string, any>> {
   return (await CreatePeminjaman(arsipId, userId, keperluan, tanggalPinjam, tanggalKembaliRencana)) as unknown as Record<string, any>;
+}
+
+export async function createArsip(nomor: string, nama: string, uraian: string, status: string, kelas: string, unit: string, lokasi: string, nilai: string): Promise<Record<string, any>> {
+  return (await CreateArsip(nomor, nama, uraian, status, kelas, unit, lokasi, nilai)) as unknown as Record<string, any>;
 }
 
 export async function getDashboardStats(): Promise<Record<string, any>> {
