@@ -364,7 +364,10 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
                       <span className="arsip-card-field-value"><i className="bi bi-building"></i>{a.unit || '-'}</span>
                     </div>
                     <div className="arsip-card-field">
-                      <span className="arsip-card-field-label">Tanggal</span>
+                      <span className="arsip-card-field-label">Lokasi Arsip</span>
+                      <span className="arsip-card-field-value">{a.lokasi || '-'}</span>
+                    </div>
+                    <div className="arsip-card-field">
                       <span className="arsip-card-field-value"><i className="bi bi-calendar3"></i>{a.tanggal || '-'}</span>
                     </div>
                     <div className="arsip-card-field">
@@ -414,6 +417,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
                     <th style={{ width: 120 }}>Unit Kerja</th>
                     <th style={{ width: 90 }}>Tanggal</th>
                     <th style={{ width: 90 }}>Kategori</th>
+                    <th style={{ width: 110 }}>Lokasi Arsip</th>
                     <th style={{ width: 100 }}>Status</th>
                     <th style={{ width: 200 }} className="text-center">Aksi</th>
                   </tr>
@@ -434,6 +438,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
                       <td><span className="small fw-600"><i className="bi bi-building text-primary me-1"></i>{a.unit || '-'}</span></td>
                       <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}><i className="bi bi-calendar3 me-1"></i>{a.tanggal || '-'}</span></td>
                       <td><span className="status-badge" style={{ background: 'var(--brand-lt)', color: 'var(--brand)' }}>{a.kategori || 'Umum'}</span></td>
+                      <td><span className="small fw-600">{a.lokasi || '-'}</span></td>
                       <td><span className={`status-badge status-${a.status}`}>{statusLabel(a.status)}</span></td>
                       <td className="text-center"><div className="d-flex justify-content-center gap-1">{crudActions(a)}</div></td>
                     </tr>

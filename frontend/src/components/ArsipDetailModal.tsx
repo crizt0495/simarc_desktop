@@ -22,6 +22,7 @@ export interface ArsipDetail {
   berkas?: boolean;
   created?: string;
   updated?: string;
+  lokasi?: string;
 }
 
 interface Props {
@@ -47,6 +48,7 @@ export const ArsipDetailModal: React.FC<Props> = ({ detail, onClose }) => {
     ['Berkas Digital', detail.berkas ? 'Tersedia' : 'Belum ada'],
     ['Dibuat', detail.created],
     ['Diperbarui', detail.updated],
+    ['Lokasi Arsip', detail.lokasi],
   ];
 
   return (

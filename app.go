@@ -238,6 +238,7 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 		Preload("JenisArsipRel").
 		Preload("KodeKlasifikasi").
 		Preload("Pemberkasan").
+		Preload("LokasiArsip").
 		Order("created_at desc").Limit(200).Find(&arsip)
 	for _, ar := range arsip {
 		unit, kategori := "-", "Umum"
@@ -275,6 +276,12 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 					return ar.KodeKlasifikasi.KodeKlasifikasi
 				}
 				return ""
+			}(),
+			"lokasi": func() string {
+				if ar.LokasiArsip != nil && ar.LokasiArsip.NamaLokasi != "" {
+					return ar.LokasiArsip.NamaLokasi
+				}
+				return "—"
 			}(),
 			"berkas":   ar.FilePath != "",
 			"created":  ar.CreatedAt.Format("2006-01-02 15:04:05"),
