@@ -1,90 +1,90 @@
 /**
- * AppTopbar — breadcrumb, status koneksi DB + sinkronisasi, tombol sync manual.
+ * AppTopbar — replika 1:1 dari <header class="top-navbar"> pada
+ * web/templates/layouts/app.html: tombol mobile, brand, kolom pencarian
+ * (petunjuk "/" ), toggle dark mode, tombol pintasan keyboard, dan dropdown
+ * pengguna (avatar inisial + nama + role → Profil/Pengaturan/Keluar).
  */
 import React from 'react';
-import { FolderTree, ChevronRight, Database, RefreshCw, CircleCheck, CircleAlert, CircleX } from 'lucide-react';
-import type { Status } from '../lib/bindings';
-import { useToast } from '../lib/toast';
+import { useTheme } from '../lib/theme';
+import { SimarcModal } from '../lib/modal';
 
-type ConnTone = 'ok' | 'warn' | 'bad';
-
-function connTone(s: Status | null): ConnTone {
-  if (!s) return 'warn';
-  if (s.db_ok) return 'ok';
-  return 'bad';
+export interface SessionUser {
+  name: string;
+  role: string;
 }
 
-export const connectionState = (s: Status | null): string => {
-  if (!s) return 'connecting' as const;
-  if (s.db_ok && s.sync_on && !s.sync_ok && s.sync_err) return 'sync failed';
-  if (s.db_ok && s.sync_on && s.sync_ok) return 'synchronizing' as const;
-  if (s.db_ok) return 'online' as const;
-  if (s.sync_on) return 'offline' as const;
-  return 'connecting';
-};
-
 export const AppTopbar: React.FC<{
-  baseUrl: string;
-  pageLabel: string;
-  status: Status | null;
-  onRefresh: () => void;
-}> = ({ baseUrl, pageLabel, status, onRefresh }) => {
-  const tone = connTone(status);
-  const {
-    push,
-  } = useToast();
+  user: SessionUser | null;
+}> = ({ user }) => {
+  const { mode } = useTheme();
 
-  const syncBusy = connectionState(status) === 'synchronizing';
+  const onThemeToggle = () => {
+    const html = document.documentElement;
+    const t = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', t);    html.setAttribute('data-theme', t);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = t === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: t } }));
+  };
+
+  void mode;
 
   return (
-    <header className="h-topbar shrink-0 bg-sidebar border-b border-line flex items-center px-5 gap-3">
-      {/* Breadcrumb — konsisten di semua halaman */}
-      <nav className="flex items-center gap-1.5 min-w-0" aria-label="Breadcrumb">
-        <FolderTree size={13} className="text-ink-3 shrink-0" />
-        <span className="text-caption text-ink-3 uppercase tracking-wide">{baseUrl}</span>
-        <ChevronRight size={13} className="text-ink-3" />
-        <span className="text-label font-medium text-ink-1 truncate">{pageLabel}</span>
-      </nav>
+    <header className="top-navbar">
+      <div className="navbar-left">
+        <button className="nav-icon-btn d-md-none" id="sidebarToggle" aria-label="Buka menu navigasi" aria-expanded="false" aria-controls="sidebarNav">
+          <i className="bi bi-list"></i>
+        </button>
+        <a href="/dashboard" className="navbar-brand-mobile" aria-label="SIMARC Beranda">
+          <i className="bi bi-archive-fill"></i>
+          <span>SIMARC</span>
+        </a>
 
-      <div className="flex-1" />
-
-      {/* Status koneksi DB lokal */}
-      <div className="flex items-center gap-2 px-2.5 h-8 rounded-lg border border-line" title={
-        status?.db_ok ? 'Database lokal siap' : `Database lokal: ${status?.db_err ?? 'menyambung…'}`
-      }>
-        {tone === 'ok' ? (
-          <CircleCheck size={14} className="text-ok" />
-        ) : tone === 'bad' ? (
-          <CircleX size={14} className="text-bad animate-pulse" />
-        ) : (
-          <CircleAlert size={14} className="text-warn" />
-        )}
-        <span className="text-caption font-medium text-ink-2 hidden sm:inline">
-          {tone === 'ok' ? `${status?.db_engine} • ${status?.db_name}` : 'DB Lokal'}
-        </span>
+        <form action="/search" method="GET" className="nav-search d-none d-lg-flex" onSubmit={(e) => e.preventDefault()}>
+          <i className="bi bi-search" style={{ color: 'var(--ink-4)', fontSize: 14, flexShrink: 0 }}></i>
+          <input type="search" name="q" placeholder="Cari arsip..." aria-label="Pencarian" autoComplete="off" />
+          <kbd style={{ fontSize: 11, color: 'var(--ink-4)', background: 'var(--surface-3)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 6px', flexShrink: 0 }}>/</kbd>
+        </form>
       </div>
 
-      {/* Status sinkronisasi + tombol manual */}
-      <button
-        onClick={async () => {
-          try {
-            const r = await import('../lib/bindings').then((m) => m.triggerSync());
-            push(r.ran ? 'success' : 'info', r.msg);
-          } catch (e) {
-            push('danger', String(e));
-          }
-          onRefresh();
-        }}
-        className="flex items-center gap-2 px-2.5 h-8 rounded-lg border border-line hover:bg-surface-2 transition-colors"
-        title="Jalankan sinkronisasi manual"
-      >
-        <RefreshCw size={14} strokeWidth={1.9} className={`text-primary ${syncBusy ? 'animate-spin' : ''}`} />
-        {status?.last_sync ? (
-          <span className="text-caption text-ink-2 hidden md:inline">{status.last_sync.split(' ')[1]} • sync {syncBusy ? 'berjalan' : 'siap'}</span>
-        ) : (
-          <span className="text-caption text-ink-2 hidden md:inline">Sinkronkan</span>
-        )}
-      </button>
+      <div className="navbar-right">
+        <button className="nav-icon-btn" id="themeToggle" title="Toggle Dark Mode" onClick={onThemeToggle}>
+          <i className="bi bi-moon" id="themeIcon"></i>
+        </button>
+
+        <button className="nav-icon-btn d-none d-md-flex" id="keyboardShortcutBtn" title="Pintasan Keyboard" onClick={() => SimarcModal.show('kbdModal')}>
+          <i className="bi bi-keyboard"></i>
+        </button>
+
+        <div className="dropdown">
+          <div className="nav-user" data-bs-toggle="dropdown" role="button" tabIndex={0} aria-haspopup="menu" aria-expanded="false" aria-label="Menu pengguna">
+            <div className="nav-avatar">{(user?.name || 'P').slice(0, 1)}</div>
+            <div className="d-none d-sm-block">
+              <div className="nav-user-name">{user?.name ?? 'Pengguna'}</div>
+              <div className="nav-user-role">{user?.role ?? 'Pengguna'}</div>
+            </div>
+            <i className="bi bi-chevron-down d-none d-sm-inline" style={{ fontSize: 11, color: 'var(--ink-4)' }}></i>
+          </div>
+          <ul className="dropdown-menu dropdown-menu-end">
+            <li>
+              <a className="dropdown-item" href="/profil" onClick={(e) => e.preventDefault()}>
+                <i className="bi bi-person"></i> Profil Saya
+              </a>
+            </li>
+            <li>
+              <a className="dropdown-item" href="/pengaturan" onClick={(e) => e.preventDefault()}>
+                <i className="bi bi-gear"></i> Pengaturan
+              </a>
+            </li>
+            <li><div className="dropdown-divider"></div></li>
+            <li>
+              <button className="dropdown-item danger" onClick={() => SimarcModal.show('exitConfirmModal')}>
+                <i className="bi bi-box-arrow-right"></i> Keluar
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
     </header>
   );
 };

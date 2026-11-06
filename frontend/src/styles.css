@@ -1,109 +1,19 @@
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/inter/700.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* ══════════════════════════════════════════════════════════════════
-   Warna SIMARC — diselaraskan dengan referensi visual aplikasi
-   (enterprise.min.css / desktop-modern.min.css → --nb-* tokens).
-   Semua warna memakai CSS variable — tidak ada hard-code.
-   ══════════════════════════════════════════════════════════════════ */
-:root {
-  --c-app-bg: #F3F5F9;
-  --c-sidebar-bg: #FFFFFF;
-  --c-surface: #FFFFFF;
-  --c-surface-2: #F8FAFD;
-  --c-surface-3: #EEF1F6;
-  --c-primary: #2563EB;
-  --c-primary-hover: #1D4ED8;
-  --c-primary-soft: #EFF4FF;
-  --c-text-1: #0F172A;
-  --c-text-2: #475569;
-  --c-text-3: #637089;
-  --c-border: #E2E8F0;
-  --c-border-strong: #CBD5E1;
-  --c-border-soft: #EDF1F7;
-  --c-success: #047857;
-  --c-warning: #B45309;
-  --c-danger: #DC2626;
-  --c-info: #0369A1;
-  --c-primary-ring: rgba(37, 99, 235, 0.25);
-}
-
-.dark {
-  --c-app-bg: #0B1220;
-  --c-sidebar-bg: #111B2F;
-  --c-surface: #111B2F;
-  --c-surface-2: #16223A;
-  --c-surface-3: #1E2C47;
-  --c-primary: #5B8DEF;
-  --c-primary-hover: #83A6F5;
-  --c-primary-soft: #182A4E;
-  --c-text-1: #E8EEF7;
-  --c-text-2: #A6B4C8;
-  --c-text-3: #8595B0;
-  --c-border: #243450;
-  --c-border-strong: #334666;
-  --c-border-soft: #1C2A42;
-  --c-success: #34D399;
-  --c-warning: #FBBF24;
-  --c-danger: #F87171;
-  --c-info: #5B8DEF;
-  --c-primary-ring: rgba(91, 141, 239, 0.3);
-}
+/* ═══════════════════════════════════════════════════════════════════════
+   SIMARC Desktop — styles SPA glue.
+   Semua design system (token, sidebar, topbar, kartu, tabel, modal, dsb.)
+   memakai css/enterprise.css + Bootstrap 5 yang dimuat oleh index.html —
+   sama persis dengan aplikasi web referensi.
+   Berkas ini hanya berisi: penyiapan kanvas SPA dan detail tak terlihat.
+   ═══════════════════════════════════════════════════════════════════════ */
 
 html, body, #root { height: 100%; }
 
 body {
-  font-family: Inter, system-ui, -apple-system, sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  -webkit-font-smoothing: antialiased;
-  background: var(--c-app-bg);
-  color: var(--c-text-1);
-  overflow: hidden;
 }
 
-@layer components {
-  .f-input {
-    @apply w-full h-10 px-3 rounded-lg border border-[#DCE3EA] bg-surface text-body text-ink-1
-           placeholder:text-ink-3 transition-colors duration-150 outline-none
-           focus:border-primary focus:ring-2 focus:ring-[var(--c-primary-ring)];
-  }
-  .dark .f-input { border-color: var(--c-border); }
-
-  .f-label { @apply block text-label font-medium text-ink-2 mb-1.5; }
-  .f-req { @apply text-bad ml-0.5; }
-  .f-error { @apply text-caption text-bad mt-1.5; }
-  .f-help { @apply text-caption text-ink-3 mt-1.5; }
-
-  .t-wrap {
-    @apply bg-surface border border-line rounded-xl overflow-hidden shadow-soft;
-  }
-  .t-head {
-    @apply bg-surface-2 text-label font-medium text-ink-2 text-left sticky top-0 z-10;
-  }
-  .t-row {
-    @apply border-t border-line-soft text-body text-ink-1 transition-colors duration-150
-           hover:bg-primary-soft cursor-default;
-  }
-  .t-cell { @apply px-4 py-3; }
-
-  .card {
-    @apply bg-surface border border-line rounded-xl shadow-soft;
-  }
-
-  .clamp {
-    scrollbar-width: thin;
-    scrollbar-color: var(--c-border) transparent;
-  }
-  .clamp::-webkit-scrollbar { width: 8px; height: 8px; }
-  .clamp::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 4px; }
-  .clamp::-webkit-scrollbar-track { background: transparent; }
-}
+/* Wails root container mengalirkan penuh, sama seperti body di web. */
+#root { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   * {

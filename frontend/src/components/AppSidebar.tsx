@@ -1,201 +1,164 @@
 /**
- * AppSidebar — navigasi utama, diselaraskan dengan sidebar referensi
- * aplikasi SIMARC (web/templates/components/sidebar.html).
- * Grup, label, ikon (Lucide) dan urutan mengikuti referensi.
+ * AppSidebar — replika 1:1 dari web/templates/components/sidebar.html
+ * aplikasi referensi: urutan grup, label, ikon (bi-*), footer (Profil/Keluar)
+ * dan panel versi "SIMARC Neo-Brutalism 2.0" sama persis.
  */
-import React, { useState } from 'react';
-import {
-  LayoutDashboard, FileText, PlusCircle, FolderPlus, Trash2,
-  FileUp, BookCheck, Building2, MapPin, Users, Tags, Folder,
-  Search, BarChart3, PieChart, CloudCheck, Clock, CalendarCheck,
-  ArrowRightLeft, UserCog, Settings, Database, ShieldCheck,
-  PanelLeftClose, PanelLeft, Sun, Moon, Monitor, Archive,
-} from 'lucide-react';
-import { type ThemeMode, useTheme } from '../lib/theme';
+import React from 'react';
 
 export type PageKey =
-  | 'dashboard' | 'arsip' | 'arsip-create' | 'pemberkasan' | 'pemusnahan'
-  | 'peminjaman-create' | 'peminjaman' | 'unit-kerja' | 'lokasi-arsip'
-  | 'users' | 'kode-klasifikasi' | 'jenis-arsip' | 'search' | 'laporan'
-  | 'laporan-arsip' | 'laporan-digital' | 'laporan-pemberkasan' | 'laporan-lokasi'
-  | 'laporan-klasifikasi' | 'laporan-retensi' | 'laporan-pemusnahan' | 'log-aktivitas'
-  | 'statistik' | 'monitoring-retensi' | 'jadwal-retensi' | 'dashboard-penyusutan'
-  | 'roles' | 'pengaturan' | 'backup' | 'blockchain' | 'sinkronisasi';
+  | 'dashboard' | 'advanced' | 'arsip' | 'pemberkasan' | 'pemindahan'
+  | 'pemusnahan' | 'peminjaman-create' | 'peminjaman' | 'unit-kerja'
+  | 'lokasi-arsip' | 'users' | 'kode-klasifikasi' | 'jenis-arsip'
+  | 'search' | 'laporan' | 'laporan-arsip' | 'laporan-digital'
+  | 'laporan-pemberkasan' | 'laporan-lokasi' | 'laporan-klasifikasi'
+  | 'laporan-retensi' | 'laporan-pemusnahan' | 'log-aktivitas' | 'statistik'
+  | 'monitoring-retensi' | 'jadwal-retensi' | 'disposal' | 'roles'
+  | 'pengaturan' | 'backup' | 'integrasi' | 'qrcode' | 'import-export'
+  | 'blockchain' | 'sinkronisasi' | 'profil';
 
 interface NavItem {
   key: PageKey;
   label: string;
-  icon: React.ElementType;
+  icon: string;
+  ident: string; // path situs referensi (mark active + breadcrumb)
 }
 
-interface NavGroup {
-  label: string;
-  items: NavItem[];
-}
+export const NAV_ITEMS: NavItem[] = [
+  // ── Dashboard ──
+  { key: 'dashboard', label: 'Dashboard Utama', icon: 'bi-speedometer2', ident: 'dashboard' },
+  { key: 'advanced', label: 'Analitik Lanjutan', icon: 'bi-cpu', ident: 'advanced/dashboard' },
 
-export const NAV_GROUPS: NavGroup[] = [
-  {
-    label: '',
-    items: [
-      { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: 'Manajemen Arsip',
-    items: [
-      { key: 'arsip', label: 'Daftar Arsip', icon: FileText },
-      { key: 'arsip-create', label: 'Tambah Arsip', icon: PlusCircle },
-      { key: 'pemberkasan', label: 'Pemberkasan', icon: FolderPlus },
-      { key: 'pemusnahan', label: 'Pemusnahan Arsip', icon: Trash2 },
-    ],
-  },
-  {
-    label: 'Layanan',
-    items: [
-      { key: 'peminjaman-create', label: 'Permohonan Pinjam', icon: FileUp },
-      { key: 'peminjaman', label: 'Daftar Peminjaman', icon: BookCheck },
-    ],
-  },
-  {
-    label: 'Master Data',
-    items: [
-      { key: 'unit-kerja', label: 'Unit Kerja', icon: Building2 },
-      { key: 'lokasi-arsip', label: 'Lokasi Arsip', icon: MapPin },
-      { key: 'users', label: 'Petugas', icon: Users },
-      { key: 'kode-klasifikasi', label: 'Kode Klasifikasi', icon: Tags },
-      { key: 'jenis-arsip', label: 'Jenis Arsip', icon: Folder },
-    ],
-  },
+  // ── Manajemen Arsip ──
+  { key: 'arsip', label: 'Daftar Arsip', icon: 'bi-file-earmark-text', ident: 'arsip' },
+  { key: 'pemberkasan', label: 'Pemberkasan', icon: 'bi-folder-plus', ident: 'pemberkasan' },
+  { key: 'pemindahan', label: 'Pemindahan Arsip', icon: 'bi-map', ident: 'arsip/pemindahan' },
+  { key: 'pemusnahan', label: 'Pemusnahan Arsip', icon: 'bi-trash', ident: 'pemusnahan' },
+
+  // ── Layanan ──
+  { key: 'peminjaman-create', label: 'Permohonan Pinjam', icon: 'bi-file-earmark-arrow-up', ident: 'peminjaman/create' },
+  { key: 'peminjaman', label: 'Daftar Peminjaman', icon: 'bi-journal-check', ident: 'peminjaman' },
+
+  // ── Master Data ──
+  { key: 'unit-kerja', label: 'Unit Kerja', icon: 'bi-building', ident: 'unit-kerja' },
+  { key: 'lokasi-arsip', label: 'Lokasi Arsip', icon: 'bi-geo-alt', ident: 'lokasi-arsip' },
+  { key: 'users', label: 'Petugas', icon: 'bi-people', ident: 'users' },
+  { key: 'kode-klasifikasi', label: 'Kode Klasifikasi', icon: 'bi-tags', ident: 'kode-klasifikasi' },
+  { key: 'jenis-arsip', label: 'Jenis Arsip', icon: 'bi-folder', ident: 'jenis-arsip' },
+
+  // ── Laporan ──
+  { key: 'search', label: 'Pencarian Arsip', icon: 'bi-search', ident: 'search' },
+  { key: 'laporan', label: 'Dashboard Laporan', icon: 'bi-graph-up', ident: 'laporan' },
+  { key: 'laporan-arsip', label: 'Laporan Arsip', icon: 'bi-file-earmark-text', ident: 'laporan/arsip' },
+  { key: 'laporan-digital', label: 'Arsip Digital', icon: 'bi-cloud-check', ident: 'laporan/digital' },
+  { key: 'laporan-pemberkasan', label: 'Laporan Pemberkasan', icon: 'bi-folder', ident: 'laporan/pemberkasan' },
+  { key: 'laporan-lokasi', label: 'Laporan per Lokasi', icon: 'bi-geo-alt', ident: 'laporan/lokasi' },
+  { key: 'laporan-klasifikasi', label: 'Laporan Klasifikasi', icon: 'bi-tags', ident: 'laporan/klasifikasi' },
+  { key: 'laporan-retensi', label: 'Laporan Retensi', icon: 'bi-hourglass-split', ident: 'laporan/retensi' },
+  { key: 'laporan-pemusnahan', label: 'Laporan Pemusnahan', icon: 'bi-trash', ident: 'laporan/pemusnahan' },
+  { key: 'log-aktivitas', label: 'Log Aktivitas', icon: 'bi-clock-history', ident: 'laporan/aktivitas' },
+  { key: 'statistik', label: 'Statistik', icon: 'bi-pie-chart', ident: 'laporan/statistik' },
+
+  // ── Monitoring ──
+  { key: 'monitoring-retensi', label: 'Monitoring Retensi', icon: 'bi-clock', ident: 'monitoring/retensi' },
+  { key: 'jadwal-retensi', label: 'Jadwal Retensi', icon: 'bi-calendar-check', ident: 'jadwal-retensi' },
+  { key: 'disposal', label: 'Dashboard Penyusutan', icon: 'bi-arrow-right-left', ident: 'disposal' },
+
+  // ── Administrasi ──
+  { key: 'roles', label: 'Manajemen Role', icon: 'bi-person-badge', ident: 'roles' },
+  { key: 'pengaturan', label: 'Pengaturan', icon: 'bi-gear', ident: 'pengaturan' },
+  { key: 'backup', label: 'Backup & Restore', icon: 'bi-database', ident: 'backup' },
+  { key: 'integrasi', label: 'Integrasi Google Sheet', icon: 'bi-table', ident: 'advanced/integrations' },
+  { key: 'qrcode', label: 'QR Code Arsip', icon: 'bi-qr-code', ident: 'advanced/qrcode' },
+  { key: 'import-export', label: 'Import / Export', icon: 'bi-arrow-left-right', ident: 'advanced/import-export' },
+  { key: 'blockchain', label: 'Blockchain Audit', icon: 'bi-shield-check', ident: 'blockchain' },
+];
+
+export const NAV_GROUPS: Array<{ label: string; keys: PageKey[] }> = [
+  { label: 'Dashboard', keys: ['dashboard', 'advanced'] },
+  { label: 'Manajemen Arsip', keys: ['arsip', 'pemberkasan', 'pemindahan', 'pemusnahan'] },
+  { label: 'Layanan', keys: ['peminjaman-create', 'peminjaman'] },
+  { label: 'Master Data', keys: ['unit-kerja', 'lokasi-arsip', 'users', 'kode-klasifikasi', 'jenis-arsip'] },
   {
     label: 'Laporan',
-    items: [
-      { key: 'search', label: 'Pencarian Arsip', icon: Search },
-      { key: 'laporan', label: 'Dashboard Laporan', icon: BarChart3 },
-      { key: 'laporan-arsip', label: 'Laporan Arsip', icon: FileText },
-      { key: 'laporan-digital', label: 'Arsip Digital', icon: CloudCheck },
-      { key: 'laporan-pemberkasan', label: 'Laporan Pemberkasan', icon: Folder },
-      { key: 'laporan-lokasi', label: 'Laporan per Lokasi', icon: MapPin },
-      { key: 'laporan-klasifikasi', label: 'Laporan Klasifikasi', icon: Tags },
-      { key: 'laporan-retensi', label: 'Laporan Retensi', icon: Clock },
-      { key: 'laporan-pemusnahan', label: 'Laporan Pemusnahan', icon: Trash2 },
-      { key: 'log-aktivitas', label: 'Log Aktivitas', icon: Clock },
-      { key: 'statistik', label: 'Statistik', icon: PieChart },
+    keys: [
+      'search', 'laporan', 'laporan-arsip', 'laporan-digital', 'laporan-pemberkasan',
+      'laporan-lokasi', 'laporan-klasifikasi', 'laporan-retensi', 'laporan-pemusnahan',
+      'log-aktivitas', 'statistik',
     ],
   },
-  {
-    label: 'Monitoring',
-    items: [
-      { key: 'monitoring-retensi', label: 'Monitoring Retensi', icon: Clock },
-      { key: 'jadwal-retensi', label: 'Jadwal Retensi', icon: CalendarCheck },
-      { key: 'dashboard-penyusutan', label: 'Dashboard Penyusutan', icon: ArrowRightLeft },
-    ],
-  },
+  { label: 'Monitoring', keys: ['monitoring-retensi', 'jadwal-retensi', 'disposal'] },
   {
     label: 'Administrasi',
-    items: [
-      { key: 'roles', label: 'Manajemen Role', icon: UserCog },
-      { key: 'pengaturan', label: 'Pengaturan', icon: Settings },
-      { key: 'backup', label: 'Backup & Restore', icon: Database },
-      { key: 'blockchain', label: 'Blockchain Audit', icon: ShieldCheck },
-      { key: 'sinkronisasi', label: 'Sinkronisasi', icon: ArrowRightLeft },
-    ],
+    keys: ['roles', 'pengaturan', 'backup', 'integrasi', 'qrcode', 'import-export', 'blockchain'],
   },
 ];
 
-export const NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+export const ITEM_BY_KEY: Record<PageKey, NavItem> = Object.fromEntries(
+  NAV_ITEMS.map((n) => [n.key, n]),
+) as unknown as Record<PageKey, NavItem>;
 
 export const AppSidebar: React.FC<{
   page: PageKey;
   onNavigate: (p: PageKey) => void;
-}> = ({ page, onNavigate }) => {
-  const [collapsed, setCollapsed] = useState(false);
-  const { mode, setMode, isDark } = useTheme();
-  const cycleTheme = () => {
-    const order: ThemeMode[] = ['light', 'dark', 'system'];
-    setMode(order[(order.indexOf(mode) + 1) % order.length]);
-  };
-
-  const ThemeIcon = mode === 'system' ? Monitor : isDark ? Moon : Sun;
-  const nextLabel = mode === 'light' ? 'gelap' : mode === 'dark' ? 'sistem' : 'terang';
-
-  return (
-    <aside
-      className={`h-full bg-sidebar border-r border-line flex flex-col transition-[width] duration-200 shrink-0 ${collapsed ? 'w-[72px]' : 'w-[264px]'}`}
-    >
-      {/* Logo + nama */}
-      <div className={`flex items-center h-16 border-b border-line ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
-        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <Archive size={18} className="text-white" />
-        </div>
-        {!collapsed && (
-          <div className="ml-3 min-w-0">
-            <p className="text-card-title font-semibold text-ink-1 leading-tight truncate">SIMARC</p>
-            <p className="text-caption text-ink-3 leading-tight truncate">Arsip Record Center</p>
-          </div>
-        )}
+}> = ({ page, onNavigate }) => (
+  <aside className="sidebar" id="sidebar">
+    <div className="sidebar-header">
+      <div className="sidebar-logo-icon">
+        <i className="bi bi-archive-fill"></i>
       </div>
-
-      {/* Grup menu */}
-      <nav className="flex-1 overflow-y-auto clamp py-3 px-2.5">
-        {NAV_GROUPS.map((g, gi) => (
-          <div key={gi} className="mb-3">
-            {!collapsed && g.label && (
-              <p className="text-caption font-medium text-ink-3 px-2.5 mb-1.5 tracking-wide uppercase">{g.label}</p>
-            )}
-            <ul className="space-y-0.5">
-              {g.items.map((n) => {
-                const active = page === n.key;
-                const li = (
-                  <button
-                    key={n.key}
-                    onClick={() => onNavigate(n.key)}
-                    className={`w-full flex items-center h-10 rounded-lg text-body font-medium transition-colors duration-150
-                      ${active ? 'bg-primary-soft text-primary' : 'text-ink-2 hover:bg-surface-2 hover:text-ink-1'}
-                      ${collapsed ? 'justify-center px-0' : 'px-2.5 gap-3'}`}
-                    title={collapsed ? n.label : undefined}
-                  >
-                    <n.icon size={16} strokeWidth={1.8} className={active ? 'text-primary' : ''} />
-                    {!collapsed && <span className="truncate">{n.label}</span>}
-                  </button>
-                );
-                return collapsed ? (
-                  <li key={n.key} title={n.label} className="relative group">
-                    {li}
-                    <span className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 whitespace-nowrap bg-ink-1 text-app px-2 py-1 rounded-md text-caption opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-30">
-                      {n.label}
-                    </span>
-                  </li>
-                ) : (
-                  <li key={n.key}>{li}</li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </nav>
-
-      {/* Aksi bawah: tema + collapse */}
-      <div className="border-t border-line p-2.5 space-y-0.5">
-        <button
-          onClick={cycleTheme}
-          className={`w-full flex items-center h-10 rounded-lg text-body text-ink-2 hover:bg-surface-2 hover:text-ink-1 transition-colors
-            ${collapsed ? 'justify-center px-0' : 'px-2.5 gap-3'}`}
-          title={collapsed ? `Tema: ${mode}` : undefined}
-        >
-          <ThemeIcon size={16} strokeWidth={1.8} />
-          {!collapsed && <span>Tema: {mode === 'system' ? 'Sistem' : isDark ? 'Gelap' : 'Terang'}</span>}
-          {!collapsed && <span className="ml-auto text-caption text-ink-3">→ {nextLabel}</span>}
-        </button>
-        <button
-          onClick={() => setCollapsed((c) => !c)}
-          className={`w-full flex items-center h-10 rounded-lg text-body text-ink-2 hover:bg-surface-2 hover:text-ink-1 transition-colors
-            ${collapsed ? 'justify-center px-0' : 'px-2.5 gap-3'}`}
-          title={collapsed ? 'Perluas sidebar' : undefined}
-        >
-          {collapsed ? <PanelLeft size={16} strokeWidth={1.8} /> : <PanelLeftClose size={16} strokeWidth={1.8} />}
-          {!collapsed && <span>Ciutkan sidebar</span>}
-        </button>
+      <div>
+        <div className="sidebar-logo-text">SIMARC</div>
+        <div className="sidebar-logo-sub">Sistem Informasi Manajemen Arsip</div>
       </div>
-    </aside>
-  );
-};
+    </div>
+
+    <nav className="sidebar-nav" id="sidebarNav">
+      {NAV_GROUPS.map((g) => (
+        <React.Fragment key={g.label}>
+          <div className="sidebar-section-label">{g.label}</div>
+          {g.keys.map((k) => {
+            const it = ITEM_BY_KEY[k];
+            return (
+              <a
+                key={k}
+                href={`/${it.ident}`}
+                className={`sidebar-link${page === k ? ' active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onNavigate(k);
+                }}
+              >
+                <i className={`bi ${it.icon}`}></i> {it.label}
+              </a>
+            );
+          })}
+        </React.Fragment>
+      ))}
+    </nav>
+
+    <div className="sidebar-footer">
+      <a
+        href="/profil"
+        className="sidebar-footer-link"
+        onClick={(e) => {
+          e.preventDefault();
+          onNavigate('profil');
+        }}
+      >
+        <i className="bi bi-person-circle"></i> Profil
+      </a>
+      <button
+        className="sidebar-footer-link"
+        id="sidebarLogoutBtn"
+        style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer' }}
+      >
+        <i className="bi bi-box-arrow-right"></i> Keluar
+      </button>
+    </div>
+
+    <div className="sidebar-version">
+      <span className="version-dot"></span>
+      <span>SIMARC Neo-Brutalism 2.0</span>
+    </div>
+  </aside>
+);

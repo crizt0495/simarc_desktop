@@ -1,47 +1,39 @@
 /**
- * ThemeProvider — light | dark | system; preferensi disimpan lokal (localStorage).
+ * Theme — identik dengan aplikasi web referensi:
+ * `data-theme="light|dark"` pada documentElement + localStorage('theme')
+ * + CustomEvent 'themeChanged' untuk elemen yang ikut berubah warna.
  */
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light' | 'dark';
 
-export interface ThemeCtx {
-  mode: ThemeMode;
-  isDark: boolean;
-  setMode: (m: ThemeMode) => void;
-}
-
-const Ctx = createContext<ThemeCtx>({ mode: 'system', isDark: false, setMode: () => {} });
-
-function apply(mode: ThemeMode): boolean {
-  const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const dark = mode === 'dark' || (mode === 'system' && sysDark);
-  document.documentElement.classList.toggle('dark', dark);
-  return dark;
-}
+const ThemeCtx = createContext<{ isDark: boolean; mode: ThemeMode; setMode: (m: ThemeMode) => void }>({
+  isDark: false,
+  mode: 'light',
+  setMode: () => undefined,
+});
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [mode, setModeState] = useState<ThemeMode>(() => {
-    const stored = window.localStorage.getItem('simarc.theme');
-    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
-  });
-  const [isDark, setIsDark] = useState(() => apply(mode));
+  const [mode, setModeState] = useState<ThemeMode>(() =>
+    (localStorage.getItem('theme') as ThemeMode) || 'light');
 
   useEffect(() => {
-    document.documentElement.classList.add('theme-watch');
-    const md = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => { if (mode === 'system') setIsDark(apply('system')); };
-    md.addEventListener?.('change', handler);
-    return () => md.removeEventListener?.('change', handler);
+    document.documentElement.setAttribute('data-theme', mode);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = mode === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
   }, [mode]);
 
   const setMode = useCallback((m: ThemeMode) => {
     setModeState(m);
-    window.localStorage.setItem('simarc.theme', m);
-    setIsDark(apply(m));
+    localStorage.setItem('theme', m);
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: m } }));
   }, []);
 
-  return <Ctx.Provider value={{ mode, isDark, setMode }}>{children}</Ctx.Provider>;
+  const toggle = useCallback(() => setMode(mode === 'dark' ? 'light' : 'dark'), [mode, setMode]);
+
+  // Ikon topbar referensi diperbarui lewat #themeIcon.
+  const value = { isDark: mode === 'dark', mode, setMode: ((m: ThemeMode) => (m === mode ? toggle() : setMode(m))) as typeof setMode };
+  return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
 };
 
-export const useTheme = () => useContext(Ctx);
+export const useTheme = () => useContext(ThemeCtx);

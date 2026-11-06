@@ -1,12 +1,57 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SIMARC — Arsip Record Center</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SIMARC — SIMARC-Arsip Record Center</title>
+
+  <link rel="icon" type="image/svg+xml" href="/images/logo-icon.svg">
+
+  <!-- ═══════════════════════════════════════════
+       CRITICAL CSS — sama dengan layouts/app.html
+       ═══════════════════════════════════════════ -->
+  <link href="/vendor/inter/inter.css" rel="stylesheet">
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/enterprise.css" rel="stylesheet">
+  <link href="/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+
+  <style>
+/* ── Aturan device dari layouts/app.html (dipindahkan apa adanya) ── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .main-content { padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important; }
+  .mobile-bottom-nav { padding-bottom: calc(4px + env(safe-area-inset-bottom)) !important; }
+  .top-navbar { padding-top: env(safe-area-inset-top); }
+}
+@supports (padding: constant(safe-area-inset-bottom)) {
+  .main-content { padding-bottom: calc(1.5rem + constant(safe-area-inset-bottom)) !important; }
+  .mobile-bottom-nav { padding-bottom: calc(4px + constant(safe-area-inset-bottom)) !important; }
+}
+
+/* Touch-Friendly Tap Targets (min 44px) */
+@media (pointer: coarse) {
+  .btn, .btn-crud, .sidebar-link, .dropdown-item, .nav-icon-btn,
+  .page-link, .mobile-bottom-nav-item, .filter-badge,
+  .tag-pill, .badge-soft, .status-badge {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-crud { min-width: 44px; }
+  .sidebar-link { padding-top: 12px !important; padding-bottom: 12px !important; }
+  input, select, textarea { font-size: 16px !important; }
+  .form-control, .form-select { font-size: 16px !important; }
+  .pagination .page-link { min-width: 44px; min-height: 44px; }
+}
+
+.momentum-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.table-responsive { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+html, body { overflow-x: hidden; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

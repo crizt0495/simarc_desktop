@@ -1,0 +1,506 @@
+   ARSIP — PREMIUM DAFTAR ARSIP
+   ═══════════════════════════════════════ */
+
+/* ── Stat Mini ── */
+.stat-mini {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 0.85rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+.stat-mini:hover {
+    border-color: var(--ink-2);
+    box-shadow: var(--sh-sm);
+}
+.stat-mini-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--r);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+.stat-mini-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--ink-2);
+    line-height: 1.2;
+}
+.stat-mini-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--ink-4);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ── View Toggle (Table / Card) ── */
+.view-toggle-group {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 3px;
+    gap: 2px;
+}
+.view-toggle-btn {
+    background: transparent;
+    border: none;
+    padding: 0.4rem 0.85rem;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--ink-4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.view-toggle-btn:hover { color: var(--ink-2); }
+.view-toggle-btn.active {
+    background: var(--surface);
+    color: var(--ink-2);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.view-toggle-btn i { font-size: 0.85rem; }
+
+/* ── Premium Table ── */
+.table-premium {
+    border-collapse: separate;
+    border-spacing: 0 6px;
+    margin-top: -6px;
+}
+.table-premium thead th {
+    background: transparent;
+    border: none;
+    color: var(--ink-4);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    padding: 0.85rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+}
+.table-premium tbody tr {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+}
+.table-premium tbody tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    border-color: var(--brand-200, var(--neu-bg));
+}
+.table-premium tbody td {
+    border: none;
+    padding: 0.85rem 0.75rem;
+    background: transparent;
+    vertical-align: middle;
+    font-size: 0.8rem;
+    color: var(--ink-2);
+}
+.table-premium tbody tr td:first-child { border-radius: var(--r) 0 0 var(--r); }
+.table-premium tbody tr td:last-child { border-radius: 0 var(--r) var(--r) 0; }
+
+/* ── Card View (default) ── */
+.arsip-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+
+/* Scroll container untuk card view */
+#viewCard {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.35rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+/* Scroll container untuk card view */
+#viewCard {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.arsip-card-grid {
+    overflow: visible !important;
+}
+#viewCard::-webkit-scrollbar {
+    width: 6px;
+}
+#viewCard::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 6px;
+}
+#viewCard::-webkit-scrollbar-thumb:hover {
+    background: var(--ink-4);
+}
+#viewCard::-webkit-scrollbar-track {
+    background: transparent;
+}
+.arsip-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 1rem 1.1rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+.arsip-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--ink-2);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.25s ease;
+}
+.arsip-card:hover {
+    border-color: var(--brand-200, var(--neu-bg));
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    transform: translateY(-3px);
+}
+.arsip-card:hover::before { transform: scaleY(1); }
+.arsip-card.is-selected {
+    border-color: var(--ink-2);
+    background: linear-gradient(135deg, rgba(255,90,54,0.05), rgba(255,107,74,0.04));
+}
+
+.arsip-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px dashed var(--border);
+}
+.arsip-card-checkbox {
+    padding-top: 0.2rem;
+    flex-shrink: 0;
+}
+.arsip-card-title {
+    flex: 1;
+    min-width: 0;
+}
+.arsip-card-nomor {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--ink-4);
+    background: var(--surface-2);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.02em;
+}
+.arsip-card-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--ink-2);
+    line-height: 1.35;
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+.arsip-card-name:hover { color: var(--ink-2); }
+.arsip-card-badges {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+.arsip-card-body {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.55rem 1rem;
+    font-size: 0.78rem;
+}
+.arsip-card-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+.arsip-card-field-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-4);
+}
+.arsip-card-field-value {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.arsip-card-field-value.text-money {
+    color: var(--ink-2);
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-weight: 800;
+}
+.arsip-card-field-value i { color: var(--ink-4); margin-right: 0.2rem; font-size: 0.75rem; }
+.arsip-card-uraian {
+    background: var(--surface-2);
+    padding: 0.55rem 0.7rem;
+    border-radius: var(--r);
+    font-size: 0.75rem;
+    color: var(--ink-3);
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    border-left: 3px solid var(--border);
+}
+.arsip-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border);
+    gap: 0.5rem;
+}
+.arsip-card-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+.arsip-card-actions .btn-crud {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+.arsip-card-meta {
+    font-size: 0.7rem;
+    color: var(--ink-4);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* View container states */
+.view-container { display: none; }
+.view-container.active { display: block; }
+
+/* Empty state for card view */
+.arsip-card-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--ink-4);
+}
+.arsip-card-empty i {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    opacity: 0.3;
+}
+
+/* ── Status Badges ── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+.status-aktif { background: var(--success-lt); color: var(--success-dk); }
+.status-inaktif { background: var(--surface-3); color: var(--ink-4); }
+.status-siap_penyusutan { background: var(--warning-lt); color: var(--warning-dk); }
+.status-musnah { background: var(--danger-lt); color: var(--danger-dk); }
+.status-permanen { background: var(--brand-lt); color: var(--brand-dk); }
+.status-diberkaskan { background: var(--info-lt); color: var(--info-dk); }
+.status-dipinjam { background: var(--warning-lt); color: var(--warning-dk); }
+
+/* ── Action Buttons (using global .btn-crud from enterprise-premium.css) ── */
+
+/* ── File indicator ── */
+.file-indicator {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+.file-indicator.exists { background: var(--neu-bg); color: var(--ink-2); }
+.file-indicator.empty { background: var(--surface-3); color: var(--ink-4); }
+
+/* ── Filter Active Badges ── */
+.filter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    transition: all 0.12s ease;
+}
+.filter-badge:hover { opacity: 0.8; }
+.filter-badge .remove {
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    margin-left: 0.2rem;
+    opacity: 0.6;
+    text-decoration: none;
+    color: inherit;
+}
+.filter-badge .remove:hover { opacity: 1; }
+
+/* ── Filter Panel ── */
+.filter-panel {
+    background: var(--surface-2);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+.filter-panel .form-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-4);
+    margin-bottom: 0.3rem;
+}
+.filter-panel .search-wrap {
+    position: relative;
+}
+.filter-panel .search-wrap i {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-4);
+    pointer-events: none;
+}
+
+/* ── Bulk Toolbar ── */
+.bulk-toolbar {
+    background: linear-gradient(135deg, var(--neu-bg), var(--neu-bg));
+    border: 1px solid rgba(11,11,11,0.16);
+    border-radius: var(--r-lg);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.bulk-toolbar .count-text {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--ink-2);
+}
+.bulk-toolbar .bulk-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ── Toast ── */
+.toast-premium {
+    background: var(--chip-bg);
+    color: var(--chip-text);
+    padding: 0.75rem 1rem;
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-lg);
+    font-size: 0.85rem;
+    min-width: 280px;
+    animation: toastSlide 0.3s ease both;
+}
+.toast-premium .toast-close {
+    background: none; border: none;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;
+}
+.toast-premium .toast-close:hover { color: var(--chip-text); }
+@keyframes toastSlide {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Animations ── */
+.fade-up { animation: fadeUp 0.35s ease both; }
+.fade-up-d1 { animation: fadeUp 0.35s ease 0.06s both; }
+.fade-up-d2 { animation: fadeUp 0.35s ease 0.1s both; }
+.fade-up-d3 { animation: fadeUp 0.35s ease 0.14s both; }
+
+/* ── Search highlight ── */
+mark {
+    padding: 0.1em 0.25em;
+    border-radius: 0.2rem;
+    font-weight: 700;
+    background: var(--warning-50);
+    color: var(--ink-2);
+}
+
+/* ── Mobile Card View Responsive ── */
+@media (max-width: 992px) {
+
+    .stat-mini { padding: 0.65rem 0.85rem; }
+    .stat-mini-value { font-size: 1.05rem; }
+    .stat-mini-icon { width: 34px; height: 34px; font-size: 0.9rem; }
+    .arsip-card-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    .view-toggle-group {
+        order: -1;
+    }
+    .bulk-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    .bulk-toolbar .bulk-actions {
+        justify-content: flex-start;
+    }
+}
+@media (max-width: 576px) {
+    .arsip-card {
+        padding: 0.8rem;
+    }
+    .arsip-card-body {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem 0.6rem;
+    }
+    .arsip-card-footer {
+        flex-wrap: wrap;
+    }
+    .arsip-card-actions {
+        flex-wrap: wrap;
+    }
+}
