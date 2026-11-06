@@ -25,6 +25,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const { push } = useToast();
   const [ready, setReady] = useState(false);
+  const [detail, setDetail] = useState<any | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -114,13 +115,14 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   /* ── Kartu & baris aksi (btn-crud) ── */
   const crudActions = (a: any) => (
     <React.Fragment>
-      <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => push('info', `Detail ${a.nomor || a.nama}`)}><i className="bi bi-eye"></i></button>
+      <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => setDetail(a)}><i className="bi bi-eye"></i></button>
       <button type="button" className="btn-crud btn-crud-primary" title="Berkaskan" onClick={() => push('info', 'Modul pemberkasan menyusul')}><i className="bi bi-folder-plus"></i></button>
       <button type="button" className="btn-crud btn-crud-success" title="Download" onClick={() => push('info', a.berkas ? 'Mengunduh berkas arsip…' : 'Belum ada berkas digital')}><i className="bi bi-download"></i></button>
     </React.Fragment>
   );
 
   return (
+    <>
     <div className="container-fluid py-3 py-xl-4">
       {/* ZONE 1: HERO HEADER */}
       <div className="arsip-hero">
@@ -463,5 +465,56 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
         )}
       </div>
     </div>
+
+    {/* MODAL DETAIL ARSIP */}
+    {detail && (
+      <div className="modal fade show d-block" tabIndex={-1} role="dialog" aria-modal="true" style={{ backgroundColor: 'rgba(15,23,42,.55)' }} onClick={() => setDetail(null)}>
+        <div className="modal-dialog modal-lg modal-dialog-scrollable" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" style={{ borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+            <div className="modal-header" style={{ background: 'var(--surface-2)' }}>
+              <div>
+                <h5 className="modal-title fw-800 mb-0"><i className="bi bi-file-earmark-text me-2 text-primary"></i>Detail Arsip</h5>
+                <div className="text-muted small">{detail.nomor || '—'} · {detail.nama || '—'}</div>
+              </div>
+              <button type="button" className="btn-close" aria-label="Tutup" onClick={() => setDetail(null)}></button>
+            </div>
+            <div className="modal-body">
+              <div className="row g-3">
+                {[
+                  ['Nomor Arsip', detail.nomor],
+                  ['Nama Arsip', detail.nama],
+                  ['Status', (detail.status || '—').replace(/_/g, ' ')],
+                  ['Unit Kerja', detail.unit],
+                  ['Kategori', detail.kategori],
+                  ['Jenis Arsip', detail.jenisName || detail.kategori],
+                  ['Tanggal Dibuat', detail.tanggal],
+                  ['Jumlah', `${detail.jumlah ?? 0} ${detail.satuan || ''}`.trim()],
+                  ['Nilai Anggaran', detail.nilai != null && Number(detail.nilai) !== 0 ? `Rp ${nf.format(Number(detail.nilai))}` : '—'],
+                  ['Nomor SPM', detail.nomor_spm],
+                  ['Berkas Digital', detail.berkas ? 'Tersedia' : 'Belum ada'],
+                  ['Dibuat', detail.created],
+                  ['Diperbarui', detail.updated],
+                ].map(([label, val]) => (
+                  <div className="col-md-6" key={String(label)}>
+                    <div className="small text-muted fw-700" style={{ fontSize: '.7rem', textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</div>
+                    <div className="fw-600" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>{val || '—'}</div>
+                  </div>
+                ))}
+              </div>
+              {detail.uraian && (
+                <div className="mt-3 pt-3 border-top">
+                  <div className="small text-muted fw-700 mb-1" style={{ fontSize: '.7rem', textTransform: 'uppercase', letterSpacing: '.04em' }}>Uraian</div>
+                  <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.55 }}>{detail.uraian}</div>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-outline-secondary rounded-pill px-3" onClick={() => setDetail(null)}><i className="bi bi-x-lg me-1"></i>Tutup</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
