@@ -8,8 +8,14 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { getMasterOptions, listArsipDetail } from '../lib/bindings';
+import PublicHeader from '../components/PublicHeader';
 
-export const PublicSearchPage: React.FC = () => {
+export interface PublicSearchPageProps {
+  onLogin?: () => void;
+  sessionName?: string | null;
+}
+
+export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, sessionName }) => {
   const [rows, setRows] = useState<any[]>([]);
   const [opts, setOpts] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
@@ -38,19 +44,30 @@ export const PublicSearchPage: React.FC = () => {
     })();
   }, []);
 
-  /* ── filter klien (dataset adalah data penuh, filter lokal) ── */
+  /* ── filter klien (dataset data penuh, filter lokal) ──
+     Semua kunci draft dipakai langsung (camelCase) — kunci identik dengan
+     field map dari backend: nomor/nama/uraian/status/unitId/…
+     Filter teks diterapkan per-field DAN keyword serba bisa. */
+  const normStatus = (s: unknown) => String(s ?? '').toLowerCase().replace(/\s+/g, '_');
+
   const filtered = useMemo(() => {
     const q = (applied.q || '').trim().toLowerCase();
     let out = rows;
+
     if (q) {
       out = out.filter((a) =>
-        [a.nomor, a.nama, a.uraian, a.unit].some((f: string) => (f || '').toLowerCase().includes(q)));
+        [a.nomor, a.nama, a.uraian, a.unit, a.kodeKlasifikasiTxt].some(
+          (f: string) => (f || '').toLowerCase().includes(q)));
     }
-    if (applied.status) out = out.filter((a) => a.status === applied.status);
-    if (applied.pemberkasanId) out = out.filter((a) => a.pemberkasanId === applied.pemberkasanId);
-    if (applied.kodeKlasifikasiId) out = out.filter((a) => a.kodeKlasifikasiId === applied.kodeKlasifikasiId);
-    if (applied.jenisArsipId) out = out.filter((a) => a.jenisArsipId === applied.jenisArsipId);
-    if (applied.unitKerjaId) out = out.filter((a) => a.unitId === applied.unitKerjaId);
+    if (applied.nomor) out = out.filter((a) => (a.nomor || '').toLowerCase().includes(applied.nomor.toLowerCase()));
+    if (applied.nama) out = out.filter((a) => (a.nama || '').toLowerCase().includes(applied.nama.toLowerCase()));
+    if (applied.uraian) out = out.filter((a) => (a.uraian || '').toLowerCase().includes(applied.uraian.toLowerCase()));
+    // Bandingkan status tanpa memandang besar-kecil huruf/underscore.
+    if (applied.status) out = out.filter((a) => normStatus(a.status) === normStatus(applied.status));
+    if (applied.pemberkasanId) out = out.filter((a) => String(a.pemberkasanId || '') === applied.pemberkasanId);
+    if (applied.kodeKlasifikasiId) out = out.filter((a) => String(a.kodeKlasifikasiId || '') === applied.kodeKlasifikasiId);
+    if (applied.jenisArsipId) out = out.filter((a) => String(a.jenisArsipId || '') === applied.jenisArsipId);
+    if (applied.unitKerjaId) out = out.filter((a) => String(a.unitId || '') === applied.unitKerjaId);
     if (applied.startDate) out = out.filter((a) => String(a.tanggal || '') >= applied.startDate);
     if (applied.endDate) out = out.filter((a) => String(a.tanggal || '') <= applied.endDate);
     return out;
@@ -65,17 +82,10 @@ export const PublicSearchPage: React.FC = () => {
 
   const applyFilter = (e: React.FormEvent) => {
     e.preventDefault();
+    // Kunci draft = kunci field backend (camelCase) — salin langsung.
     const next: Record<string, string> = {};
     Object.entries(draft).forEach(([k, v]) => { if (v) next[k] = v; });
-    // convert camelCase keys -> allowed names
-    const norm: Record<string, string> = {};
-    Object.entries(next).forEach(([k, v]) => {
-      const cn = k.replace(/Klasifikasi/g, 'kodeKlasifikasi')
-                 .replace(/Kerja/g, 'unitKerja')
-                 .replace(/Arsip/g, 'jenisArsip');
-      norm[cn] = v;
-    });
-    setApplied(norm);
+    setApplied(next);
     setPage(1);
   };
 
@@ -88,13 +98,12 @@ export const PublicSearchPage: React.FC = () => {
   return (
     <div className="container-fluid py-3 py-xl-4">
       <div className="card">
-        {/* HEADER */}
-        <div className="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <div className="h5 mb-0">
-            <i className="bi bi-search me-2"></i>Cari Arsip (tanpa login)
-          </div>
-          <span className="text-muted small">SIMARC Viewer</span>
-        </div>
+        {/* HEADER LANDING — judul kiri, tombol Login pojok kanan atas */}
+        <PublicHeader
+          onLogin={() => onLogin?.()}
+          sessionName={sessionName ?? null}
+          onEnterDashboard={onLogin}
+        />
 
         {/* SEARCH FORM */}
         <form onSubmit={applyFilter} className="card-body pt-3 pb-3">

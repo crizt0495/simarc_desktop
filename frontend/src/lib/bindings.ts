@@ -52,3 +52,16 @@ export async function getMasterOptions(): Promise<Record<string, any[]>> {
 export async function getProfile(): Promise<Profile> {
   return (await GetProfile()) as unknown as Profile;
 }
+
+/* ── Autentikasi (backend App.Login/Logout; dibedakan pakai window.go
+      agar tidak bergantung pada wailsjs hasil generasi lama) ── */
+export async function login(username: string, password: string): Promise<Profile> {
+  const goApp = (window as any)?.go?.main?.App;
+  if (!goApp?.Login) throw new Error('binding Login tidak tersedia');
+  return (await goApp.Login(username, password)) as unknown as Profile;
+}
+
+export async function logout(): Promise<void> {
+  const goApp = (window as any)?.go?.main?.App;
+  if (goApp?.Logout) await goApp.Logout();
+}

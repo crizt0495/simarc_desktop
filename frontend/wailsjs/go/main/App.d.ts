@@ -15,6 +15,10 @@ export function ListArsip():Promise<Array<Record<string, any>>>;
 
 export function ListArsipDetail():Promise<Array<Record<string, any>>>;
 
+export function Login(arg1:string,arg2:string):Promise<Record<string, any>>;
+
+export function Logout():Promise<void>;
+
 export function PingBackend():Promise<string>;
 
 export function QuitApp():Promise<void>;

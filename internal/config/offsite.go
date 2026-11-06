@@ -7,7 +7,7 @@ import (
 )
 
 // OffsiteConfig holds the settings for the offsite (cloud) backup target:
-// a cloud MySQL/MariaDB database (e.g. Aiven for MySQL, TiDB Cloud) plus an
+// a cloud MySQL/MariaDB database (e.g. TiDB Cloud) plus an
 // S3-compatible object-storage bucket (e.g. Cloudflare R2, Backblaze B2) used
 // to mirror the archive files that live on the server's disk.
 //

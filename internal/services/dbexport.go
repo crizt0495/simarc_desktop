@@ -14,16 +14,16 @@ import (
 )
 
 // ExportDatabaseAsSQL generates a mysqldump-compatible .sql file entirely
-// through GORM, so it works on Vercel serverless where the mysqldump binary
-// is not available. It handles CREATE TABLE + INSERT statements for every
-// table in the current database.
+// through GORM, so it works on hosts where the mysqldump binary is not
+// available. It handles CREATE TABLE + INSERT statements for every table
+// in the current database.
 func ExportDatabaseAsSQL() ([]byte, error) {
 	db := database.DB
 	var buf bytes.Buffer
 
 	buf.WriteString("-- SIMARC Database Export\n")
 	buf.WriteString(fmt.Sprintf("-- Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
-	buf.WriteString("-- Method: GORM-based export (Vercel-compatible)\n")
+	buf.WriteString("-- Method: GORM-based export\n")
 	buf.WriteString("SET FOREIGN_KEY_CHECKS=0;\n\n")
 
 	// Get all table names

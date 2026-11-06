@@ -85,11 +85,11 @@ func loadDotEnv() {
 func Load() {
 	loadDotEnv()
 
-	// MySQL defaults — Aiven MySQL is the primary database.
+	// MySQL-compatible defaults — MariaDB/MySQL lokal atau TiDB Cloud.
 	// getEnvFirst menerima nama varian yang sering tertukar di dashboard
 	// (DB_USER vs DB_USERNAME, DB_NAME vs DB_DATABASE) supaya salah menulis
 	// tidak diam-diam jatuh ke default 127.0.0.1 dan menampilkan halaman
-	// 503 "Database Tidak Tersedia" di Vercel.
+	// 503 "Database Tidak Tersedia" saat kredensial salah.
 	dbHost := getEnvFirst("DB_HOST", "127.0.0.1")
 	dbPort := getEnvFirst("DB_PORT", "3306")
 	dbName := getEnvFirst("DB_DATABASE", "DB_NAME", "defaultdb")
@@ -123,7 +123,7 @@ func Load() {
 			if idx := strings.Index(dbName, "?"); idx != -1 {
 				dbName = dbName[:idx]
 			}
-			// TLS: accept the driver param (tls=) and the MySQL CLI / Aiven
+			// TLS: accept the driver param (tls=) and the MySQL CLI / TiDB Cloud
 			// spelling (ssl-mode=REQUIRED|VERIFY_CA|VERIFY_IDENTITY|DISABLED).
 			// NormalizeMySQLTLS maps either onto a mode the driver understands.
 			if t := parsed.Query().Get("tls"); t != "" {
@@ -287,18 +287,18 @@ func HasMysql() bool {
 	return err == nil
 }
 
-// CanBackup returns true if database backup is possible (mysqldump available and not on Vercel).
+// CanBackup returns true if database backup is possible (mysqldump available and not in an ephemeral serverless environment).
 func CanBackup() bool {
 	return HasMysqldump() && !IsVercel()
 }
 
-// CanRestore returns true if database restore is possible (mysql available and not on Vercel).
+// CanRestore returns true if database restore is possible (mysql available and not in an ephemeral serverless environment).
 func CanRestore() bool {
 	return HasMysql() && !IsVercel()
 }
 
 // StorageDir returns the base directory for file storage.
-// On Vercel, uses /tmp (ephemeral); locally uses the project storage dir.
+// In ephemeral serverless environments, uses /tmp (non-persistent inside a single run); locally uses the project storage dir.
 func StorageDir() string {
 	if IsVercel() {
 		return "/tmp"

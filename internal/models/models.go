@@ -617,7 +617,7 @@ type BackupLog struct {
 	CreatedAt         time.Time  `json:"created_at"`
 	CompletedAt       *time.Time `json:"completed_at"`
 	// Content menyimpan isi dump SQL di database (LONGBLOB) sehingga backup
-	// tetap bisa diunduh meskipun file lokal hilang (mis. serverless Vercel
+	// tetap bisa diunduh meskipun file lokal hilang (mis. deployment serverless
 	// yang disk-nya ephemeral, atau file terhapus). Hanya diisi jika ukuran
 	// ≤ maxBackupContentBytes agar tidak melampaui max_allowed_packet MySQL.
 	Content []byte `gorm:"type:longblob;column:file_content" json:"-"`

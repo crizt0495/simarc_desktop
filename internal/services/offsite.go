@@ -32,7 +32,7 @@ import (
 // The local database stays the source of truth. This service mirrors it to a
 // cloud MySQL/MariaDB database and mirrors the archive files (storage/app/uploads)
 // to an S3-compatible object-storage bucket. It is intended to run on the
-// central server only (never in client mode or on Vercel).
+// central server only (never in client mode or in ephemeral serverless runs).
 
 // LegacyExcludeTables returns the legacy/debug tables that exist in the current
 // database and should be skipped by backups. Only tables that actually exist are
@@ -251,8 +251,9 @@ func importToCloud(cfg config.OffsiteConfig, sqlData []byte) error {
 	args = append(args, cfg.DBName)
 
 	// MySQL enforces sql_require_primary_key by default on some managed
-	// services (e.g. Aiven). Relax it for this session so a table that lacks a
-	// primary key cannot abort the whole import. MariaDB has no such variable.
+	// services (e.g. TiDB Cloud / MySQL 8). Relax it for this session so a
+	// table that lacks a primary key cannot abort the whole import. MariaDB
+	// has no such variable.
 	payload := sqlData
 	if cloudNeedsPKWorkaround(cfg) {
 		payload = append([]byte("SET SESSION sql_require_primary_key=0;\n"), sqlData...)
@@ -724,8 +725,9 @@ func recordOffsiteLog(cfg config.OffsiteConfig, res OffsiteResult, status string
 }
 
 // StartOffsiteScheduler launches the daily offsite backup goroutine. It is a
-// no-op when the feature is disabled, on Vercel, or when no target is
-// configured yet. Safe to call repeatedly (e.g. after saving settings).
+// no-op when the feature is disabled, in ephemeral serverless deployments, or
+// when no target is configured yet. Safe to call repeatedly (e.g. after
+// saving settings).
 func StartOffsiteScheduler() {
 	if config.IsVercel() {
 		return

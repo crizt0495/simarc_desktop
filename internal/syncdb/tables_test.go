@@ -4,9 +4,9 @@ import "testing"
 
 // TestIsTrulyGeneratedColumn mengunci perilaku pemilahan kolom MySQL:
 // hanya VIRTUAL/STORED GENERATED yang dilewati. "DEFAULT_GENERATED" TIDAK boleh
-// dilewati — kolom `id char(36) DEFAULT (uuid())` di MySQL 8/Aiven memakainya,
-// dan bila ikut terbuang maka PRIMARY KEY-nya hilang sehingga tabel (mis.
-// `arsip`) dilewati sepenuhnya saat sinkron. Lihat regresi "data klien 0".
+// dilewati — kolom `id char(36) DEFAULT (uuid())` di MySQL 8/TiDB Cloud
+// memakainya, dan bila ikut terbuang maka PRIMARY KEY-nya hilang sehingga tabel
+// (mis. `arsip`) dilewati sepenuhnya saat sinkron. Lihat regresi "data klien 0".
 func TestIsTrulyGeneratedColumn(t *testing.T) {
 	cases := []struct {
 		extra string
@@ -16,7 +16,7 @@ func TestIsTrulyGeneratedColumn(t *testing.T) {
 		{"VIRTUAL GENERATED", true},
 		{"stored generated", true},
 		{"STORED GENERATED", true},
-		// Nilai nyata dari Aiven MySQL untuk kolom PK ber-DEFAULT:
+		// Nilai nyata dari MySQL 8 (TiDB Cloud) untuk kolom PK ber-DEFAULT:
 		{"DEFAULT_GENERATED", false},
 		{"default_generated", false},
 		{"", false},

@@ -5,7 +5,7 @@
  * konfirmasi keluar, dan portal modal di akhir body.
  */
 import React, { useEffect, useRef } from 'react';
-import { AppSidebar, ITEM_BY_KEY, type PageKey } from './AppSidebar';
+import { AppSidebar, NAV_ITEMS, type PageKey } from './AppSidebar';
 import { AppTopbar, type SessionUser } from './AppTopbar';
 import { SimarcModal, SmModal } from '../lib/modal';
 import { QuitApp } from '../../wailsjs/go/main/App';
@@ -66,14 +66,14 @@ export const buildBreadcrumb = (ident: string): React.ReactNode => {
 };
 
 export const AppLayout: React.FC<{
-  page: PageKey;
+  page: string;
   onNavigate: (p: PageKey) => void;
   user: SessionUser | null;
   children: React.ReactNode;
 }> = ({ page, onNavigate, user, children }) => {
   const firstInput = useRef<HTMLDivElement>(null);
   void firstInput;
-  const ident = ITEM_BY_KEY[page]?.ident ?? page;
+  const ident = NAV_ITEMS.find((n) => n.key === page)?.ident ?? page;
 
   /* ── Pintasan keyboard — persis layouts/app.html (/ · D · Ctrl+B) ── */
   useEffect(() => {

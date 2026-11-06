@@ -22,15 +22,15 @@ layanan cloud gratis, sebagai cadangan jika server lokal rusak/hilang.
              +---------------+----------------+
              |                                |
     mysqldump -> impor ke cloud MySQL   arsip file -> unggah ke object storage
-    (Aiven for MySQL, dst.)             (Cloudflare R2 / Backblaze B2)
+    (TiDB Cloud, dst.)                  (Cloudflare R2 / Backblaze B2)
 ```
 
 - **Database:** `mysqldump` database lokal lalu diimpor ke database cloud.
   Secara default tabel lama/debug (Laravel Telescope, cache, tabel duplikat)
   dilewati agar dump kecil (~10 MB). Dengan opsi **Mirror 100% (1:1)**
   (`OFFSITE_DB_INCLUDE_LEGACY=true`) **semua** tabel disalin sehingga salinan
-  cloud identik byte-per-byte dengan lokal (dump ~125 MB; masih dalam kuota
-  gratis Aiven 1 GB).
+  cloud identik byte-per-byte dengan lokal (dump ~125 MB; masih dalam batas
+  kuota paket gratis TiDB Cloud).
 - Dump memakai `--hex-blob` supaya kolom biner (BLOB) tercatat sebagai literal
   heksadesimal dan byte-nya **identik** setelah diimpor ke MySQL (tanpa ini,
   `backup_logs.file_content` bisa berubah 2 byte karena escaping teks).
@@ -60,27 +60,28 @@ penjadwal otomatis berjalan **setiap hari pada jam yang dipilih** (default 02:00
 
 ## 3. Contoh Penyedia Gratis
 
-### 3a. Database Cloud — Aiven for MySQL (gratis)
+### 3a. Database Cloud — TiDB Cloud Serverless (MySQL-compatible)
 
-1. Daftar di <https://aiven.io>, buat layanan **MySQL** (paket Free, 1 GB).
-2. Tunggu status **Running**, lalu buka halaman **Connection information**.
+1. Daftar di <https://tidbcloud.com>, buat cluster **Serverless** (paket gratis).
+2. Buka cluster → **Connect** untuk melihat kredensial dan string koneksi.
 3. Salin nilai berikut ke form **Database Cloud**:
 
-   | Kolom form         | Contoh Aiven                                              |
-   |--------------------|-----------------------------------------------------------|
-   | Host               | `mysql-xxxxxxxx-xxxx.b.aivencloud.com`                    |
-   | Port               | `19160`                                                   |
-   | Nama database      | `defaultdb`                                               |
-   | Username           | `avnadmin`                                                |
-   | Password           | `AVNS_...` (ambil dari halaman Connection information)     |
-   | TLS                | `required` (wajib untuk Aiven)                            |
+   | Kolom form         | Contoh TiDB Cloud                                          |
+   |--------------------|------------------------------------------------------------|
+   | Host               | `gateway01.ap-southeast-1.prod.aws.tidbcloud.com`          |
+   | Port               | `4000`                                                     |
+   | Nama database      | `simarc_backup`                                            |
+   | Username           | `xxxxx.root` (format `<prefix>.root`, dari halaman Connect) |
+   | Password           | password cluster (atur lewat halaman Connect)              |
+   | TLS                | `required` (wajib untuk TiDB Cloud)                        |
 
-   > Aiven mewajibkan koneksi TLS. Pilih `required` (tanpa verifikasi CA) atau
-   > `verify` bila CA disimpan di server. Untuk `verify`, isi kolom CA file
-   > (Aiven menyediakan `ca.pem`).
+   > TiDB Cloud mewajibkan koneksi TLS. Pilih `required` atau `skip-verify`
+   > (selalu TLS tanpa verifikasi CA), atau `verify` bila CA disimpan di
+   > server — isi kolom CA file.
 
-Catatan: paket Free akan **tidur setelah idle** dan bangun lagi saat diakses.
-Itu normal; backup harian tetap berjalan (koneksi pertama membangunkan server).
+Catatan: TiDB kompatibel dengan MySQL, jadi klien `mysql`/`mysqldump` standar
+tetap bisa dipakai, tetapi **selalu dengan TLS** (`--ssl` pada klien
+MariaDB/MySQL).
 
 ### 3b. Storage Object — Cloudflare R2 (gratis 10 GB) atau Backblaze B2
 
@@ -142,13 +143,13 @@ OFFSITE_MINUTE=0              # menit jalan (0-59)
 OFFSITE_BACKUP_DB=true        # salin database
 OFFSITE_BACKUP_FILES=true     # salin file uploads
 
-# Database cloud (MySQL/MariaDB)
-OFFSITE_DB_HOST=mysql-xxxxxxxx.b.aivencloud.com
-OFFSITE_DB_PORT=19160
-OFFSITE_DB_NAME=defaultdb
-OFFSITE_DB_USER=avnadmin
+# Database cloud (TiDB Cloud, MySQL-compatible)
+OFFSITE_DB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+OFFSITE_DB_PORT=4000
+OFFSITE_DB_NAME=simarc_backup
+OFFSITE_DB_USER=xxxxx.root
 OFFSITE_DB_PASS=********
-OFFSITE_DB_TLS=required       # disabled | preferred | required | verify
+OFFSITE_DB_TLS=required       # disabled | preferred | required | skip-verify | verify
 OFFSITE_DB_CA_FILE=           # path ca.pem (opsional, untuk TLS=verify)
 OFFSITE_DB_INCLUDE_LEGACY=true # true = mirror 100% (semua tabel); false = lewati tabel legacy
 
@@ -177,7 +178,7 @@ Tidak perlu restart setelah menekan **Simpan** — pengaturan dibaca ulang dari
 **Database** (contoh, sesuaikan kredensial):
 
 ```bash
-mysqldump --host=<HOST> --port=<PORT> --user=<USER> --ssl defaultdb \
+mysqldump --host=<HOST> --port=<PORT> --user=<USER> --ssl simarc_backup \
   > simarc_restore.sql
 mysql --user=chris --password simarc < simarc_restore.sql
 ```
@@ -191,9 +192,9 @@ mysql --user=chris --password simarc < simarc_restore.sql
 
 | Gejala | Penyebab umum | Solusi |
 |--------|---------------|--------|
-| "Koneksi database cloud gagal" | TLS salah / server tidur | Set TLS `required`; ulangi (Aiven bangun dari idle) |
+| "Koneksi database cloud gagal" | TLS salah / host-port salah | Set TLS `required`; cek host & port `4000` TiDB Cloud |
 | Impor gagal `DEFAULT uuid()` | MariaDB lokal → MySQL | Sudah ditangani otomatis (dump dinormalkan) |
-| Impor gagal `sql_require_primary_key` | Aiven memaksa primary key | Sudah ditangani otomatis (relaksasi per sesi) |
+| Impor gagal `sql_require_primary_key` | MySQL 8 / layanan cloud terkelola (TiDB Cloud) memaksa primary key | Sudah ditangani otomatis (relaksasi per sesi) |
 | "Koneksi storage gagal" | Endpoint/region/bucket salah | Periksa endpoint & kunci; R2 region `auto` |
 | "Koneksi rclone remote gagal" | Remote belum ada / token kedaluwarsa | Jalankan `rclone config` lalu `rclone lsd <remote>:` sebagai user server |
 | Backup jalan tapi file 0 | `storage/app/uploads` kosong | Normal — belum ada file untuk dicadangkan |
@@ -219,12 +220,12 @@ cat storage/app/offsite/status.json
   `OFFSITE_DB_INCLUDE_LEGACY=true` **tidak ada** tabel yang dilewati (mirror 1:1).
 - Agar salinan cloud benar-benar identik, opsi **Mirror 100% (1:1)** disarankan
   aktif: seluruh 71 tabel disalin dan data diverifikasi byte-per-byte.
-- Penjadwal berjalan **di dalam proses server** dan tidak aktif pada mode klien
-  atau saat dijalankan di Vercel.
+- Penjadwal berjalan **di dalam proses server** dan tidak aktif pada mode
+  klien — ini aplikasi desktop (offline-first), bukan aplikasi web berkelanjutan.
 - Untuk backend rclone, binary `rclone` harus tersedia di `PATH` user yang
   menjalankan server (unit systemd memakai `User=chris`), dan remote sudah
   dikonfigurasi lewat `rclone config` milik user tersebut.
 - Karena `backup_logs.file_content` bisa besar, `max_allowed_packet` server
-  cloud harus memadai; Aiven default 64 MB (cukup untuk blob 9 MB yang menjadi
-  ~19 MB saat di-hex). Backup lokal di menu **Backup** sengaja **tidak** memakai
+  cloud harus memadai (cukup untuk blob 9 MB yang menjadi ~19 MB saat di-hex).
+  Backup lokal di menu **Backup** sengaja **tidak** memakai
   `--hex-blob` agar tetap bisa di-restore ke MariaDB lokal yang batasnya 16 MB.

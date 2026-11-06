@@ -14,7 +14,7 @@ tersedia.
 | Peran | Apa yang dijalankan | Bisa offline? |
 |-------|---------------------|:-------------:|
 | **Komputer (node)** | Aplikasi SIMARC + **database lokal sendiri** (MySQL *atau* SQLite) | ✅ Ya, penuh |
-| **Hub** (bisa salah satu komputer, atau cloud Aiven) | MySQL *atau* SQLite sebagai titik temu | ✅ (komputer lain tetap jalan, sekadar belum menyatu) |
+| **Hub** (bisa salah satu komputer, atau cloud TiDB Cloud) | MySQL *atau* SQLite sebagai titik temu | ✅ (komputer lain tetap jalan, sekadar belum menyatu) |
 
 Setiap komputer menulis ke database lokalnya sendiri. Saat hub **terjangkau**,
 mesin sinkronisasi menukar perubahan dua arah:
@@ -62,7 +62,7 @@ SYNC_NODE_ID=komputer-front-office      # WAJIB berbeda tiap komputer
 SYNC_INTERVAL_MINUTES=15
 
 # Hub (titik temu) — sama di semua komputer
-SYNC_HUB_DB_HOST=192.168.1.86           # atau host Aiven
+SYNC_HUB_DB_HOST=192.168.1.86           # atau host TiDB Cloud
 SYNC_HUB_DB_NAME=simarc
 SYNC_HUB_DB_USER=simarc
 SYNC_HUB_DB_PASS=...
@@ -102,7 +102,7 @@ SYNC_ENABLED=true
 SYNC_NODE_ID=komputer-front-office
 SYNC_INTERVAL_MINUTES=15
 
-# Hub: MySQL (Aiven/kantor) — sama untuk semua komputer
+# Hub: MySQL (TiDB Cloud/kantor) — sama untuk semua komputer
 SYNC_HUB_DRIVER=mysql
 SYNC_HUB_DB_HOST=...
 SYNC_HUB_DB_NAME=simarc
@@ -154,9 +154,9 @@ Yang perlu diketahui:
   **dikunjungi tiap node** (node mendorong perubahannya ke hub; hub sendiri
   menarik saat ada node lain yang menjalankan sync). Untuk hub yang juga
   menjadi penulis aktif, arahkan hub ke salah satu node atau ke dirinya sendiri
-  melalui kanal terpisah — paling mudah: **pakai cloud (Aiven) sebagai hub**.
+  melalui kanal terpisah — paling mudah: **pakai cloud (TiDB Cloud) sebagai hub**.
 
-- **Cloud (Aiven)** — hub selalu menyala, cocok bila kantor tidak punya
+- **Cloud (TiDB Cloud)** — hub selalu menyala, cocok bila kantor tidak punya
   komputer yang selalu hidup. Sinkronisasi butuh internet saat proses berjalan,
   tetapi aplikasi tetap jalan tanpa internet.
 
@@ -209,7 +209,7 @@ Yang **tidak** disinkronkan secara sengaja:
 klasifikasi, user, unit kerja, dil.) tetapi **tabel `arsip` tetap 0** — sehingga
 terlihat "datanya 0".
 
-**Sebab:** saat membaca struktur tabel hub (MySQL 8 / Aiven),
+**Sebab:** saat membaca struktur tabel hub (MySQL 8),
 `information_schema.columns.EXTRA` untuk kolom PK `id char(36) DEFAULT (uuid())`
 bernilai **`DEFAULT_GENERATED`**. Kode lama memakai uji
 `strings.Contains(extra, "generated")` untuk membuang kolom *generated*, sehingga
@@ -380,41 +380,45 @@ dan data diambil ulang dari hub pada sinkronisasi berikutnya.
 ## 8. Hubungan dengan fitur lain
 
 - **Backup Cloud (offsite)** tidak berubah: database lokal tetap sumber utama,
-  cloud hanya salinan pemulihan. Bila memakai **Aiven** sebagai *hub sinkronisasi*,
-  Anda boleh memakai instance yang sama maupun instance terpisah dari offsite.
+  cloud hanya salinan pemulihan. Bila memakai **TiDB Cloud** sebagai *hub
+  sinkronisasi*, Anda boleh memakai database yang sama maupun database terpisah
+  dari offsite.
 - **Mode klien** (`SIMARC_SERVER_URL`) tetap ada untuk kantor yang memilih
   satu server pusat + klien tipis. Sinkronisasi ini adalah alternatifnya: setiap
   komputer mandiri (offline) lalu menyatu otomatis.
 
 ---
 
-## 9. Hub yang dipakai sekarang: database cloud (Aiven) + berkas LAN
+## 9. Hub yang dipakai sekarang: database cloud (TiDB Cloud) + berkas LAN
 
 Supaya tidak bergantung pada satu komputer kantor yang harus selalu menyala,
-titik temu **baris database** dipindahkan ke **Aiven MySQL** (cloud), sedangkan
-**berkas arsip** tetap lewat aplikasi hub LAN (port `8080`).
+titik temu **baris database** dipindahkan ke **TiDB Cloud** (MySQL-compatible,
+cloud), sedangkan **berkas arsip** tetap lewat aplikasi hub LAN (port `8080`).
 
-### Database hub — Aiven MySQL
+### Database hub — TiDB Cloud (MySQL-compatible)
 
-- **Host**: `mysql-1d4b6727-christwnto-b045.b.aivencloud.com` (port `19160`)
-- **Database**: `simarc_hub` (dipisah dari `defaultdb` yang dipakai backup
+- **Host**: `gateway01.<region>.prod.aws.tidbcloud.com` (contoh:
+  `gateway01.ap-southeast-1.prod.aws.tidbcloud.com`, port `4000`)
+- **Database**: `simarc_hub` (dipisah dari `simarc_backup` yang dipakai backup
   offsite agar tidak bentrok)
-- **User**: `avnadmin`
-- **TLS**: `required` (Aiven memakai CA sendiri, jadi verifikasi penuh `true`
-  akan gagal; `required` = selalu TLS tanpa verifikasi sertifikat)
+- **User**: `xxxxx.root` (format `<prefix>.root`)
+- **TLS**: `required` (TiDB Cloud memaksa TLS; `required` = selalu TLS tanpa
+  verifikasi sertifikat, `verify` bila verifikasinya lulus)
 
 Skema/tabel TIDAK ditulis di repo: dibuat sekali dari dump komputer yang sudah
 berisi data (`mysqldump --no-data`), lalu tiap komputer mengisi barisnya lewat
-sinkronisasi. Aiven MySQL 8 menyalakan `sql_require_primary_key`, dan semua
-tabel SIMARC memang sudah punya PRIMARY KEY.
+sinkronisasi. TiDB Cloud (MySQL-compatible) dan MySQL 8 terkelola umumnya
+menyalakan `sql_require_primary_key`, dan semua tabel SIMARC memang sudah
+punya PRIMARY KEY.
 
 ### Berkas arsip — aplikasi hub LAN
 
-Aiven hanya MySQL, tidak bisa melayani berkas. Berkas arsip (PDF/gambar di
-`storage/app/uploads`) tetap dikirim lewat aplikasi SIMARC di komputer hub LAN
-(`http://192.168.1.86:8080`), sehingga komputer harus berada di WiFi/LAN yang
-sama agar berkas ikut tersinkron. Bila kelak berkas ingin ikut cloud penuh,
-perlu server aplikasi (VPS) yang menunjuk ke database Aiven yang sama.
+TiDB Cloud hanya menyediakan database, tidak bisa melayani berkas. Berkas arsip
+(PDF/gambar di `storage/app/uploads`) tetap dikirim lewat aplikasi SIMARC di
+komputer hub LAN (`http://192.168.1.86:8080`), sehingga komputer harus berada
+di WiFi/LAN yang sama agar berkas ikut tersinkron. Bila kelak berkas ingin ikut
+cloud penuh, perlu server aplikasi (VPS) yang menunjuk ke database TiDB Cloud
+yang sama.
 
 ### Isi ini di `.env` setiap komputer lain
 
@@ -423,12 +427,12 @@ SYNC_ENABLED=true
 SYNC_NODE_ID=komputer-nama-unik        # WAJIB berbeda tiap komputer
 SYNC_INTERVAL_MINUTES=15
 
-# Database hub: Aiven (cloud)
-SYNC_HUB_DB_HOST=mysql-1d4b6727-christwnto-b045.b.aivencloud.com
-SYNC_HUB_DB_PORT=19160
+# Database hub: TiDB Cloud (cloud, MySQL-compatible)
+SYNC_HUB_DB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+SYNC_HUB_DB_PORT=4000
 SYNC_HUB_DB_NAME=simarc_hub
-SYNC_HUB_DB_USER=avnadmin
-SYNC_HUB_DB_PASS=<password avnadmin>
+SYNC_HUB_DB_USER=xxxxx.root
+SYNC_HUB_DB_PASS=<password cluster>
 SYNC_HUB_DB_TLS=required
 
 # Berkas arsip (uploads) — aplikasi hub LAN di port 8080
@@ -450,16 +454,18 @@ Saat aplikasi menyala pada database yang **masih kosong**, ia memeriksa hub:
 Karena itu, akun admin dan daftar peran di semua komputer mengikuti data hub —
 jangan mengubah nama pengguna admin di satu komputer secara terpisah.
 
-### Catatan pemeliharaan hub Aiven
+### Catatan pemeliharaan hub TiDB Cloud
 
-- **Filter IP**: bila Aiven diberi batas IP, tambahkan alamat publik tiap kantor
-  (atau matikan filter) agar semua komputer bisa menyambung.
+- **Filter IP**: cluster Serverless TiDB Cloud tidak perlu filter IP; semua
+  komputer cukup memakai kredensial cluster (koneksi wajib TLS).
 - **Batas koneksi**: sinkronisasi memakai satu koneksi singkat tiap 15 menit,
   jadi aman untuk belasan komputer.
-- `defaultdb` **tetap** dipakai fitur backup offsite (dump penuh). Jangan
-  mengarahkan sinkronisasi ke `defaultdb`.
-- Bila lupa password `avnadmin`, reset lewat konsol Aiven lalu perbarui
-  `SYNC_HUB_DB_PASS` (dan `OFFSITE_DB_PASS`) di `.env` semua komputer.
+- Database `simarc_backup` (di cluster yang sama) **tetap** dipakai fitur
+  backup offsite (dump penuh). Jangan mengarahkan sinkronisasi ke
+  `simarc_backup`.
+- Bila lupa password cluster, atur ulang lewat dashboard TiDB Cloud
+  (tidbcloud.com) lalu perbarui `SYNC_HUB_DB_PASS` (dan `OFFSITE_DB_PASS`)
+  di `.env` semua komputer.
 
 ### Bila ingin kembali ke hub LAN (alternatif tanpa cloud)
 
@@ -505,11 +511,11 @@ SYNC_INTERVAL_MINUTES=15
 SYNC_HUB_URL=http://192.168.1.86:8080
 SYNC_HUB_TOKEN=<rahasia bersama>
 
-# Hub database (Aiven atau MySQL kantor) — titik temu data
-SYNC_HUB_DB_HOST=mysql-1d4b6727-christwnto-b045.b.aivencloud.com
-SYNC_HUB_DB_PORT=19160
+# Hub database (TiDB Cloud atau MySQL kantor) — titik temu data
+SYNC_HUB_DB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+SYNC_HUB_DB_PORT=4000
 SYNC_HUB_DB_NAME=simarc_hub
-SYNC_HUB_DB_USER=avnadmin
+SYNC_HUB_DB_USER=xxxxx.root
 SYNC_HUB_DB_PASS=...
 SYNC_HUB_DB_TLS=required
 ```
@@ -533,5 +539,5 @@ hidup.
   `sudo ufw allow from 192.168.1.0/24 to any port 8080`.
 - Sebaiknya **set IP statis / reservasi DHCP** untuk `192.168.1.86` agar
   `SYNC_HUB_URL` di komputer lain tetap benar.
-- Komputer ini juga ikut menyinkron ke hub Aiven (`SYNC_NODE_ID=server-hub`),
+- Komputer ini juga ikut menyinkron ke hub TiDB Cloud (`SYNC_NODE_ID=server-hub`),
   sehingga data yang diubah di sini ikut naik ke cloud.

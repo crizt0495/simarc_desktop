@@ -293,9 +293,9 @@ func sha256sum(s string) string {
 type OcrService struct{}
 
 func (s *OcrService) ExtractText(filePath, lang string) (string, error) {
-	// tesseract is not available on Vercel serverless
+	// tesseract is not available in ephemeral serverless deployments
 	if config.IsVercel() {
-		return "", fmt.Errorf("OCR tidak tersedia di Vercel. Gunakan external OCR service (Google Vision API, AWS Textract, dll)")
+		return "", fmt.Errorf("OCR tidak tersedia pada deployment ini. Gunakan external OCR service (Google Vision API, AWS Textract, dll)")
 	}
 	if lang == "" {
 		lang = "ind+eng"
@@ -312,9 +312,9 @@ func (s *OcrService) ExtractText(filePath, lang string) (string, error) {
 type BackupService struct{}
 
 func (s *BackupService) CreateDatabaseBackup() (*models.BackupLog, error) {
-	// mysqldump is not available on Vercel serverless
+	// mysqldump is not available in ephemeral serverless deployments
 	if !config.CanBackup() {
-		return nil, fmt.Errorf("database backup tidak tersedia di Vercel atau mysqldump tidak ditemukan di sistem. Gunakan backup dari dashboard Aiven Console")
+		return nil, fmt.Errorf("database backup tidak tersedia: mysqldump tidak ditemukan di sistem. Gunakan backup dari dashboard TiDB Cloud atau menu export SQL")
 	}
 
 	filename := fmt.Sprintf("backup_%s.sql", time.Now().Format("2006-01-02_150405"))

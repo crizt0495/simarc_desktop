@@ -8,16 +8,20 @@ import { Dashboard } from './pages/Dashboard';
 import { ArsipPage } from './pages/ArsipPage';
 import { StaticPage } from './pages/StaticPage';
 import { PublicSearchPage } from './pages/PublicSearchPage';
+import { LoginPage } from './pages/LoginPage';
 import { ITEM_BY_KEY, type PageKey } from './components/AppSidebar';
-import { getProfile, getStatus, pingBackend, type Status } from './lib/bindings';
+import { getProfile, getStatus, pingBackend, type Status, type Profile } from './lib/bindings';
 import ErrorBoundary from './components/ErrorBoundary';
 
+type AppPage = PageKey | 'login';
+
 const App: React.FC = () => {
-  const hash = typeof location !== 'undefined' ? (location.hash || '').replace('#', '') as PageKey : '' as PageKey;
+  const hash = typeof location !== 'undefined' ? (location.hash || '').replace('#', '') as AppPage : '' as AppPage;
   const validHash = hash && ITEM_BY_KEY[hash as PageKey] ? hash as PageKey : null;
-  const [page, setPage] = useState<PageKey>(validHash ?? 'dashboard');
+  // Halaman pertama saat aplikasi dibuka = landing page publik.
+  const [page, setPage] = useState<AppPage>(validHash ?? 'public-search');
   const [status, setStatus] = useState<Status | null>(null);
-  const [profile, setProfile] = useState<{ name: string; role: string } | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -37,7 +41,7 @@ const App: React.FC = () => {
   }, [refresh]);
 
   useEffect(() => {
-    document.title = `${ITEM_BY_KEY[page]?.label ?? 'SIMARC'} — SIMARC-Arsip Record Center`;
+    document.title = `${ITEM_BY_KEY[page as PageKey]?.label ?? 'SIMARC'} — SIMARC-Arsip Record Center`;
   }, [page]);
 
   const renderPage = () => {
@@ -47,7 +51,22 @@ const App: React.FC = () => {
       case 'arsip':
         return <ArsipPage />;
       case 'public-search':
-        return <PublicSearchPage />;
+        return (
+          <PublicSearchPage
+            onLogin={() => setPage('login')}
+            sessionName={null} // landing selalu mode viewer; profil tampil di topbar
+          />
+        );
+      case 'login':
+        return (
+          <LoginPage
+            onSuccess={(p) => {
+              setProfile(p);
+              setPage('dashboard');
+            }}
+            onBack={() => setPage('public-search')}
+          />
+        );
       default:
         return <StaticPage page={page} />;
     }

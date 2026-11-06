@@ -11,8 +11,9 @@ import (
 //
 // Model: every computer runs its own MySQL database (so it keeps working with
 // no network at all). One of the databases — or a cloud MySQL such as the
-// existing Aiven mirror — acts as the "hub". Each computer periodically (and on
-// demand) exchanges its changes with the hub using a last-write-wins merge.
+// project's TiDB Cloud database — acts as the "hub". Each computer
+// periodically (and on demand) exchanges its changes with the hub using a
+// last-write-wins merge.
 //
 // The local database is always the machine's working copy and remains usable
 // offline; the hub is only contacted when it is reachable.
@@ -38,9 +39,9 @@ type SyncConfig struct {
 	HubDBPass string
 	HubDBTLS  string
 
-	// HubDriver menentukan mesin database hub: "mysql" (default: Aiven, MySQL
-	// kantor, atau komputer server) atau "sqlite" (berkas pada komputer yang
-	// menjadi titik temu — berguna untuk instalasi tanpa server database).
+	// HubDriver menentukan mesin database hub: "mysql" (default: TiDB Cloud,
+	// MySQL kantor, atau komputer server) atau "sqlite" (berkas pada komputer
+	// yang menjadi titik temu — berguna untuk instalasi tanpa server database).
 	HubDriver string
 	// HubDBPath adalah lokasi berkas SQLite bila HubDriver = "sqlite".
 	HubDBPath string

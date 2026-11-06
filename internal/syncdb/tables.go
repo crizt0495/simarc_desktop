@@ -362,7 +362,8 @@ func loadTableSQLite(ctx context.Context, db *sql.DB, name string) (*tableInfo, 
 //
 // Kritis: nilai "DEFAULT_GENERATED" BUKAN kolom generated. Itu hanya penanda
 // kolom dengan ekspresi DEFAULT (mis. `id char(36) DEFAULT (uuid())`, lazim di
-// MySQL 8/Aiven). Kolom semacam itu tetap kolom biasa yang WAJIB ikut disalin.
+// MySQL 8/komputasi cloud seperti TiDB Cloud). Kolom semacam itu tetap kolom
+// biasa yang WAJIB ikut disalin.
 // Menyamakan "DEFAULT_GENERATED" dengan kolom generated membuat kolom PRIMARY
 // KEY seperti `id` terbuang, lalu seluruh tabel (mis. `arsip`) dilewati saat
 // sinkron sehingga komputer klien tidak pernah menerima datanya.

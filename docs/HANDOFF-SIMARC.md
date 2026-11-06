@@ -31,7 +31,7 @@ dan data kembali 100% pada restart berikutnya.
           │  aplikasi hub (port 8080) = sinkronisasi BERKAS (uploads/PDF)
           ▼
 ┌────────────────────┐
-│  HUB MySQL Aiven   │  ◀── database cloud, titik temu semua node
+│  HUB TiDB Cloud    │  ◀── database cloud, titik temu semua node
 │  simarc_hub        │
 └─────────┬──────────┘
           │  pull (delta per tabel)
@@ -43,7 +43,7 @@ dan data kembali 100% pada restart berikutnya.
 Komputer ANDROID → APK (WebView) →(http://192.168.1.86:8080)→ SERVER
 ```
 
-- **Hub database:** Aiven MySQL `simarc_hub` (bukan file LAN).
+- **Hub database:** TiDB Cloud (MySQL-compatible) `simarc_hub` (bukan file LAN).
 - **Hub berkas:** aplikasi di PC ini, `http://192.168.1.86:8080`.
 - **APK Android** adalah *WebView client* ke server (lihat §6).
 
@@ -58,7 +58,7 @@ Komputer ANDROID → APK (WebView) →(http://192.168.1.86:8080)→ SERVER
 
 | Node | Bentuk PK `permission_role` (SEBELUM perbaikan) |
 |---|---|
-| Server MySQL & Aiven Hub | `id` (UUID) — tunggal |
+| Server MySQL & hub TiDB Cloud | `id` (UUID) — tunggal |
 | Klien SQLite | `(role_id, permission_id)` — **komposit** |
 
 Rantainya:
@@ -242,10 +242,10 @@ PW="$(grep '^DB_PASSWORD=' .env | cut -d= -f2-)"
 # Server (lokal MySQL)
 mysql -u chris -p"$PW" -h 127.0.0.1 simarc
 
-# Hub (Aiven) — butuh --ssl (bukan --ssl-mode=REQUIRED)
+# Hub (TiDB Cloud) — butuh --ssl (bukan --ssl-mode=REQUIRED)
 HUB_PW="$(grep '^SYNC_HUB_DB_PASS=' .env | cut -d= -f2-)"
-mysql --ssl -h mysql-1d4b6727-christwnto-b045.b.aivencloud.com -P 19160 \
-      -u avnadmin -p"$HUB_PW" simarc_hub
+mysql --ssl -h gateway01.<region>.prod.aws.tidbcloud.com -P 4000 \
+      -u xxxxx.root -p"$HUB_PW" simarc_hub
 
 # Sinkronisasi manual satu siklus
 go run ./cmd/sync
@@ -264,7 +264,7 @@ systemctl --user restart simarc-hub.service
 |---|---|
 | Repo | `git@github.com:crizt0495/simarc-go.git` (branch `master`) |
 | MySQL lokal | `127.0.0.1:3306/simarc`, user `chris` (password di `.env`) |
-| Aiven hub | `mysql-1d4b6727-christwnto-b045.b.aivencloud.com:19160/simarc_hub`, user `avnadmin`, TLS required (password di `.env`) |
+| TiDB Cloud hub | `gateway01.<region>.prod.aws.tidbcloud.com:4000/simarc_hub`, user `<prefix>.root` (mis. `xxxxx.root`), TLS required (password di `.env`) |
 | LAN server/hub HTTP | `http://192.168.1.86:8080` |
 | `SYNC_HUB_TOKEN` | di `.env` (`SYNC_HUB_TOKEN=...`) |
 | Service hub | `~/.config/systemd/user/simarc-hub.service` + `~/.local/bin/simarc-hub-run` |

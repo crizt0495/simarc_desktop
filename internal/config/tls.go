@@ -3,15 +3,15 @@ package config
 import "strings"
 
 // NormalizeMySQLTLS maps the human-friendly TLS modes used across .env files,
-// the settings UI (which mirrors MySQL CLI / Aiven wording) and DATABASE_URL
+// the settings UI (which mirrors MySQL CLI wording) and DATABASE_URL
 // query parameters onto the exact strings accepted by go-sql-driver/mysql.
 //
 // The driver only understands "", "false", "true", "skip-verify" and
 // "preferred" — plus any name previously registered with
 // mysql.RegisterTLSConfig. Anything else makes ParseDSN fail with
 // "invalid value / unknown config name", so a very natural "required" or
-// "disabled" (the values the UI used to save) would break cloud (Aiven)
-// connections instead of enabling them.
+// "disabled" (the values the UI used to save) would break cloud (TiDB
+// Cloud) connections instead of enabling them.
 //
 // Mapping:
 //

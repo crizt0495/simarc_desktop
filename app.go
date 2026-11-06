@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	"arsippro/internal/config"
 	"arsippro/internal/database"
@@ -16,7 +21,9 @@ import (
 
 // App holds the application state.
 type App struct {
-	ctx context.Context
+	ctx            context.Context
+	currentUserID  string // set setelah Login() sukses; kosong = mode publik/viewer
+	currentProfile map[string]interface{}
 }
 
 func NewApp() *App {
@@ -157,8 +164,13 @@ func (a *App) GetDashboardStats() map[string]interface{} {
 }
 
 // GetProfile returns the logged-in user representation for the UI.
-// Desktop runs single-device, so the first active user is the operator.
+// Bila belum login (membuka landing page publik), kembalikan nama sumber
+// dari user aktif pertama sebagai fallback lengai; setelah Login() sukses
+// profil yang ditampilkan adalah pengguna yang benar-benar terautentikasi.
 func (a *App) GetProfile() map[string]interface{} {
+	if a.currentProfile != nil {
+		return a.currentProfile
+	}
 	out := map[string]interface{}{"name": "Pengguna", "role": "Pengguna"}
 	if database.DB == nil {
 		return out
@@ -176,6 +188,41 @@ func (a *App) GetProfile() map[string]interface{} {
 	return out
 }
 
+// Login memverifikasi username/password (hash bcrypt pada tabel users).
+// Sukses → profil tersimpan di sesi aplikasi dan dikembalikan.
+// Gagal → error dikirim ke frontend (reject promise) untuk ditampilkan.
+func (a *App) Login(username, password string) (map[string]interface{}, error) {
+	if database.DB == nil {
+		return nil, fmt.Errorf("database belum siap")
+	}
+	if strings.TrimSpace(username) == "" || password == "" {
+		return nil, fmt.Errorf("username dan password wajib diisi")
+	}
+	var u models.User
+	if err := database.DB.Preload("Role").Where("username = ?", strings.TrimSpace(username)).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("username tidak ditemukan")
+		}
+		return nil, fmt.Errorf("query gagal: %v", err)
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)); err != nil {
+		return nil, fmt.Errorf("password salah")
+	}
+	role := "Pengguna"
+	if u.Role != nil && u.Role.Name != "" {
+		role = u.Role.Name
+	}
+	a.currentUserID = u.ID
+	a.currentProfile = map[string]interface{}{"name": u.Name, "role": role}
+	return a.currentProfile, nil
+}
+
+// Logout menghabiskan sesi login aplikasi (kembali ke mode publik/viewer).
+func (a *App) Logout() {
+	a.currentUserID = ""
+	a.currentProfile = nil
+}
+
 // ListArsipDetail returns full arsip records (with joins) for the arsip page.
 func (a *App) ListArsipDetail() []map[string]interface{} {
 	result := []map[string]interface{}{}
@@ -187,6 +234,7 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 		Preload("UnitKerja").
 		Preload("JenisArsipRel").
 		Preload("KodeKlasifikasi").
+		Preload("Pemberkasan").
 		Order("created_at desc").Limit(200).Find(&arsip)
 	for _, ar := range arsip {
 		unit, kategori := "-", "Umum"
@@ -208,17 +256,37 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 			"status":    ar.StatusArsip,
 			"unit":      unit,
 			"kategori":  kategori,
+			"jenisName": kategori,
 			"tanggal":   tanggal,
 			"jumlah":    ar.Jumlah,
 			"satuan":    ar.Satuan,
 			"nilai":     ar.NilaiAnggaran,
 			"nomor_spm": ar.NomorSPM,
-			"berkas":    ar.FilePath != "",
-			"created":   ar.CreatedAt.Format("2006-01-02 15:04:05"),
-			"updated":   ar.UpdatedAt.Format("2006-01-02 15:04:05"),
+			// ID relasi untuk filter lengkap halaman publik/landing.
+			"unitId":             ar.UnitKerjaID,
+			"kodeKlasifikasiId":  ar.KodeKlasifikasiID,
+			"jenisArsipId":       derefStr(ar.JenisArsipID),
+			"pemberkasanId":      derefStr(ar.PemberkasanID),
+			"kodeKlasifikasiTxt": func() string {
+				if ar.KodeKlasifikasi != nil {
+					return ar.KodeKlasifikasi.KodeKlasifikasi
+				}
+				return ""
+			}(),
+			"berkas":   ar.FilePath != "",
+			"created":  ar.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":  ar.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	return result
+}
+
+// derefStr nil-aman untuk kolom relasi *string.
+func derefStr(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
 }
 
 // GetMasterOptions returns master-data dropdown options for the arsip filter panel.

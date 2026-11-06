@@ -55,19 +55,18 @@ func TestNormalizedTLSAcceptedByDriver(t *testing.T) {
 	}
 }
 
-// TestLoadParsesDATABASEURLTLS verifies the full Aiven-style connection string
-// (ssl-mode=REQUIRED) is understood and turned into a driver-safe TLS mode.
+// TestLoadParsesDATABASEURLTLS verifies the full TiDB Cloud-style connection string (ssl-mode=REQUIRED) is understood and turned into a driver-safe TLS mode.
 func TestLoadParsesDATABASEURLTLS(t *testing.T) {
 	old := App
 	t.Cleanup(func() { App = old })
 
-	t.Setenv("DATABASE_URL", "mysql://avnadmin:secret@mysql-x.aivencloud.com:19160/defaultdb?ssl-mode=REQUIRED")
+	t.Setenv("DATABASE_URL", "mysql://419auXgnyEgUPJS.root:secret@gateway01.ap-northeast-1.prod.aws.tidbcloud.com:4000/simarc?ssl-mode=REQUIRED")
 	Load()
 
-	if App.DBHost != "mysql-x.aivencloud.com" || App.DBPort != "19160" || App.DBName != "defaultdb" {
+	if App.DBHost != "gateway01.ap-northeast-1.prod.aws.tidbcloud.com" || App.DBPort != "4000" || App.DBName != "simarc" {
 		t.Fatalf("DATABASE_URL not parsed: host=%q port=%q db=%q", App.DBHost, App.DBPort, App.DBName)
 	}
-	if App.DBUser != "avnadmin" || App.DBPass != "secret" {
+	if App.DBUser != "419auXgnyEgUPJS.root" || App.DBPass != "secret" {
 		t.Fatalf("credentials not parsed: user=%q pass=%q", App.DBUser, App.DBPass)
 	}
 	if got := NormalizeMySQLTLS(App.DBTLS); got != "skip-verify" {

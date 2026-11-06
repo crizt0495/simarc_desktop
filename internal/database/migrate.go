@@ -23,9 +23,9 @@ import (
 // SchemaVersion identifies the current expected database schema/maintenance
 // state. Bump this value whenever Migrate()'s tasks need to run again (new
 // tables, indexes, data fixes). On boot, Migrate() skips all heavy work when
-// the stored version matches — critical for Vercel serverless where new
-// instances start constantly and a full migration per cold start made every
-// request slow.
+// the stored version matches — critical for deployments where instances
+// start constantly (screensaver restarts, kiosk reloads) and a full
+// migration per start would make every launch slow.
 const SchemaVersion = "2026.09.22-01"
 
 // tableExists returns true when a table exists in the current database.
@@ -503,8 +503,8 @@ func sha256sum(s string) string {
 }
 
 func cleanupFilePaths() {
-	// On Vercel the filesystem is ephemeral: NO uploaded file ever exists on
-	// disk, so os.Stat would report every path as missing and this function
+	// In ephemeral environments NO uploaded file ever exists on disk, so
+	// os.Stat would report every path as missing and this function
 	// would wipe the file_path column of ALL arsip rows on every schema bump.
 	if os.Getenv("VERCEL") == "1" {
 		return
@@ -643,7 +643,7 @@ func addBackupLogGDriveColumns() {
 
 // addBackupLogContentColumn adds the file_content LONGBLOB column to
 // backup_logs so downloads stay available even when the on-disk file is gone
-// (Vercel serverless ephemeral filesystem, deleted files, different cwd).
+// (ephemeral serverless filesystem, deleted files, different cwd).
 func addBackupLogContentColumn() {
 	log.Println("[MIGRASI] Memeriksa kolom file_content di backup_logs...")
 	if !columnExists("backup_logs", "file_content") {
@@ -667,7 +667,7 @@ func addArsipGDriveURLColumn() {
 // ensureArsipIDDefault adds DEFAULT (UUID()) to arsip.id so MySQL won't reject
 // inserts that forget to supply the primary key (Error 1364 HY000). This is a
 // safety net alongside the GORM BeforeCreate hook on the Arsip model. Requires
-// MySQL 8.0.13+ (Aiven MySQL satisfies this).
+// MySQL 8.0.13+ (MySQL 8 / TiDB Cloud satisfy this).
 func ensureArsipIDDefault() {
 	if !tableExists("arsip") {
 		return

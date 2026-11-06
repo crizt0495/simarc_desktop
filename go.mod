@@ -66,7 +66,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wailsapp/go-webview2 v1.0.22 // indirect
 	golang.org/x/net v0.62.0 // indirect
-	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/sys v0.49.0
 	golang.org/x/text v0.43.0 // indirect
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.2

@@ -48,7 +48,7 @@ khas installer Windows (bukan CMD):
    di `storage\simarc.db` saat aplikasi pertama kali dijalankan). Bila `.env`
    komputer ini memakai MySQL (instalasi lama), MariaDB portabel diekstrak
    seperti sebelumnya (port database 3307).
-4. `.env` dibuat lengkap: mode offline + sinkronisasi Aiven (`simarc-hub`) +
+4. `.env` dibuat lengkap: mode offline + sinkronisasi TiDB Cloud (`simarc_hub`) +
    simpul (`SYNC_NODE_ID`) otomatis.
 5. Shortcut Desktop + Start Menu dibuat.
 6. Aplikasi **langsung dijalankan** — jendela SIMARC terbuka sendiri dan
@@ -143,9 +143,9 @@ Caranya bukan mode klien (mode klien tergantung server), melainkan:
    Konfigurasi hub sudah **tertanam di dalam installer** (tidak perlu
    `simarc-install.txt`). Installer otomatis memakai mode **Offline (Mandiri)**.
 2. Setiap komputer punya database & aplikasinya sendiri → tetap mandiri.
-3. Saat pertama dijalankan, aplikasi **menarik seluruh data dari hub Aiven**
-   (peran, pengguna, izin, arsip) — lihat `docs/OFFLINE-SYNC.md`. Hub hanya
-   dibutuhkan **saat sinkronisasi**, bukan saat membuka arsip. Berkas arsip
+3. Saat pertama dijalankan, aplikasi **menarik seluruh data dari hub TiDB Cloud
+   (cloud)** (peran, pengguna, izin, arsip) — lihat `docs/OFFLINE-SYNC.md`. Hub
+   hanya dibutuhkan **saat sinkronisasi**, bukan saat membuka arsip. Berkas arsip
    ditarik dari aplikasi hub LAN (`SYNC_HUB_URL`) saat komputer berada di LAN
    yang sama.
 

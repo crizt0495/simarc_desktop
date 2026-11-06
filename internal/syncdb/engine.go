@@ -54,7 +54,7 @@ type Engine struct {
 // Open builds an Engine using the application's local database and the hub
 // configured in cfg. Database lokal bisa MySQL (instalasi lama) atau SQLite
 // (desktop offline-first). Hub juga bisa SQLite (SYNC_HUB_DRIVER=sqlite)
-// bila titik temu memakai berkas lokal, selain MySQL (Aiven/kantor).
+// bila titik temu memakai berkas lokal, selain MySQL (TiDB Cloud/kantor).
 func Open(ctx context.Context, cfg config.SyncConfig, logf func(string, ...any)) (*Engine, error) {
 	if !cfg.HubReady() {
 		return nil, fmt.Errorf("hub database belum dikonfigurasi (SYNC_HUB_DB_HOST/NAME/USER)")

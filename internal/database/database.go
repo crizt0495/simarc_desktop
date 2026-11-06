@@ -41,7 +41,8 @@ func Driver() string {
 func IsSQLite() bool { return Driver() == "sqlite" }
 
 // Connect opens the database connection using the current application config.
-// Connection pool is tuned for Vercel serverless (short-lived workers).
+// Connection pool is tuned for short-lived (serverless) and long-lived desktop
+// deployments alike.
 func Connect() error {
 	if IsSQLite() {
 		db, err := openSQLite(config.App.DBPath)
@@ -181,18 +182,19 @@ func openDB(host, port, name, user, pass string) (*gorm.DB, error) {
 // openMySQL membangun koneksi MySQL GORM langsung dari *sql.Config driver,
 // bukan dari string DSN. Password yang mengandung karakter khusus (`@`, `:`,
 // `/`, `(`, `)`, spasi, ...) tidak perlu di-escape manual — penyebub klasik
-// halaman 503 "Database Tidak Tersedia" saat kredensial cloud (Aiven) memakai
+// halaman 503 "Database Tidak Tersedia" saat kredensial cloud (TiDB Cloud)
+// memakai
 // simbol dan Sprintf DSN gagal menguraikannya.
 func openMySQL(host, port, name, user, pass string, readTimeout, writeTimeout time.Duration) (*gorm.DB, error) {
 	// TLS mode for the MySQL connection. The values written by the settings UI
 	// and .env files ("required", "disabled", ...) are normalized to what
 	// go-sql-driver actually accepts (preferred/skip-verify/true/false).
 	//   preferred   – use TLS when the server supports it, fall back to plain
-	//   skip-verify – always TLS, skip certificate verification (Aiven self-signed CA)
+	//   skip-verify – always TLS, skip certificate verification (TiDB Cloud CA)
 	//   true        – always TLS with full certificate verification
 	//   false       – never TLS
 	// "preferred" is the safe default: it works against cloud providers that
-	// REQUIRE TLS (e.g. Aiven) as well as local MariaDB/MySQL without TLS.
+	// REQUIRE TLS (e.g. TiDB Cloud) as well as local MariaDB/MySQL without TLS.
 	tlsMode := config.NormalizeMySQLTLS(config.App.DBTLS)
 
 	cfg := godriver.NewConfig()
@@ -226,9 +228,9 @@ func openMySQL(host, port, name, user, pass string, readTimeout, writeTimeout ti
 		return nil, err
 	}
 
-	// Connection pooling — tuned for Vercel serverless:
-	// Vercel functions are short-lived (a few seconds); we keep a modest pool
-	// that opens fast, recycles frequently, and tolerates restarts.
+	// Connection pooling — tuned for serverless deployments (functions are
+	// short-lived, so we keep a modest pool that opens fast, recycles
+	// frequently, and tolerates restarts) — harmless for the desktop runtime.
 	sqlDB, err := gormDB.DB()
 	if err != nil {
 		return nil, err

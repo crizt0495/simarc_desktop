@@ -14,7 +14,7 @@ Pola yang diadopsi berasal dari aplikasi desktop/aplikasi web terbaik:
 | **Linear** | *Soft chrome* (topbar tenang), densitas navigasi, keyboard-first |
 | **Raycast** | Command palette (⌘K / Ctrl+K) sebagai tulang navigasi |
 | **Notion** | Palet netral, tipografi tenang, satu warna aksen |
-| **Vercel** | Topbar translusen (glass) + border halus |
+| **Topbar glass (umum di aplikasi web modern)** | Topbar translusen (glass) + border halus |
 | **Apple HIG** | Focus ring konsisten, motion halus, dukungan `prefers-reduced-motion` |
 
 ## Yang diimplementasikan

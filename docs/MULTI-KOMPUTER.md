@@ -33,7 +33,7 @@ Solusi yang benar: jalankan **satu server pusat**, lalu komputer lain menjadi
 
 ## 2. Menyiapkan SERVER PUSAT (satu komputer / VPS)
 
-Server pusat memegang database (MySQL/MariaDB lokal **atau** Aiven) dan seluruh
+Server pusat memegang database (MySQL/MariaDB lokal **atau** TiDB Cloud) dan seluruh
 berkas arsip. Pada komputer ini isi `.env` seperti biasa (bagian `DB_*`), lalu
 jalankan server.
 

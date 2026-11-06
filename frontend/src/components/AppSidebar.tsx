@@ -100,7 +100,7 @@ export const ITEM_BY_KEY: Record<PageKey, NavItem> = Object.fromEntries(
 ) as unknown as Record<PageKey, NavItem>;
 
 export const AppSidebar: React.FC<{
-  page: PageKey;
+  page: string;
   onNavigate: (p: PageKey) => void;
 }> = ({ page, onNavigate }) => (
   <aside className="sidebar" id="sidebar">
