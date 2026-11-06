@@ -12,6 +12,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	"github.com/google/uuid"
+
 	"arsippro/internal/config"
 	"arsippro/internal/database"
 	"arsippro/internal/models"
@@ -343,6 +345,283 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 	out["pemberkasan"] = opts(p)
 
 	return out
+}
+
+// ListPeminjaman returns archive borrowing (peminjaman) records joined with
+// the arsip detail (for the Detail modal) and the peminat (user).
+func (a *App) ListPeminjaman() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if database.DB == nil {
+		return result
+	}
+	var list []models.PeminjamanArsip
+	database.DB.Preload("Arsip").Preload("User").Order("created_at desc").Find(&list)
+	for _, p := range list {
+		row := map[string]interface{}{
+			"id":               p.ID,
+			"arsipId":          p.ArsipID,
+			"peminjamanStatus": p.Status,
+			"peminjam":         "",
+			"tanggalPinjam":    "",
+			"tanggalKembaliRencana": "",
+			"tanggalKembaliAktual": "",
+			"keperluan":        p.Keperluan,
+			"created":          p.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":          p.UpdatedAt.Format("2006-01-02 15:04:05"),
+		}
+		if p.User != nil {
+			row["peminjam"] = p.User.Name
+		}
+		if p.TanggalPinjam != nil {
+			row["tanggalPinjam"] = p.TanggalPinjam.Format("2006-01-02")
+		}
+		if p.TanggalKembaliRencana != nil {
+			row["tanggalKembaliRencana"] = p.TanggalKembaliRencana.Format("2006-01-02")
+		}
+		if p.TanggalKembaliAktual != nil {
+			row["tanggalKembaliAktual"] = p.TanggalKembaliAktual.Format("2006-01-02")
+		}
+		if p.Arsip != nil {
+			ar := p.Arsip
+			unit := "-"
+			if ar.UnitKerja != nil && ar.UnitKerja.NamaUnit != "" {
+				unit = ar.UnitKerja.NamaUnit
+			}
+			kategori := "Umum"
+			if ar.JenisArsipRel != nil && ar.JenisArsipRel.NamaJenis != "" {
+				kategori = ar.JenisArsipRel.NamaJenis
+			}
+			tanggal := ""
+			if ar.TanggalDibuat != nil {
+				tanggal = ar.TanggalDibuat.Format("2006-01-02")
+			}
+			row["nomor"] = ar.NomorArsip
+			row["nama"] = ar.NamaArsip
+			row["uraian"] = ar.Uraian
+			row["status"] = ar.StatusArsip
+			row["unit"] = unit
+			row["kategori"] = kategori
+			row["jenisName"] = kategori
+			row["tanggal"] = tanggal
+			row["jumlah"] = ar.Jumlah
+			row["satuan"] = ar.Satuan
+			row["nilai"] = ar.NilaiAnggaran
+			row["nomor_spm"] = ar.NomorSPM
+			row["berkas"] = ar.FilePath != ""
+			row["created"] = ar.CreatedAt.Format("2006-01-02 15:04:05")
+			row["updated"] = ar.UpdatedAt.Format("2006-01-02 15:04:05")
+		}
+		result = append(result, row)
+	}
+	return result
+}
+
+// ListPemberkasan returns archive berkas (pemberkasan) with the arsip
+// aggregates and the representative arsip fields for the Detail modal.
+func (a *App) ListPemberkasan() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if database.DB == nil {
+		return result
+	}
+	var berkas []models.Pemberkasan
+	database.DB.Preload("Arsip").Order("tahun asc, nama_pemberkasan asc").Find(&berkas)
+	for _, b := range berkas {
+		row := map[string]interface{}{
+			"id":            b.ID,
+			"kodeBerkas":   b.KodeBerkas,
+			"namaPemberkasan": b.NamaPemberkasan,
+			"tahun":        b.Tahun,
+			"statusBerkas": b.StatusBerkas,
+			"unitKerjaId": derefStr(b.UnitKerjaID),
+			"created":      b.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":      b.UpdatedAt.Format("2006-01-02 15:04:05"),
+		}
+		if b.UnitKerja != nil {
+			row["unitKerja"] = b.UnitKerja.NamaUnit
+		}
+		if len(b.Arsip) > 0 {
+			ar := b.Arsip[0]
+			unit := "-"
+			if ar.UnitKerja != nil && ar.UnitKerja.NamaUnit != "" {
+				unit = ar.UnitKerja.NamaUnit
+			}
+			kategori := "Umum"
+			if ar.JenisArsipRel != nil && ar.JenisArsipRel.NamaJenis != "" {
+				kategori = ar.JenisArsipRel.NamaJenis
+			}
+			tanggal := ""
+			if ar.TanggalDibuat != nil {
+				tanggal = ar.TanggalDibuat.Format("2006-01-02")
+			}
+			row["arsipId"] = ar.ID
+			row["nomor"] = ar.NomorArsip
+			row["nama"] = ar.NamaArsip
+			row["uraian"] = ar.Uraian
+			row["status"] = ar.StatusArsip
+			row["unit"] = unit
+			row["kategori"] = kategori
+			row["jenisName"] = kategori
+			row["tanggal"] = tanggal
+			row["jumlah"] = ar.Jumlah
+			row["satuan"] = ar.Satuan
+			row["nilai"] = ar.NilaiAnggaran
+			row["nomor_spm"] = ar.NomorSPM
+			row["berkas"] = ar.FilePath != ""
+			row["created"] = ar.CreatedAt.Format("2006-01-02 15:04:05")
+			row["updated"] = ar.UpdatedAt.Format("2006-01-02 15:04:05")
+		}
+		row["arsipCount"] = len(b.Arsip)
+		result = append(result, row)
+	}
+	return result
+}
+
+// ListPemusnahan returns destruction (pemusnahan) requests joined with arsip.
+func (a *App) ListPemusnahan() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if database.DB == nil {
+		return result
+	}
+	var list []models.PemusnahanArsip
+	database.DB.Preload("Arsip").Preload("UserPengaju").Order("created_at desc").Find(&list)
+	for _, p := range list {
+	 row := map[string]interface{}{
+			"id":                 p.ID,
+			"arsipId":            p.ArsipID,
+			"status":             p.Status,
+			"namaKegiatan":      p.NamaKegiatan,
+			"tanggalPelaksanaan": "",
+			"alasanPengajuan":   p.AlasanPengajuan,
+			"keteranganApprove": p.KeteranganApprove,
+			"keterangan":        p.Keterangan,
+			"userPengaju":       "",
+			"tanggalPengajuan":  "",
+			"isAuto":             p.IsAuto,
+			"created":            p.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":            p.UpdatedAt.Format("2006-01-02 15:04:05"),
+		}
+		if p.UserPengaju != nil {
+			row["userPengaju"] = p.UserPengaju.Name
+		}
+		if p.TanggalPelaksanaan != nil {
+			row["tanggalPelaksanaan"] = p.TanggalPelaksanaan.Format("2006-01-02")
+		}
+		if p.TanggalPengajuan != nil {
+			row["tanggalPengajuan"] = p.TanggalPengajuan.Format("2006-01-02")
+		}
+		if p.Arsip != nil {
+			ar := p.Arsip
+			unit := "-"
+			if ar.UnitKerja != nil && ar.UnitKerja.NamaUnit != "" {
+				unit = ar.UnitKerja.NamaUnit
+			}
+			kategori := "Umum"
+			if ar.JenisArsipRel != nil && ar.JenisArsipRel.NamaJenis != "" {
+				kategori = ar.JenisArsipRel.NamaJenis
+			}
+			tanggal := ""
+			if ar.TanggalDibuat != nil {
+				tanggal = ar.TanggalDibuat.Format("2006-01-02")
+			}
+			row["nomor"] = ar.NomorArsip
+			row["nama"] = ar.NamaArsip
+			row["uraian"] = ar.Uraian
+			row["status"] = ar.StatusArsip
+			row["unit"] = unit
+			row["kategori"] = kategori
+			row["jenisName"] = kategori
+			row["tanggal"] = tanggal
+			row["jumlah"] = ar.Jumlah
+			row["satuan"] = ar.Satuan
+			row["nilai"] = ar.NilaiAnggaran
+			row["nomor_spm"] = ar.NomorSPM
+			row["berkas"] = ar.FilePath != ""
+			row["created"] = ar.CreatedAt.Format("2006-01-02 15:04:05")
+			row["updated"] = ar.UpdatedAt.Format("2006-01-02 15:04:05")
+		}
+		result = append(result, row)
+	}
+	return result
+}
+
+// ListActivityLogs returns recent activity log entries joined with the actor.
+func (a *App) ListActivityLogs() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if database.DB == nil {
+		return result
+	}
+	var logs []models.ActivityLog
+	database.DB.Preload("User").Order("created_at desc").Limit(200).Find(&logs)
+	for _, lg := range logs {
+		userName := "Sistem"
+		if lg.User != nil && lg.User.Name != "" {
+			userName = lg.User.Name
+		}
+		result = append(result, map[string]interface{}{
+			"id":          lg.ID,
+			"userId":      lg.UserID,
+			"userName":    userName,
+			"action":      lg.Action,
+			"description": lg.Description,
+			"modelType":   lg.ModelType,
+			"modelId":     lg.ModelID,
+			"createdAt":   lg.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	return result
+}
+
+// ListUsers returns system user accounts for master-data pages.
+func (a *App) ListUsers() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if database.DB == nil {
+		return result
+	}
+	var users []models.User
+	database.DB.Order("created_at desc").Find(&users)
+	for _, u := range users {
+		result = append(result, map[string]interface{}{
+			"id":        u.ID,
+			"username": u.Username,
+			"name":      u.Name,
+			"role":      "",
+			"unitKerja": "",
+			"isActive":  u.IsActive,
+			"created":   u.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":   u.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+		if u.Role != nil {
+			result[len(result)-1]["role"] = u.Role.Name
+		}
+		if u.UnitKerja != nil {
+			result[len(result)-1]["unitKerja"] = u.UnitKerja.NamaUnit
+		}
+	}
+	return result
+}
+
+// CreatePeminjaman creates a new archive borrowing (peminjaman) request.
+func (a *App) CreatePeminjaman(arsipId, userId, keperluan, tanggalPinjam, tanggalKembaliRencana string) (map[string]interface{}, error) {
+	var pinjam, kembali *time.Time
+	if t, err := time.Parse("2006-01-02", tanggalPinjam); err == nil {
+		pinjam = &t
+	}
+	if t, err := time.Parse("2006-01-02", tanggalKembaliRencana); err == nil {
+		kembali = &t
+	}
+	p := models.PeminjamanArsip{
+		ID:                     uuid.NewString(),
+		ArsipID:                arsipId,
+		UserID:                 userId,
+		Keperluan:              keperluan,
+		Status:                 "pending",
+		TanggalPinjam:          pinjam,
+		TanggalKembaliRencana: kembali,
+	}
+	if err := database.DB.Create(&p).Error; err != nil {
+		return map[string]interface{}{"error": err.Error()}, err
+	}
+	return map[string]interface{}{"id": p.ID, "status": p.Status}, nil
 }
 
 // GetDashboardExtras returns the remaining dashboard data:

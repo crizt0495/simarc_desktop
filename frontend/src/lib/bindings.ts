@@ -7,6 +7,12 @@ import {
   PingBackend,
   ListArsip,
   ListArsipDetail,
+  ListPeminjaman,
+  ListPemberkasan,
+  ListPemusnahan,
+  ListActivityLogs,
+  ListUsers,
+  CreatePeminjaman,
   GetDashboardStats,
   GetDashboardExtras,
   GetMasterOptions,
@@ -35,6 +41,30 @@ export async function listArsip(): Promise<any[]> {
 
 export async function listArsipDetail(): Promise<any[]> {
   return (await ListArsipDetail()) as unknown as any[];
+}
+
+export async function listPeminjaman(): Promise<any[]> {
+  return (await ListPeminjaman()) as unknown as any[];
+}
+
+export async function listPemberkasan(): Promise<any[]> {
+  return (await ListPemberkasan()) as unknown as any[];
+}
+
+export async function listPemusnahan(): Promise<any[]> {
+  return (await ListPemusnahan()) as unknown as any[];
+}
+
+export async function listActivityLogs(): Promise<any[]> {
+  return (await ListActivityLogs()) as unknown as any[];
+}
+
+export async function listUsers(): Promise<any[]> {
+  return (await ListUsers()) as unknown as any[];
+}
+
+export async function createPeminjaman(arsipId: string, userId: string, keperluan: string, tanggalPinjam: string, tanggalKembaliRencana: string): Promise<Record<string, any>> {
+  return (await CreatePeminjaman(arsipId, userId, keperluan, tanggalPinjam, tanggalKembaliRencana)) as unknown as Record<string, any>;
 }
 
 export async function getDashboardStats(): Promise<Record<string, any>> {

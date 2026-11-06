@@ -9,6 +9,15 @@ import { ArsipPage } from './pages/ArsipPage';
 import { StaticPage } from './pages/StaticPage';
 import { PublicSearchPage } from './pages/PublicSearchPage';
 import { LoginPage } from './pages/LoginPage';
+import { PeminjamanPage } from './pages/PeminjamanPage';
+import { PemberkasanPage } from './pages/PemberkasanPage';
+import { PemusnahanPage } from './pages/PemusnahanPage';
+import { LogActivityPage } from './pages/LogActivityPage';
+import { UsersPage } from './pages/UsersPage';
+import { UnitKerjaPage } from './pages/UnitKerjaPage';
+import { LokasiArsipPage } from './pages/LokasiArsipPage';
+import { KodeKlasifikasiPage } from './pages/KodeKlasifikasiPage';
+import { JenisArsipPage } from './pages/JenisArsipPage';
 import { ITEM_BY_KEY, type PageKey } from './components/AppSidebar';
 import { getProfile, getStatus, pingBackend, type Status, type Profile } from './lib/bindings';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -50,6 +59,26 @@ const App: React.FC = () => {
         return <Dashboard status={status} userName={profile?.name ?? 'Pengguna'} />;
       case 'arsip':
         return <ArsipPage />;
+      case 'peminjaman':
+        return <PeminjamanPage />;
+      case 'peminjaman-create':
+        return <PeminjamanPage mode="create" />;
+      case 'pemberkasan':
+        return <PemberkasanPage />;
+      case 'pemusnahan':
+        return <PemusnahanPage />;
+      case 'log-aktivitas':
+        return <LogActivityPage />;
+      case 'users':
+        return <UsersPage />;
+      case 'unit-kerja':
+        return <UnitKerjaPage />;
+      case 'lokasi-arsip':
+        return <LokasiArsipPage />;
+      case 'kode-klasifikasi':
+        return <KodeKlasifikasiPage />;
+      case 'jenis-arsip':
+        return <JenisArsipPage />;
       case 'public-search':
         return (
           <PublicSearchPage
