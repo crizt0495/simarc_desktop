@@ -9,6 +9,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getMasterOptions, listArsipDetail } from '../lib/bindings';
 import PublicHeader from '../components/PublicHeader';
+import { ArsipDetailModal } from '../components/ArsipDetailModal';
 
 /* ── warna badge status arsip ── */
 const statusBadge = (s: unknown): string => {
@@ -30,6 +31,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
   const [opts, setOpts] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<any | null>(null);
 
   /* ── draft filter (user input) ── */
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -125,6 +127,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
   };
 
   return (
+    <>
     <div className="container-fluid py-3 py-xl-4">
       <div className="card">
         {/* HEADER LANDING — judul kiri, tombol Login pojok kanan atas */}
@@ -246,6 +249,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                     <th className="text-center" style={{ width: 96 }}>Tanggal</th>
                     <th className="text-center" style={{ width: 60 }}>Berkas</th>
                     <th className="text-center" style={{ width: 110 }}>Status</th>
+                    <th className="text-center" style={{ width: 90 }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -266,6 +270,11 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                       </td>
                       <td className="text-center">
                         <span className={`badge ${statusBadge(ar.status)}`}>{ar.status ? ar.status.replace(/_/g, ' ') : '—'}</span>
+                      </td>
+                      <td className="text-center">
+                        <button type="button" className="btn btn-sm btn-outline-primary rounded-pill px-2" onClick={() => setDetail(ar)} title="Lihat detail">
+                          <i className="bi bi-eye me-1"></i>Detail
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -301,6 +310,8 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
         )}
       </div>
     </div>
+    <ArsipDetailModal detail={detail} onClose={() => setDetail(null)} />
+  </>
   );
 };
 
