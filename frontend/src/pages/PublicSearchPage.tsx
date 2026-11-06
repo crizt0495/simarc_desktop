@@ -54,6 +54,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
         setRows(Array.isArray(r) ? r : []);
         setOpts(o || {});
         setError(null);
+
         // Jika DB belum siap, r kosong — jadwalkan retry (kecuali percobaan terakhir).
         if ((!Array.isArray(r) || r.length === 0) && attempt < maxAttempts) {
           setTimeout(load, Math.min(300 * attempt, 1500));
