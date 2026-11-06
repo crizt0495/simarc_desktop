@@ -343,7 +343,7 @@ export const Dashboard: React.FC<{ status: Status | null; userName: string }> = 
           <button type="button" className="btn btn-sm btn-outline-primary rounded-pill px-3" onClick={() => undefined}>Lihat Semua <i className="bi bi-arrow-right ms-1"></i></button>
         </div>
         <div className="table-wrap table-responsive">
-          <table className="table datatable" id="activityTable">
+          <table className="table table-hover table-sm align-middle datatable" id="activityTable">
             <thead>
               <tr>
                 <th>Pengguna</th>

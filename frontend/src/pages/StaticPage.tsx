@@ -53,14 +53,6 @@ export const MODULE_META: Partial<Record<PageKey, ModuleMeta>> = {
   sinkronisasi: { title: 'Sinkronisasi', sub: 'Status database lokal dan replikasi ke server pusat', icon: 'bi-arrow-left-right' },
 };
 
-const EMPTY_STATE = (
-  <div className="empty-state">
-    <i className="bi bi-inbox empty-icon"></i>
-    <p className="empty-title">Belum ada data</p>
-    <p className="empty-desc">Data modul ini akan tampil di sini setelah backend modul terhubung</p>
-  </div>
-);
-
 export const StaticPage: React.FC<{ page: PageKey }> = ({ page }) => {
   const meta = MODULE_META[page] ?? { title: 'SIMARC', sub: '', icon: 'bi-archive' };
 
@@ -99,11 +91,11 @@ export const StaticPage: React.FC<{ page: PageKey }> = ({ page }) => {
       <div className="card border-0 shadow-sm fade-up-d1" style={{ border: '1px solid var(--border) !important', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
         <div className="card-body" style={{ padding: '1.25rem' }}>
           <div className="table-responsive">
-            <table className="table premium-table mb-0">
-              <thead><tr><th style={{ display: 'none' }}></th></tr></thead>
-              <tbody style={{ display: 'none' }}></tbody>
-            </table>
-            {EMPTY_STATE}
+            <div className="empty-state py-4">
+              <i className="bi bi-inbox empty-icon"></i>
+              <p className="empty-title">Belum ada data</p>
+              <p className="empty-desc">Data modul ini akan tampil di sini setelah backend modul terhubung</p>
+            </div>
           </div>
         </div>
       </div>

@@ -400,8 +400,8 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
         ) : (
           <div id="viewTable" className="view-container">
             <div className="table-responsive">
-              <table className="table table-premium datatable">
-                <thead>
+              <table className="table table-hover table-premium datatable">
+                <thead className="sticky-top">
                   <tr>
                     <th style={{ width: 36 }} className="text-center"><div className="form-check mb-0"><input type="checkbox" className="form-check-input" id="selectAllCheckboxTable" title="Pilih Semua" checked={pageRows.length > 0 && selected.size === pageRows.length} onChange={toggleAll} /></div></th>
                     <th style={{ width: 44 }} className="text-center">#</th>
