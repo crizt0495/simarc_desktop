@@ -7,6 +7,7 @@ import { AppLayout } from './components/AppLayout';
 import { Dashboard } from './pages/Dashboard';
 import { ArsipPage } from './pages/ArsipPage';
 import { StaticPage } from './pages/StaticPage';
+import { PublicSearchPage } from './pages/PublicSearchPage';
 import { ITEM_BY_KEY, type PageKey } from './components/AppSidebar';
 import { getProfile, getStatus, pingBackend, type Status } from './lib/bindings';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -45,6 +46,8 @@ const App: React.FC = () => {
         return <Dashboard status={status} userName={profile?.name ?? 'Pengguna'} />;
       case 'arsip':
         return <ArsipPage />;
+      case 'public-search':
+        return <PublicSearchPage />;
       default:
         return <StaticPage page={page} />;
     }

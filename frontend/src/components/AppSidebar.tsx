@@ -7,6 +7,7 @@ import React from 'react';
 
 export type PageKey =
   | 'dashboard' | 'advanced' | 'arsip' | 'pemberkasan' | 'pemindahan'
+  | 'public-search'
   | 'pemusnahan' | 'peminjaman-create' | 'peminjaman' | 'unit-kerja'
   | 'lokasi-arsip' | 'users' | 'kode-klasifikasi' | 'jenis-arsip'
   | 'search' | 'laporan' | 'laporan-arsip' | 'laporan-digital'
@@ -27,6 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
   // ── Dashboard ──
   { key: 'dashboard', label: 'Dashboard Utama', icon: 'bi-speedometer2', ident: 'dashboard' },
   { key: 'advanced', label: 'Analitik Lanjutan', icon: 'bi-cpu', ident: 'advanced/dashboard' },
+  { key: 'public-search', label: 'Cari Arsip (Publik)', icon: 'bi-magnifying-glass-dot', ident: 'public-search' },
 
   // ── Manajemen Arsip ──
   { key: 'arsip', label: 'Daftar Arsip', icon: 'bi-file-earmark-text', ident: 'arsip' },
