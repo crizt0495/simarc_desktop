@@ -73,3 +73,6 @@ simarc-install.txt
 !/*.deb
 !dist/SIMARC.exe
 !dist/simarc_*.deb
+
+# Wails windows installer build artifacts
+build/windows/
