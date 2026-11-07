@@ -19,7 +19,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const [opts, setOpts] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const view: 'card' = 'card';
+  const view: 'table' = 'table';
   const [filterOpen, setFilterOpen] = useState(true);
   const [applied, setApplied] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});
