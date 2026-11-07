@@ -19,7 +19,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const [opts, setOpts] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<'card' | 'table'>('card');
+  const view: 'card' = 'card';
   const [filterOpen, setFilterOpen] = useState(true);
   const [applied, setApplied] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -318,14 +318,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
       {/* TOOLS BAR: View Toggle + Export */}
       <div className="d-flex justify-content-between align-items-center mt-3 mb-1 flex-wrap gap-3 fade-up-d2">
         <div className="d-flex align-items-center gap-3">
-          <div className="view-toggle-group">
-            <button type="button" className={`view-toggle-btn${view === 'card' ? ' active' : ''}`} onClick={() => setView('card')}>
-              <i className="bi bi-grid-3x3-gap-fill"></i> <span>Card</span>
-            </button>
-            <button type="button" className={`view-toggle-btn${view === 'table' ? ' active' : ''}`} onClick={() => setView('table')}>
-              <i className="bi bi-table"></i> <span>Tabel</span>
-            </button>
-          </div>
+          {/* Grid (card) view saja — tabel dinonaktifkan, gunakan tampilan grid */}
           <button type="button" className="btn btn-sm btn-outline-primary rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => push('success', 'Tautan arsip disalin ke clipboard')}><i className="bi bi-link-45deg"></i><span className="d-none d-sm-inline ms-1">Copy URL</span></button>
         </div>
         <div className="d-flex gap-2">

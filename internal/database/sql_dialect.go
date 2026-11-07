@@ -24,16 +24,18 @@ var (
 
 // AdaptSQL menyesuaikan kueri agar berjalan di mesin database aktif.
 func AdaptSQL(q string) string {
-	if !IsSQLite() {
+	if IsSQLite() {
+		q = reDateAdd.ReplaceAllString(q, `date($1, '+' || ($2) || ' years')`)
+		q = reCurDate.ReplaceAllString(q, `date('now','localtime')`)
+		q = reDateFormat.ReplaceAllString(q, `strftime('$2', $1)`)
+		q = reToChar.ReplaceAllString(q, `strftime('%Y-%m', $1)`)
+		q = reExtractYear.ReplaceAllString(q, `CAST(strftime('%Y', $1) AS INTEGER)`)
+		q = reCastUnsigned.ReplaceAllString(q, `AS INTEGER`)
+		q = reVersion.ReplaceAllString(q, `sqlite_version()`)
 		return q
 	}
-	q = reDateAdd.ReplaceAllString(q, `date($1, '+' || ($2) || ' years')`)
-	q = reCurDate.ReplaceAllString(q, `date('now','localtime')`)
-	q = reDateFormat.ReplaceAllString(q, `strftime('$2', $1)`)
-	q = reToChar.ReplaceAllString(q, `strftime('%Y-%m', $1)`)
-	q = reExtractYear.ReplaceAllString(q, `CAST(strftime('%Y', $1) AS INTEGER)`)
-	q = reCastUnsigned.ReplaceAllString(q, `AS INTEGER`)
-	q = reVersion.ReplaceAllString(q, `sqlite_version()`)
+	// MySQL / TiDB: TO_CHAR tidak ada — MySQL memakai DATE_FORMAT.
+	q = reToChar.ReplaceAllString(q, `DATE_FORMAT($1, '%Y-%m')`)
 	return q
 }
 

@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"time"
 
 	"arsippro/internal/models"
 
@@ -11,7 +12,8 @@ import (
 
 // Seed creates default data if tables are empty
 func Seed() {
-	seedRoles()
+	seedArsip()
+		seedRoles()
 	seedAdmin()
 	seedLokasiRakA()
 }
@@ -27,7 +29,8 @@ func SeedIfNeeded() {
 		seedLokasiRakA()
 		return
 	}
-	seedRoles()
+	seedArsip()
+		seedRoles()
 	seedAdmin()
 	seedLokasiRakA()
 }
@@ -130,3 +133,107 @@ func upsertLokasi(namaLokasi, deskripsi string) {
 		log.Printf("[SEED] Lokasi arsip \"%s\" diperbarui dengan deskripsi \"%s\"", namaLokasi, deskripsi)
 	}
 }
+
+func strPtr(s string) *string { return &s }
+
+func float64Val(v float64) *float64 { return &v }
+
+func seedArsip() {
+	var count int64
+	DB.Model(&models.Arsip{}).Count(&count)
+	if count > 0 {
+		return
+	}
+
+	log.Println("Seeding default arsip data...")
+
+	// Get the default lokasi
+	var lokasi models.LokasiArsip
+	DB.Where("nama_lokasi = ?", "Record Center").First(&lokasi)
+
+	// Get the admin role
+	var adminRole models.Role
+	DB.Where("name = ?", "Admin").First(&adminRole)
+
+	// Get a user
+	var adminUser models.User
+	DB.Where("username = ?", "admin").First(&adminUser)
+
+	t := time.Now().Local()
+
+	arsipData := []models.Arsip{
+		{
+			ID:                uuid.New().String(),
+			NomorArsip:        "SPJ-001",
+			NamaArsip:         "Surat Perintah Jawatan 001",
+			Uraian:            "Surat perintah jabatan nomor 001 tahun 2024 dari Sekretaris Daerah",
+			StatusArsip:       "aktif",
+			KodeKlasifikasiID: "kls-001",
+			UnitKerjaID:       "unit-001",
+			LokasiArsipID:     &lokasi.ID,
+			TanggalDibuat:     &t,
+			NilaiAnggaran:     float64Val(5000000),
+			Nominal:           float64Val(5000000),
+			Jumlah:            1,
+			Satuan:            "Berkas",
+			StatusReview:      false,
+		},
+		{
+			ID:                uuid.New().String(),
+			NomorArsip:        "SPJ-002",
+			NamaArsip:         "Surat Perintah Jawatan 002",
+			Uraian:            "Surat perintah jabatan nomor 002 tahun 2024 dari Sekretaris Daerah",
+			StatusArsip:       "inaktif",
+			KodeKlasifikasiID: "kls-002",
+			UnitKerjaID:       "unit-002",
+			LokasiArsipID:     &lokasi.ID,
+			TanggalDibuat:     &t,
+			NilaiAnggaran:     float64Val(3000000),
+			Nominal:           float64Val(3000000),
+			Jumlah:            1,
+			Satuan:            "Berkas",
+			StatusReview:      false,
+		},
+		{
+			ID:                uuid.New().String(),
+			NomorArsip:        "SPJ-003",
+			NamaArsip:         "Surat Perintah Jawatan 003",
+			Uraian:            "Surat perintah jabatan nomor 003 tahun 2024 dari Sekretaris Daerah",
+			StatusArsip:       "siap_penyusutan",
+			KodeKlasifikasiID: "kls-003",
+			UnitKerjaID:       "unit-001",
+			LokasiArsipID:     &lokasi.ID,
+			TanggalDibuat:     &t,
+			NilaiAnggaran:     float64Val(7500000),
+			Nominal:           float64Val(7500000),
+			Jumlah:            1,
+			Satuan:            "Berkas",
+			StatusReview:      false,
+		},
+		{
+			ID:                uuid.New().String(),
+			NomorArsip:        "SPJ-004",
+			NamaArsip:         "Surat Perintah Jawatan 004",
+			Uraian:            "Surat perintah jabatan nomor 004 tahun 2024 dari Sekretaris Daerah",
+			StatusArsip:       "aktif",
+			KodeKlasifikasiID: "kls-001",
+			UnitKerjaID:       "unit-002",
+			LokasiArsipID:     &lokasi.ID,
+			TanggalDibuat:     &t,
+			NilaiAnggaran:     float64Val(2000000),
+			Nominal:           float64Val(2000000),
+			Jumlah:            1,
+			Satuan:            "Berkas",
+			StatusReview:      false,
+		},
+	}
+
+	for _, arsip := range arsipData {
+		DB.Create(&arsip)
+		log.Printf("[SEED] Arsip dibuat: %s - %s", arsip.NomorArsip, arsip.NamaArsip)
+	}
+}
+
+// SeedIfNeeded seeds default data only when the database is fresh (no users
+// yet). Unlike Seed(), it never resets existing passwords — this is used when
+// switching databases at runtime so the admin password is never overwritten.
