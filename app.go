@@ -98,7 +98,7 @@ func (a *App) ListArsip() []map[string]interface{} {
 		return []map[string]interface{}{}
 	}
 	var arsip []models.Arsip
-	database.DB.Order("created_at desc").Limit(200).Find(&arsip)
+	database.DB.Order("created_at desc").Limit(500).Find(&arsip)
 	result := make([]map[string]interface{}, len(arsip))
 	for i, ar := range arsip {
 		result[i] = map[string]interface{}{
