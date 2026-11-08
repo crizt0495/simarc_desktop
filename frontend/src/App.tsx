@@ -26,7 +26,7 @@ import { RolesPage } from './pages/RolesPage';
 import { StatistikPage } from './pages/StatistikPage';
 import { SearchPage } from './pages/SearchPage';
 import { ITEM_BY_KEY, type PageKey } from './components/AppSidebar';
-import { getProfile, getStatus, pingBackend, type Status, type Profile } from './lib/bindings';
+import { getProfile, getStatus, pingBackend, logout, type Status, type Profile } from './lib/bindings';
 import ErrorBoundary from './components/ErrorBoundary';
 
 type AppPage = PageKey | 'login';
@@ -60,10 +60,16 @@ const App: React.FC = () => {
     document.title = `${ITEM_BY_KEY[page as PageKey]?.label ?? 'SIMARC'} — SIMARC-Arsip Record Center`;
   }, [page]);
 
+  const handleLogout = async () => {
+    try { await logout(); } catch { /* abaikan error logout */ }
+    setProfile(null);
+    setPage('public-search');
+  };
+
   const renderBody = () => {
     switch (page) {
       case 'dashboard':
-        return <Dashboard status={status} userName={profile?.name ?? 'Pengguna'} />;
+        return <Dashboard status={status} userName={profile?.name ?? 'Pengguna'} onLogout={handleLogout} />;
       case 'arsip':
         return <ArsipPage />;
       case 'peminjaman':
@@ -104,7 +110,9 @@ const App: React.FC = () => {
         return (
           <PublicSearchPage
             onLogin={() => setPage('login')}
-            sessionName={null}
+            sessionName={profile?.name ?? null}
+            onEnterDashboard={() => setPage('dashboard')}
+            onLogout={handleLogout}
           />
         );
       case 'login':

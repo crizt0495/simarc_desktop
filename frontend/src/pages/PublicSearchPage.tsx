@@ -24,9 +24,11 @@ const statusBadge = (s: unknown): string => {
 export interface PublicSearchPageProps {
   onLogin?: () => void;
   sessionName?: string | null;
+  onEnterDashboard?: () => void;
+  onLogout?: () => void;
 }
 
-export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, sessionName }) => {
+export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, sessionName, onEnterDashboard, onLogout }) => {
   const [rows, setRows] = useState<any[]>([]);
   const [opts, setOpts] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
@@ -135,7 +137,8 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
         <PublicHeader
           onLogin={() => onLogin?.()}
           sessionName={sessionName ?? null}
-          onEnterDashboard={onLogin}
+          onEnterDashboard={onEnterDashboard ?? onLogin}
+          onLogout={onLogout}
         />
 
         {/* SEARCH FORM */}

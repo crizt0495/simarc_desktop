@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getDashboardExtras, getDashboardStats, listArsipDetail, type Status } from '../lib/bindings';
 import { SimarcModal, SmModal } from '../lib/modal';
 
-export const Dashboard: React.FC<{ status: Status | null; userName: string }> = ({ status, userName }) => {
+export const Dashboard: React.FC<{ status: Status | null; userName: string; onLogout?: () => void }> = ({ status, userName, onLogout }) => {
   const [stats, setStats] = useState<Record<string, any> | null>(null);
   const [extras, setExtras] = useState<Record<string, any> | null>(null);
   const [rows, setRows] = useState<any[]>([]);
@@ -147,6 +147,11 @@ export const Dashboard: React.FC<{ status: Status | null; userName: string }> = 
               ? <React.Fragment><span className="spinner"></span> Memperbarui...</React.Fragment>
               : <React.Fragment><i className="bi bi-arrow-clockwise"></i><span className="d-none d-sm-inline"> Perbarui Data</span></React.Fragment>}
           </button>
+          {onLogout ? (
+            <button className="btn btn-outline-danger rounded-pill px-3" onClick={onLogout} title="Keluar dari SIMARC">
+              <i className="bi bi-box-arrow-right me-1"></i>Keluar
+            </button>
+          ) : null}
         </div>
       </div>
 

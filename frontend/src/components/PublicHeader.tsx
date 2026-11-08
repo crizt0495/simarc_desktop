@@ -8,12 +8,14 @@ export interface PublicHeaderProps {
   onLogin: () => void;
   sessionName?: string | null;
   onEnterDashboard?: () => void;
+  onLogout?: () => void;
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({
   onLogin,
   sessionName,
   onEnterDashboard,
+  onLogout,
 }) => (
   <div className="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white">
     <div className="d-flex align-items-center gap-2">
@@ -41,6 +43,16 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
         >
           <i className="bi bi-speedometer2 me-1"></i>Dashboard
         </button>
+        {onLogout ? (
+          <button
+            type="button"
+            className="btn btn-outline-danger btn-sm rounded-pill px-3"
+            onClick={onLogout}
+            title="Keluar dari SIMARC"
+          >
+            <i className="bi bi-box-arrow-right me-1"></i>Keluar
+          </button>
+        ) : null}
       </div>
     ) : (
       <button

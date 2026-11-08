@@ -56,6 +56,10 @@ func (a *App) startup(ctx context.Context) {
 
 	// Seed default data
 	database.SeedIfNeeded()
+
+	// Start automatic retention / disposal background job
+	// (recalculate retention dates + auto-create pemusnahan for expired archives).
+	services.StartAutoDisposal()
 }
 
 // shutdown closes the database connection.

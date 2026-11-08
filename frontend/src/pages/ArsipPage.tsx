@@ -6,7 +6,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import './arsip.css';
-import { getMasterOptions, listArsipDetail, type Status } from '../lib/bindings';
+import { getMasterOptions, listArsipDetail, createArsip, type Status } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 
@@ -27,6 +27,15 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const { push } = useToast();
   const [ready, setReady] = useState(false);
   const [detail, setDetail] = useState<any | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [fNomor, setFNomor] = useState('');
+  const [fNama, setFNama] = useState('');
+  const [fUraian, setFUraian] = useState('');
+  const [fStatus, setFStatus] = useState('aktif');
+  const [fKlas, setFKlas] = useState('');
+  const [fUnit, setFUnit] = useState('');
+  const [fLokasi, setFLokasi] = useState('');
+  const [fNilai, setFNilai] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -113,6 +122,18 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
     return arr.slice(0, 5);
   }, [totalPages, curPage]);
 
+  const submitArsip = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await createArsip(fNomor, fNama, fUraian, fStatus, fKlas, fUnit, fLokasi, String(fNilai || 0));
+    if (res && (res as any).error) {
+      push('danger', String((res as any).error));
+      return;
+    }
+    setAddOpen(false);
+    setFNomor(''); setFNama(''); setFUraian(''); setFStatus('aktif'); setFKlas(''); setFUnit(''); setFLokasi(''); setFNilai('');
+    await load();
+  };
+
   /* ── Kartu & baris aksi (btn-crud) ── */
   const crudActions = (a: any) => (
     <React.Fragment>
@@ -141,7 +162,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => push('info', 'Modul import menyusul')}>
               <i className="bi bi-file-earmark-excel me-1"></i>Import
             </button>
-            <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => push('info', 'Modul tambah arsip menyusul')}>
+            <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => setAddOpen(true)}>
               <i className="bi bi-plus-lg"></i><span className="d-none d-sm-inline ms-1">Tambah</span>
             </button>
           </div>
@@ -464,6 +485,74 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
         )}
       </div>
     </div>
+
+    {/* MODAL TAMBAH ARSIP */}
+    {addOpen ? (
+      <div className="modal fade show" style={{ display: 'block' }} tabIndex={-1} role="dialog" aria-modal="true">
+        <div className="modal-dialog modal-lg modal-dialog-centered" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title"><i className="bi bi-plus-lg me-2"></i>Tambah Arsip</h5>
+              <button type="button" className="btn-close" aria-label="Close" onClick={() => setAddOpen(false)}></button>
+            </div>
+            <form onSubmit={submitArsip}>
+              <div className="modal-body">
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Nomor Arsip *</label>
+                    <input type="text" className="form-control" value={fNomor} onChange={(e) => setFNomor(e.target.value)} required />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Nama Arsip</label>
+                    <input type="text" className="form-control" value={fNama} onChange={(e) => setFNama(e.target.value)} />
+                  </div>
+                  <div className="col-md-12">
+                    <label className="form-label">Uraian / Deskripsi</label>
+                    <textarea className="form-control" rows={2} value={fUraian} onChange={(e) => setFUraian(e.target.value)}></textarea>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Status</label>
+                    <select className="form-select" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
+                      {['aktif', 'diberkaskan', 'inaktif', 'siap_penyusutan', 'musnah'].map((x) => (<option key={x} value={x}>{x.replace(/_/g, ' ')}</option>))}
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Kode Klasifikasi</label>
+                    <select className="form-select" value={fKlas} onChange={(e) => setFKlas(e.target.value)}>
+                      <option value="">— Pilih Klasifikasi —</option>
+                      {(opts.kodeKlasifikasi ?? []).map((o: any) => (<option key={o.id} value={o.id}>{o.name}</option>))}
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Unit Kerja</label>
+                    <select className="form-select" value={fUnit} onChange={(e) => setFUnit(e.target.value)}>
+                      <option value="">— Pilih Unit Kerja —</option>
+                      {(opts.unitKerja ?? []).map((o: any) => (<option key={o.id} value={o.id}>{o.name}</option>))}
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Lokasi Arsip</label>
+                    <select className="form-select" value={fLokasi} onChange={(e) => setFLokasi(e.target.value)}>
+                      <option value="">— Pilih Lokasi Arsip —</option>
+                      {(opts.lokasiArsip ?? []).map((o: any) => (<option key={o.id} value={o.id}>{o.name}</option>))}
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Nilai Anggaran</label>
+                    <input type="number" className="form-control" value={fNilai} onChange={(e) => setFNilai(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-light rounded-pill px-3" onClick={() => setAddOpen(false)}>Batal</button>
+                <button type="submit" className="btn btn-primary rounded-pill px-3"><i className="bi bi-check-lg me-1"></i>Simpan Arsip</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div className="modal-backdrop fade show"></div>
+      </div>
+    ) : null}
 
     {/* MODAL DETAIL ARSIP */}
     <ArsipDetailModal detail={detail} onClose={() => setDetail(null)} />
