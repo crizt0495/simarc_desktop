@@ -549,6 +549,7 @@ kbd {
   inset: 0;
   z-index: calc(var(--z-sidebar) - 1);
   background: rgba(11, 18, 32, 0.55);
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
@@ -2049,6 +2050,7 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   inset: 0;
   z-index: var(--z-modal);
   background: rgba(11, 18, 32, 0.55);
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
@@ -2376,6 +2378,7 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   justify-content: center;
   gap: 0.8rem;
   background: rgba(255,255,255,0.82);
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }
 [data-theme="dark"] .loading-overlay { background: rgba(11,18,32,0.82); }
