@@ -24,7 +24,8 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
         <i className="bi bi-archive-fill"></i>
       </span>
       <div>
-        <div className="h5 mb-0">SIMARC</div>
+        <div className="h5 mb-0 fw-800">SIMARC</div>
+        <div className="text-muted" style={{ fontSize: '.72rem' }}>Sistem Informasi Manajemen Arsip Record Center</div>
       </div>
     </div>
 

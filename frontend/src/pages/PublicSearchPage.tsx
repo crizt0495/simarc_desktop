@@ -192,9 +192,12 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
 
         {/* JUDUL HALAMAN */}
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-          <h2 className="h3 fw-800 mb-0">
-            <i className="bi bi-archive-fill text-primary me-2"></i>Daftar Arsip Record Center
-          </h2>
+          <div>
+            <h2 className="h3 fw-800 mb-0">
+              <i className="bi bi-archive-fill text-primary me-2"></i>Daftar Arsip Record Center
+            </h2>
+            <div className="text-muted small mt-1">Pencarian arsip keseluruhan pada Sistem Informasi Manajemen Arsip Record Center</div>
+          </div>
           <span className="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill px-3 py-2">
             <i className="bi bi-search me-1"></i>Pencarian arsip keseluruhan
           </span>
