@@ -2050,8 +2050,6 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   inset: 0;
   z-index: var(--z-modal);
   background: rgba(11, 18, 32, 0.55);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s ease, visibility 0.2s ease;
