@@ -24,8 +24,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
         <i className="bi bi-archive-fill"></i>
       </span>
       <div>
-        <div className="h5 mb-0">SIMARC — Landing Publik</div>
-        <div className="text-muted small">Cari & telusuri arsip tanpa login</div>
+        <div className="h5 mb-0">SIMARC</div>
       </div>
     </div>
 
