@@ -14,6 +14,7 @@ import {
 import { useToast } from '../lib/toast';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 import { ArsipFormModal } from '../components/ArsipFormModal';
+import SearchableSelect from '../components/SearchableSelect';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -310,42 +311,55 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
               </div>
               <div className="col-md-3">
                 <label className="form-label">Unit Kerja</label>
-                <select className="form-select form-select-sm" name="unit_kerja_id" value={draft.unit_kerja_id ?? ''} onChange={(e) => setDraft((d) => ({ ...d, unit_kerja_id: e.target.value }))}>
-                  <option value="">Semua Unit</option>
-                  {(opts.unitKerja ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <SearchableSelect
+                  options={(opts.unitKerja ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                  value={draft.unit_kerja_id ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, unit_kerja_id: v }))}
+                  placeholder="Semua Unit"
+                />
               </div>
               <div className="col-md-2">
                 <label className="form-label">Status</label>
-                <select className="form-select form-select-sm" name="status" value={draft.status ?? ''} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}>
-                  <option value="">Semua</option>
-                  <option value="aktif">Aktif</option>
-                  <option value="inaktif">Inaktif</option>
-                  <option value="siap_penyusutan">Siap Penyusutan</option>
-                  <option value="musnah">Musnah</option>
-                  <option value="permanen">Permanen</option>
-                </select>
+                <SearchableSelect
+                  options={[
+                    { value: '', label: 'Semua' },
+                    { value: 'aktif', label: 'Aktif' },
+                    { value: 'inaktif', label: 'Inaktif' },
+                    { value: 'siap_penyusutan', label: 'Siap Penyusutan' },
+                    { value: 'musnah', label: 'Musnah' },
+                    { value: 'permanen', label: 'Permanen' },
+                  ]}
+                  value={draft.status ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, status: v }))}
+                  placeholder="Semua"
+                />
               </div>
               <div className="col-md-2">
                 <label className="form-label">Klasifikasi</label>
-                <select className="form-select form-select-sm" name="kode_klasifikasi_id" value={draft.kode_klasifikasi_id ?? ''} onChange={(e) => setDraft((d) => ({ ...d, kode_klasifikasi_id: e.target.value }))}>
-                  <option value="">Semua</option>
-                  {(opts.kodeKlasifikasi ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <SearchableSelect
+                  options={(opts.kodeKlasifikasi ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                  value={draft.kode_klasifikasi_id ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, kode_klasifikasi_id: v }))}
+                  placeholder="Semua"
+                />
               </div>
               <div className="col-md-2">
                 <label className="form-label">Lokasi</label>
-                <select className="form-select form-select-sm" name="lokasi_arsip_id" value={draft.lokasi_arsip_id ?? ''} onChange={(e) => setDraft((d) => ({ ...d, lokasi_arsip_id: e.target.value }))}>
-                  <option value="">Semua</option>
-                  {(opts.lokasiArsip ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <SearchableSelect
+                  options={(opts.lokasiArsip ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                  value={draft.lokasi_arsip_id ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, lokasi_arsip_id: v }))}
+                  placeholder="Semua"
+                />
               </div>
               <div className="col-md-3">
                 <label className="form-label">Kategori Arsip</label>
-                <select className="form-select form-select-sm" name="jenis_arsip_id" value={draft.jenis_arsip_id ?? ''} onChange={(e) => setDraft((d) => ({ ...d, jenis_arsip_id: e.target.value }))}>
-                  <option value="">Semua</option>
-                  {(opts.jenisArsip ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <SearchableSelect
+                  options={(opts.jenisArsip ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                  value={draft.jenis_arsip_id ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, jenis_arsip_id: v }))}
+                  placeholder="Semua"
+                />
               </div>
               <div className="col-md-2">
                 <label className="form-label">Tgl Mulai</label>
@@ -357,18 +371,25 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
               </div>
               <div className="col-md-2">
                 <label className="form-label">Berkas Digital</label>
-                <select className="form-select form-select-sm" name="status_berkas_digital" value={draft.status_berkas_digital ?? ''} onChange={(e) => setDraft((d) => ({ ...d, status_berkas_digital: e.target.value }))}>
-                  <option value="">Semua</option>
-                  <option value="sudah_ada">Ada Berkas</option>
-                  <option value="belum_ada">Belum Ada</option>
-                </select>
+                <SearchableSelect
+                  options={[
+                    { value: '', label: 'Semua' },
+                    { value: 'sudah_ada', label: 'Ada Berkas' },
+                    { value: 'belum_ada', label: 'Belum Ada' },
+                  ]}
+                  value={draft.status_berkas_digital ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, status_berkas_digital: v }))}
+                  placeholder="Semua"
+                />
               </div>
               <div className="col-md-2">
                 <label className="form-label">Pemberkasan</label>
-                <select className="form-select form-select-sm" name="pemberkasan_id" value={draft.pemberkasan_id ?? ''} onChange={(e) => setDraft((d) => ({ ...d, pemberkasan_id: e.target.value }))}>
-                  <option value="">Semua</option>
-                  {(opts.pemberkasan ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <SearchableSelect
+                  options={(opts.pemberkasan ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                  value={draft.pemberkasan_id ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, pemberkasan_id: v }))}
+                  placeholder="Semua"
+                />
               </div>
               <div className="col-md-2">
                 <label className="form-label">Nilai Min</label>
@@ -380,30 +401,43 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
               </div>
               <div className="col-md-2">
                 <label className="form-label">Urutkan</label>
-                <select className="form-select form-select-sm" name="sort_by" value={draft.sort_by ?? ''} onChange={(e) => setDraft((d) => ({ ...d, sort_by: e.target.value }))}>
-                  <option value="">Default</option>
-                  <option value="nomor_arsip">No. Arsip</option>
-                  <option value="nama_arsip">Nama</option>
-                  <option value="tanggal_dibuat">Tanggal</option>
-                  <option value="status">Status</option>
-                  <option value="unit_kerja">Unit</option>
-                </select>
+                <SearchableSelect
+                  options={[
+                    { value: '', label: 'Default' },
+                    { value: 'nomor_arsip', label: 'No. Arsip' },
+                    { value: 'nama_arsip', label: 'Nama' },
+                    { value: 'tanggal_dibuat', label: 'Tanggal' },
+                    { value: 'status', label: 'Status' },
+                    { value: 'unit_kerja', label: 'Unit' },
+                  ]}
+                  value={draft.sort_by ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, sort_by: v }))}
+                  placeholder="Default"
+                />
               </div>
               <div className="col-md-1">
                 <label className="form-label">Arah</label>
-                <select className="form-select form-select-sm" name="sort_order" value={draft.sort_order ?? 'DESC'} onChange={(e) => setDraft((d) => ({ ...d, sort_order: e.target.value }))}>
-                  <option value="ASC">↑</option>
-                  <option value="DESC">↓</option>
-                </select>
+                <SearchableSelect
+                  options={[
+                    { value: 'ASC', label: '↑' },
+                    { value: 'DESC', label: '↓' },
+                  ]}
+                  value={draft.sort_order ?? 'DESC'}
+                  onChange={(v) => setDraft((d) => ({ ...d, sort_order: v }))}
+                />
               </div>
               <div className="col-md-1">
                 <label className="form-label">Tampil</label>
-                <select className="form-select form-select-sm" name="per_page" value={draft.per_page ?? '10'} onChange={(e) => setDraft((d) => ({ ...d, per_page: e.target.value }))}>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
+                <SearchableSelect
+                  options={[
+                    { value: '10', label: '10' },
+                    { value: '25', label: '25' },
+                    { value: '50', label: '50' },
+                    { value: '100', label: '100' },
+                  ]}
+                  value={draft.per_page ?? '10'}
+                  onChange={(v) => setDraft((d) => ({ ...d, per_page: v }))}
+                />
               </div>
               <div className="col-md-2 d-flex align-items-end gap-2">
                 <button type="submit" className="btn btn-primary btn-sm rounded-pill fw-700 flex-grow-1"><i className="bi bi-funnel me-1"></i>Terapkan</button>
@@ -625,10 +659,12 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
           </div>
           <div className="sm-body">
             <label className="form-label">Pilih Berkas Pemberkasan</label>
-            <select className="form-select form-select-sm mb-2" value={assignPemberkasanId} onChange={(e) => setAssignPemberkasanId(e.target.value)}>
-              <option value="">— Pilih berkas —</option>
-              {(opts.pemberkasan ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}{o.tahun ? ` (${o.tahun})` : ''}</option>)}
-            </select>
+            <SearchableSelect
+              options={(opts.pemberkasan ?? []).map((o: any) => ({ value: o.id, label: o.tahun ? `${o.name} (${o.tahun})` : o.name }))}
+              value={assignPemberkasanId}
+              onChange={(v) => setAssignPemberkasanId(v)}
+              placeholder="— Pilih berkas —"
+            />
             <div className="small text-muted"><i className="bi bi-info-circle me-1"></i>Arsip terpilih akan dipindahkan ke berkas yang ditentukan.</div>
           </div>
           <div className="sm-footer">
@@ -656,10 +692,12 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
           </div>
           <div className="sm-body">
             <label className="form-label">Lokasi Tujuan</label>
-            <select className="form-select form-select-sm mb-2" value={moveLokasiId} onChange={(e) => setMoveLokasiId(e.target.value)}>
-              <option value="">— Pilih lokasi tujuan —</option>
-              {(opts.lokasiArsip ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={(opts.lokasiArsip ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+              value={moveLokasiId}
+              onChange={(v) => setMoveLokasiId(v)}
+              placeholder="— Pilih lokasi tujuan —"
+            />
             <div className="small text-muted"><i className="bi bi-info-circle me-1"></i>Lokasi penyimpanan arsip akan diperbarui secara massal.</div>
           </div>
           <div className="sm-footer">

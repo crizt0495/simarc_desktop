@@ -2,7 +2,7 @@
  * LokasiArsipPage — modul master data Lokasi Arsip (CRUD lengkap).
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { getMasterOptions, saveLokasiArsip, deleteLokasiArsip } from '../lib/bindings';
+import { getMasterOptions, saveLokasiArsip, deleteLokasiArsip, listArsipDetail } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { FormModal } from '../components/FormModal';
 import { ArsipFormModal } from '../components/ArsipFormModal';
@@ -22,6 +22,7 @@ export const LokasiArsipPage: React.FC = () => {
   const [arsipFormOpen, setArsipFormOpen] = useState(false);
   const [arsipLokasi, setArsipLokasi] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
+  const [arsipList, setArsipList] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -29,6 +30,8 @@ export const LokasiArsipPage: React.FC = () => {
       const o = await getMasterOptions();
       setRows(Array.isArray(o?.lokasiArsip) ? o.lokasiArsip : []);
       setOpts(o ?? {});
+      const arsip = await listArsipDetail();
+      setArsipList(Array.isArray(arsip) ? arsip : []);
       setError(null);
     } catch (e) {
       setError(String(e));
@@ -40,6 +43,15 @@ export const LokasiArsipPage: React.FC = () => {
   useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => [...rows].sort((x, y) => String(x.name ?? '').localeCompare(String(y.name ?? ''))), [rows]);
+  const arsipCountByLokasi = useMemo(() => {
+    const m = new Map<string, number>();
+    arsipList.forEach((a) => {
+      const k = String(a?.lokasiArsipId ?? '');
+      if (!k) return;
+      m.set(k, (m.get(k) ?? 0) + 1);
+    });
+    return m;
+  }, [arsipList]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * perPage, curPage * perPage);
@@ -109,6 +121,7 @@ export const LokasiArsipPage: React.FC = () => {
                     <th>Nama Lokasi</th>
                     <th>Deskripsi</th>
                     <th style={{ width: 120 }}>Kapasitas</th>
+                    <th style={{ width: 110 }} className="text-center">Jumlah Arsip</th>
                     <th style={{ width: 220 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
@@ -120,6 +133,7 @@ export const LokasiArsipPage: React.FC = () => {
                       <td className="fw-600">{l.name}</td>
                       <td><span className="small text-muted">{l.deskripsi || '—'}</span></td>
                       <td><span className="small fw-600">{l.kapasitas || '—'}</span></td>
+                      <td className="text-center"><span className="small fw-700">{nf.format(arsipCountByLokasi.get(String(l.id)) ?? 0)}</span></td>
                       <td className="text-center"><div className="d-flex justify-content-center gap-1">
                         <button type="button" className="btn-crud btn-crud-primary" title="Tambah Arsip" onClick={() => openAddArsip(l)}><i className="bi bi-plus-circle me-1"></i>Tambah Arsip</button>
                         <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(l); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>

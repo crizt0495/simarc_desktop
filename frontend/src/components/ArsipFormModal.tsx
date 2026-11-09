@@ -2,7 +2,7 @@
  * ArsipFormModal — form Tambah / Ubah arsip (modul inti SIMARC).
  * Field mengikuti struktur tabel arsip + master data.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FormModal, type FieldDef } from './FormModal';
 import { createArsipFull, updateArsip } from '../lib/bindings';
 import { useToast } from '../lib/toast';
@@ -28,8 +28,26 @@ export const ArsipFormModal: React.FC<{
   const { push } = useToast();
   const [busy, setBusy] = useState(false);
   const editing = Boolean(initial?.id);
+  const [jenisId, setJenisId] = useState<string>('');
 
-  const fields: FieldDef[] = [
+  useEffect(() => {
+    if (open) {
+      setJenisId(String((initial as any)?.jenisArsipId ?? ''));
+    }
+  }, [open]);
+
+  const selectedJenis = ((opts.jenisArsip ?? []) as any[]).find(
+    (o) => String(o?.value ?? o?.id ?? '') === String(jenisId),
+  ) ?? null;
+
+  const isSpj = (() => {
+    const s = `${selectedJenis?.name ?? ''} ${selectedJenis?.kodeJenis ?? ''} ${selectedJenis?.label ?? ''}`.toUpperCase().trim();
+    if (!s) return false;
+    if (s.startsWith('NON')) return false;
+    return s.includes('SPJ');
+  })();
+
+  const baseFields: FieldDef[] = [
     { key: 'nomor', label: 'Nomor Arsip', placeholder: 'Kosongkan untuk dibuat otomatis', help: 'Nomor unik arsip; boleh dikosongkan.' },
     { key: 'nama', label: 'Nama / Identitas Arsip', required: true, placeholder: 'Contoh: SK Pembinaan Kearsipan 2026' },
     { key: 'uraian', label: 'Uraian / Deskripsi', type: 'textarea', rows: 3, placeholder: 'Ringkasan isi arsip…' },
@@ -46,6 +64,17 @@ export const ArsipFormModal: React.FC<{
     { key: 'nilaiAnggaran', label: 'Nilai Anggaran (Rp)', type: 'number', step: '0.01', placeholder: '0' },
     { key: 'nomorSPM', label: 'Nomor SPM', placeholder: 'Opsional' },
   ];
+
+  const fields: FieldDef[] = useMemo(() => {
+    const spjExtras: FieldDef[] = isSpj
+      ? [
+          { key: 'nomorSPM', label: 'Nomor SPM', placeholder: 'Nomor SPM terkait arsip' },
+          { key: 'nilaiAnggaran', label: 'Nominal Anggaran (Rp)', type: 'number', step: '0.01', placeholder: '0' },
+        ]
+      : [];
+    const core = baseFields.filter((f) => f.key !== 'nomorSPM' && f.key !== 'nilaiAnggaran');
+    return [...core, ...spjExtras];
+  }, [isSpj]);
 
   const submit = async (v: Record<string, any>) => {
     setBusy(true);
@@ -105,6 +134,7 @@ export const ArsipFormModal: React.FC<{
       submitLabel={editing ? 'Simpan Perubahan' : 'Simpan Arsip'}
       onClose={onClose}
       onSubmit={submit}
+      onValuesChange={(v) => setJenisId(String(v?.jenisArsipId ?? ''))}
     />
   );
 };

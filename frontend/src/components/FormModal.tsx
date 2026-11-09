@@ -4,6 +4,7 @@
  * sehingga tampilan tetap konsisten dengan design system `.sm*`.
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import SearchableSelect, { type SearchableSelectOption } from './SearchableSelect';
 
 export type FieldDef = {
   key: string;
@@ -33,6 +34,7 @@ export interface FormModalProps {
   busy?: boolean;
   onClose: () => void;
   onSubmit: (values: Record<string, any>) => void | Promise<void>;
+  onValuesChange?: (values: Record<string, any>) => void;
 }
 
 const emptyFor = (fields: FieldDef[]): Record<string, any> => {
@@ -43,7 +45,7 @@ const emptyFor = (fields: FieldDef[]): Record<string, any> => {
 
 export const FormModal: React.FC<FormModalProps> = ({
   open, title, subtitle, icon = 'pencil-square', size = 'lg',
-  fields, initial, submitLabel = 'Simpan', busy = false, onClose, onSubmit,
+  fields, initial, submitLabel = 'Simpan', busy = false, onClose, onSubmit, onValuesChange,
 }) => {
   const initialKey = useMemo(() => JSON.stringify(initial ?? {}), [initial]);
   const [values, setValues] = useState<Record<string, any>>(() => ({ ...emptyFor(fields), ...(initial ?? {}) }));
@@ -56,6 +58,13 @@ export const FormModal: React.FC<FormModalProps> = ({
     // fields statis per halaman; cukup reset saat modal dibuka / target berubah.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialKey]);
+
+  // Notifies parent about current values (dipakai untuk dropdown kondisional, mis. jenis SPJ).
+  useEffect(() => {
+    if (!open) return;
+    onValuesChange?.(values);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, open]);
 
   if (!open) return null;
 
@@ -122,19 +131,13 @@ export const FormModal: React.FC<FormModalProps> = ({
                           {f.label}{f.required && <span className="text-danger ms-1">*</span>}
                         </label>
                         {f.type === 'select' ? (
-                          <select
-                            className="form-select form-select-sm"
-                            value={values[f.key] ?? ''}
-                            onChange={(e) => set(f.key, e.target.value)}
+                          <SearchableSelect
+                            options={(f.options ?? []) as SearchableSelectOption[]}
+                            value={String(values[f.key] ?? '')}
+                            onChange={(v) => set(f.key, v)}
                             disabled={f.disabled || busy}
-                            style={{ fontSize: '0.85rem' }}
-                          >
-                            {!f.required && <option value="">{f.placeholder || '— Pilih —'}</option>}
-                            {f.required && !values[f.key] && <option value="">{f.placeholder || '— Pilih —'}</option>}
-                            {(f.options ?? []).map((o) => (
-                              <option key={o.value} value={o.value}>{o.label}</option>
-                            ))}
-                          </select>
+                            placeholder={f.placeholder || '— Pilih —'}
+                          />
                         ) : f.type === 'textarea' ? (
                           <textarea
                             className="form-control"
