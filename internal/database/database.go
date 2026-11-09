@@ -44,16 +44,19 @@ func IsSQLite() bool { return Driver() == "sqlite" }
 // Connection pool is tuned for short-lived (serverless) and long-lived desktop
 // deployments alike.
 func Connect() error {
+	// ── KEBIJAKAN PROYEK ────────────────────────────────────────────────────
+	// SIMARC WAJIB memakai TiDB Cloud. Database lokal (SQLite/MySQL lokal)
+	// tidak boleh dipakai karena bisa memuat data lama milik aplikasi lain.
+	// Bila konfigurasi tidak ditemukan, koneksi ditolak dengan pesan jelas
+	// alih-alih diam-diam jatuh ke 127.0.0.1:3306.
 	if IsSQLite() {
-		db, err := openSQLite(config.App.DBPath)
-		if err != nil {
-			return err
-		}
-		DB = db
-		setupJoinTables(db)
-		log.Printf("Database SQLite terhubung: %s", config.App.DBPath)
-		return nil
+		return fmt.Errorf("database SQLite dinonaktifkan — SIMARC hanya menggunakan TiDB Cloud")
 	}
+	host := strings.ToLower(strings.TrimSpace(config.App.DBHost))
+	if host != "tidbcloud.com" && !strings.HasSuffix(host, ".tidbcloud.com") {
+		return fmt.Errorf("host database %q bukan TiDB Cloud — SIMARC hanya mengizinkan TiDB Cloud. Periksa DB_HOST/DATABASE_URL pada ~/.env", config.App.DBHost)
+	}
+
 	db, err := openDB(config.App.DBHost, config.App.DBPort, config.App.DBName, config.App.DBUser, config.App.DBPass)
 	if err != nil {
 		return err

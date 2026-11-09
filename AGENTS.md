@@ -28,6 +28,8 @@
 
 ## Catatan penting
 
+- **Database WAJIB TiDB Cloud.** Aplikasi menolak SQLite maupun MySQL/MariaDB lokal (lihat `database.Connect`). Jangan menambahkan fallback ke database lokal.
+- Pencarian konfigurasi `.env`: direktori kerja → folder biner → folder induk biner → `~/.env` → `~/.config/simarc/.env`. Ini memastikan shortcut desktop tetap memakai TiDB Cloud.
 - Repo GitHub bersifat **publik**. Sesuai keputusan pemilik, kredensial database di `.env` tetap di-push apa adanya. Jika visibilitas repo berubah atau kredensial dirotasi, perbarui `.env` dan push ulang.
 - Aplikasi terpasang membaca `~/.env` (di luar repo, mode `0600`).
 - Jangan pernah menampilkan isi kredensial (password/host DB) di jawaban chat atau log publik.

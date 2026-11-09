@@ -71,11 +71,22 @@ func loadDotEnv() {
 		filepath.Join(dir, ".env"),
 		filepath.Join(filepath.Dir(dir), ".env"),
 	}
+	// Instalasi desktop: konfigurasi pengguna berada di ~/.env. Tanpa ini,
+	// aplikasi yang diluncurkan lewat shortcut dengan working directory
+	// berbeda (mis. "/") tidak menemukan konfigurasi dan diam-diam memakai
+	// database lokal — bukan TiDB Cloud.
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		candidates = append(candidates, filepath.Join(home, ".env"))
+	}
+	if cfgDir, err := os.UserConfigDir(); err == nil && cfgDir != "" {
+		candidates = append(candidates, filepath.Join(cfgDir, "simarc", ".env"))
+	}
 	for _, p := range candidates {
 		if _, statErr := os.Stat(p); statErr != nil {
 			continue
 		}
 		if loadErr := godotenv.Load(p); loadErr == nil {
+			log.Printf("Konfigurasi database dimuat dari %s", p)
 			return
 		}
 	}
