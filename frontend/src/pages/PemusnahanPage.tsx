@@ -110,8 +110,7 @@ export const PemusnahanPage: React.FC = () => {
             <div className="hero-sub">Pengajuan pemusnahan arsip — {nf.format(antrean)} permohonan menunggu</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setSel(new Set()); setCreateOpen(true); }}>
-            <i className="bi bi-plus-lg me-1"></i>Buat Pengajuan
-          </button>
+            <i className="bi bi-plus-lg "></i></button>
         </div>
       </div>
 
@@ -161,7 +160,7 @@ export const PemusnahanPage: React.FC = () => {
                       <td><span className="small fw-600"><i className="bi bi-person me-1"></i>{p.userPengaju || '—'}</span></td>
                       <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}><i className="bi bi-calendar3 me-1"></i>{p.tanggalPelaksanaan || p.tanggalPengajuan || '—'}</span></td>
                       <td><span className={`status-badge ${destruksiBadge(p.status)}`}>{statusLabel(String(p.status ?? ''))}</span></td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1 flex-wrap">
+                      <td className="text-center"><div className="btn-crud-group">
                         <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => openArsip(p)}><i className="bi bi-eye"></i></button>
                         {String(p.status ?? '').toLowerCase().includes('diajukan') && (
                           <>

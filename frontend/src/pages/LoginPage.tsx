@@ -93,8 +93,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, onBack }) => {
 
           <div className="text-center mt-3">
             <button type="button" className="btn btn-link btn-sm text-decoration-none" onClick={onBack}>
-              <i className="bi bi-arrow-left me-1"></i>Kembali ke halaman publik
-            </button>
+              <i className="bi bi-arrow-left "></i></button>
           </div>
         </div>
       </div>

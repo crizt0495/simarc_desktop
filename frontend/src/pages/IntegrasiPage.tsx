@@ -107,8 +107,7 @@ export const IntegrasiPage: React.FC<{ page?: PageKey }> = ({ page }) => {
           </div>
           <div className="d-flex gap-2 flex-wrap">
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.72rem' }} onClick={() => void load()} disabled={loading}>
-              <i className="bi bi-arrow-repeat me-1"></i>Muat Ulang
-            </button>
+              <i className="bi bi-arrow-repeat "></i></button>
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => void doSync()} disabled={running}>
               <i className={`bi ${running ? 'bi-arrow-repeat' : 'bi-arrow-left-right'} me-1`}></i>{running ? 'Menyinkronkan…' : 'Sinkron Sekarang'}
             </button>

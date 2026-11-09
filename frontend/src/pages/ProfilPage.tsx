@@ -76,8 +76,7 @@ export const ProfilPage: React.FC = () => {
             <div className="hero-sub">Kelola identitas akun dan keamanan kata sandi</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.72rem' }} onClick={() => void load()} disabled={loading}>
-            <i className="bi bi-arrow-repeat me-1"></i>Muat Ulang
-          </button>
+            <i className="bi bi-arrow-repeat "></i></button>
         </div>
       </div>
 

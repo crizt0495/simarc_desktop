@@ -81,8 +81,7 @@ export const ImportExportPage: React.FC = () => {
             <div className="hero-sub">Pindahkan data arsip antar sistem menggunakan berkas CSV</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={downloadTemplate}>
-            <i className="bi bi-file-earmark-arrow-down me-1"></i>Unduh Template
-          </button>
+            <i className="bi bi-file-earmark-arrow-down "></i></button>
         </div>
       </div>
 

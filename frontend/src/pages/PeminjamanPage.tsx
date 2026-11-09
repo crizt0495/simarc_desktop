@@ -6,6 +6,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { listPeminjaman, listArsipDetail, listUsers, createPeminjaman, updatePeminjamanStatus } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import SearchableSelect from '../components/SearchableSelect';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 
 const nf = new Intl.NumberFormat('id-ID');
@@ -113,17 +114,21 @@ export const PeminjamanPage: React.FC<{ mode?: 'list' | 'create' }> = ({ mode: i
             <form onSubmit={submitCreate} className="row g-3">
               <div className="col-md-6">
                 <label className="form-label">Arsip</label>
-                <select className="form-select form-select-sm" required value={draft.arsipId} onChange={(e) => setDraft((d) => ({ ...d, arsipId: e.target.value }))} style={{ fontSize: '0.85rem' }}>
-                  <option value="">Pilih arsip…</option>
-                  {arsips.map((a) => <option key={a.id} value={a.id}>{a.nomor || '—'} — {a.nama}</option>)}
-                </select>
+                <SearchableSelect
+                  options={arsips.map((a: any) => ({ value: a.id, label: `${a.nomor || '—'} — ${a.nama}` }))}
+                  value={draft.arsipId ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, arsipId: v }))}
+                  placeholder="Pilih arsip…"
+                />
               </div>
               <div className="col-md-6">
                 <label className="form-label">Peminat / Petugas</label>
-                <select className="form-select form-select-sm" required value={draft.userId} onChange={(e) => setDraft((d) => ({ ...d, userId: e.target.value }))} style={{ fontSize: '0.85rem' }}>
-                  <option value="">Pilih petugas…</option>
-                  {users.map((u) => <option key={u.id} value={u.id}>{u.name || u.username}</option>)}
-                </select>
+                <SearchableSelect
+                  options={users.map((u: any) => ({ value: u.id, label: `${u.userName}${u.displayName ? ` (${u.displayName})` : ''}` }))}
+                  value={draft.userId ?? ''}
+                  onChange={(v) => setDraft((d) => ({ ...d, userId: v }))}
+                  placeholder="Pilih petugas…"
+                />
               </div>
               <div className="col-12">
                 <label className="form-label">Keperluan</label>
@@ -138,7 +143,7 @@ export const PeminjamanPage: React.FC<{ mode?: 'list' | 'create' }> = ({ mode: i
                 <input type="date" className="form-control form-control-sm" value={draft.tanggalKembaliRencana} onChange={(e) => setDraft((d) => ({ ...d, tanggalKembaliRencana: e.target.value }))} style={{ fontSize: '0.85rem' }} />
               </div>
               <div className="col-12 d-flex gap-2">
-                <button type="submit" className="btn btn-primary rounded-pill px-4 fw-700"><i className="bi bi-send me-1"></i> Ajukan Permohonan</button>
+                <button type="submit" className="btn btn-primary rounded-pill px-4 fw-700"><i className="bi bi-send "></i></button>
                 <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-700" onClick={() => setCurMode('list')}>Batal</button>
               </div>
             </form>
@@ -215,7 +220,7 @@ export const PeminjamanPage: React.FC<{ mode?: 'list' | 'create' }> = ({ mode: i
                       <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}><i className="bi bi-calendar3 me-1"></i>{p.tanggalPinjam || '—'}</span></td>
                       <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}><i className="bi bi-calendar3 me-1"></i>{p.tanggalKembaliRencana || '—'}</span></td>
                       <td><span className={`status-badge ${pinjamBadge(p.peminjamanStatus)}`}>{statusLabel(String(p.peminjamanStatus ?? ''))}</span></td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1 flex-wrap">
+                      <td className="text-center"><div className="btn-crud-group">
                         <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => openArsip(p)}><i className="bi bi-eye"></i></button>
                         {String(p.peminjamanStatus ?? '').toLowerCase().includes('pending') && (
                           <>

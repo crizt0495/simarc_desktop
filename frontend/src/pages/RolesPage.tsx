@@ -73,8 +73,7 @@ export const RolesPage: React.FC = () => {
             <div className="hero-sub">Kelola role dan izin akses pengguna untuk menjaga integritas data kearsipan.</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
-            <i className="bi bi-plus-lg me-1"></i>Tambah Role
-          </button>
+            <i className="bi bi-plus-lg "></i></button>
         </div>
       </div>
 
@@ -99,7 +98,7 @@ export const RolesPage: React.FC = () => {
                     <th>Nama Tampilan</th>
                     <th>Keterangan</th>
                     <th style={{ width: 140 }}>Dibuat</th>
-                    <th style={{ width: 150 }} className="text-center">Aksi</th>
+                    <th style={{ width: 100 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -110,9 +109,9 @@ export const RolesPage: React.FC = () => {
                       <td className="fw-600">{r.namaRole || '—'}</td>
                       <td><span className="small text-muted">{r.keterangan || '—'}</span></td>
                       <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}>{r.created || '—'}</span></td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
-                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(r); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
-                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(r)}><i className="bi bi-trash me-1"></i>Hapus</button>
+                      <td className="text-center"><div className="btn-crud-group">
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(r); setFormOpen(true); }}><i className="bi bi-pencil "></i></button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(r)}><i className="bi bi-trash "></i></button>
                       </div></td>
                     </tr>
                   ))}

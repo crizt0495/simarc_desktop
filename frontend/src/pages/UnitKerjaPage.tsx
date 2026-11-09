@@ -73,8 +73,7 @@ export const UnitKerjaPage: React.FC = () => {
             <div className="hero-sub">Kelola struktur organisasi dan unit kerja pengelola arsip</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
-            <i className="bi bi-plus-lg me-1"></i>Tambah Unit
-          </button>
+            <i className="bi bi-plus-lg "></i></button>
         </div>
       </div>
 
@@ -97,7 +96,7 @@ export const UnitKerjaPage: React.FC = () => {
                     <th style={{ width: 44 }} className="text-center">#</th>
                     <th style={{ width: 80 }}>ID</th>
                     <th>Nama Unit Kerja</th>
-                    <th style={{ width: 150 }} className="text-center">Aksi</th>
+                    <th style={{ width: 100 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -106,9 +105,9 @@ export const UnitKerjaPage: React.FC = () => {
                       <td className="text-center text-muted fw-700 small">{startIdx + idx + 1}</td>
                       <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{u.id}</span></td>
                       <td className="fw-600">{u.name}</td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
-                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(u); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
-                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(u)}><i className="bi bi-trash me-1"></i>Hapus</button>
+                      <td className="text-center"><div className="btn-crud-group">
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(u); setFormOpen(true); }}><i className="bi bi-pencil "></i></button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(u)}><i className="bi bi-trash "></i></button>
                       </div></td>
                     </tr>
                   ))}

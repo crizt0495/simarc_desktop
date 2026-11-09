@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { getSettings, saveSettings } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import SearchableSelect from '../components/SearchableSelect';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -114,9 +115,13 @@ export const PengaturanPage: React.FC = () => {
   const selectField = (key: string, label: string, options: Array<{ value: string; label: string }>, help?: string, col = 6) => (
     <div className={`col-md-${col}`}>
       <label className="form-label">{label}</label>
-      <select className="form-select form-select-sm" value={form[key] ?? ''} disabled={loading} onChange={(e) => set(key, e.target.value)} style={{ fontSize: '0.85rem' }}>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+      <SearchableSelect
+        options={options}
+        value={String(form[key] ?? '')}
+        onChange={(v) => set(key, v)}
+        disabled={loading}
+        placeholder="— Pilih —"
+      />
       {help && <small className="text-muted" style={{ fontSize: '0.7rem' }}>{help}</small>}
     </div>
   );
@@ -130,8 +135,7 @@ export const PengaturanPage: React.FC = () => {
             <div className="hero-sub">Konfigurasi aplikasi, institusi, database, dan keamanan sesi</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.72rem' }} onClick={() => void load()} disabled={loading}>
-            <i className="bi bi-arrow-repeat me-1"></i>Muat Ulang
-          </button>
+            <i className="bi bi-arrow-repeat "></i></button>
         </div>
       </div>
 

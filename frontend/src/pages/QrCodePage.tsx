@@ -6,6 +6,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { listArsipDetail, generateQrDataUrl } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import SearchableSelect from '../components/SearchableSelect';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -102,11 +103,9 @@ export const QrCodePage: React.FC = () => {
           </div>
           <div className="d-flex gap-2 flex-wrap">
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.72rem' }} onClick={download} disabled={!dataUrl}>
-              <i className="bi bi-download me-1"></i>Unduh PNG
-            </button>
+              <i className="bi bi-download "></i></button>
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={print} disabled={!dataUrl}>
-              <i className="bi bi-printer me-1"></i>Cetak Label
-            </button>
+              <i className="bi bi-printer "></i></button>
           </div>
         </div>
       </div>
@@ -162,9 +161,11 @@ export const QrCodePage: React.FC = () => {
               <div className="row g-2 mb-3">
                 <div className="col-6">
                   <label className="form-label">Ukuran (px)</label>
-                  <select className="form-select form-select-sm" value={size} onChange={(e) => setSize(Number(e.target.value))}>
-                    {[160, 200, 240, 300, 400, 500].map((s) => <option key={s} value={s}>{s} px</option>)}
-                  </select>
+                  <SearchableSelect
+                    options={[160, 200, 240, 300, 400, 500].map((s) => ({ value: String(s), label: `${s} px` }))}
+                    value={String(size)}
+                    onChange={(v) => setSize(Number(v))}
+                  />
                 </div>
                 <div className="col-6 d-flex align-items-end">
                   <button type="button" className="btn btn-primary btn-sm rounded-pill fw-800 w-100" onClick={() => void generate()} disabled={busy}>

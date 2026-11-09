@@ -85,8 +85,7 @@ export const KodeKlasifikasiPage: React.FC = () => {
             <div className="hero-sub">Kelola kode klasifikasi, retensi, dan keamanan arsip</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
-            <i className="bi bi-plus-lg me-1"></i>Tambah Kode
-          </button>
+            <i className="bi bi-plus-lg "></i></button>
         </div>
       </div>
 
@@ -113,7 +112,7 @@ export const KodeKlasifikasiPage: React.FC = () => {
                     <th style={{ width: 100 }}>Inaktif</th>
                     <th style={{ width: 120 }}>Penyusutan</th>
                     <th style={{ width: 120 }}>Keamanan</th>
-                    <th style={{ width: 150 }} className="text-center">Aksi</th>
+                    <th style={{ width: 100 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,9 +125,9 @@ export const KodeKlasifikasiPage: React.FC = () => {
                       <td><span className="small fw-600">{k.retensiInaktif || 0} th</span></td>
                       <td><span className="small fw-600">{k.penyusutanArsip || '—'}</span></td>
                       <td><span className="small fw-600">{k.klasifikasiKeamanan || '—'}</span></td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
-                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(k); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
-                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(k)}><i className="bi bi-trash me-1"></i>Hapus</button>
+                      <td className="text-center"><div className="btn-crud-group">
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(k); setFormOpen(true); }}><i className="bi bi-pencil "></i></button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(k)}><i className="bi bi-trash "></i></button>
                       </div></td>
                     </tr>
                   ))}

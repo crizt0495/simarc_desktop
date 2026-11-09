@@ -95,8 +95,7 @@ export const LokasiArsipPage: React.FC = () => {
             <div className="hero-sub">Kelola lokasi penyimpanan fisik arsip di lingkungan record center</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
-            <i className="bi bi-plus-lg me-1"></i>Tambah Lokasi
-          </button>
+            <i className="bi bi-plus-lg "></i></button>
         </div>
       </div>
 
@@ -122,7 +121,7 @@ export const LokasiArsipPage: React.FC = () => {
                     <th>Deskripsi</th>
                     <th style={{ width: 120 }}>Kapasitas</th>
                     <th style={{ width: 110 }} className="text-center">Jumlah Arsip</th>
-                    <th style={{ width: 220 }} className="text-center">Aksi</th>
+                    <th style={{ width: 120 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -134,11 +133,13 @@ export const LokasiArsipPage: React.FC = () => {
                       <td><span className="small text-muted">{l.deskripsi || '—'}</span></td>
                       <td><span className="small fw-600">{l.kapasitas || '—'}</span></td>
                       <td className="text-center"><span className="small fw-700">{nf.format(arsipCountByLokasi.get(String(l.id)) ?? 0)}</span></td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
-                        <button type="button" className="btn-crud btn-crud-primary" title="Tambah Arsip" onClick={() => openAddArsip(l)}><i className="bi bi-plus-circle me-1"></i>Tambah Arsip</button>
-                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(l); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
-                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(l)}><i className="bi bi-trash me-1"></i>Hapus</button>
-                      </div></td>
+                      <td className="text-center">
+                        <div className="btn-crud-group">
+                          <button type="button" className="btn-crud btn-crud-primary" title="Tambah Arsip di Lokasi Ini" onClick={() => openAddArsip(l)}><i className="bi bi-plus-circle"></i></button>
+                          <button type="button" className="btn-crud btn-crud-edit" title="Ubah Lokasi" onClick={() => { setTarget(l); setFormOpen(true); }}><i className="bi bi-pencil"></i></button>
+                          <button type="button" className="btn-crud btn-crud-del" title="Hapus Lokasi" onClick={() => void remove(l)}><i className="bi bi-trash"></i></button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

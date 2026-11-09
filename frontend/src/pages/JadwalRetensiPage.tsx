@@ -95,8 +95,7 @@ export const JadwalRetensiPage: React.FC = () => {
             <div className="hero-sub">Kelola jadwal pemusnahan, penyusutan, dan review arsip berdasarkan retensi</div>
           </div>
           <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
-            <i className="bi bi-plus-lg me-1"></i>Buat Jadwal
-          </button>
+            <i className="bi bi-plus-lg "></i></button>
         </div>
       </div>
 
@@ -139,10 +138,10 @@ export const JadwalRetensiPage: React.FC = () => {
                       <td><span className={`status-badge status-${String(j.status ?? '').replace(/\s+/g, '_')}`}>{j.status || '—'}</span></td>
                       <td><span className="small fw-600">{j.nasib || '—'}</span></td>
                       <td className="text-center"><span className="badge badge-soft-primary">{nf.format(Number(j.arsipDiproses ?? 0))}/{nf.format(Number(j.totalArsip ?? 0))}</span></td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1 flex-wrap">
-                        <button type="button" className="btn-crud btn-crud-success" title="Proses" onClick={() => void proses(j)}><i className="bi bi-play-fill me-1"></i>Proses</button>
-                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(j); setFormOpen(true); }}><i className="bi bi-pencil"></i></button>
-                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(j)}><i className="bi bi-trash"></i></button>
+                      <td className="text-center"><div className="btn-crud-group">
+                        <button type="button" className="btn-crud btn-crud-success" title="Proses Retensi" onClick={() => void proses(j)}><i className="bi bi-play-fill"></i></button>
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah Jadwal" onClick={() => { setTarget(j); setFormOpen(true); }}><i className="bi bi-pencil"></i></button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus Jadwal" onClick={() => void remove(j)}><i className="bi bi-trash"></i></button>
                       </div></td>
                     </tr>
                   ))}

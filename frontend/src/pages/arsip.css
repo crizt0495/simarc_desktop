@@ -288,7 +288,7 @@
     flex-wrap: wrap;
 }
 .arsip-card-actions .btn-crud {
-    width: 30px;
+    min-width: 30px;
     height: 30px;
     border-radius: 6px;
     font-size: 0.78rem;

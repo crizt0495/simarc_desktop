@@ -12,9 +12,9 @@ import {
   exportArsipCSV, importArsipCSV, extractOcrFromFile,
 } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import SearchableSelect from '../components/SearchableSelect';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 import { ArsipFormModal } from '../components/ArsipFormModal';
-import SearchableSelect from '../components/SearchableSelect';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -242,10 +242,10 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   /* ── Kartu & baris aksi (btn-crud) ── */
   const crudActions = (a: any) => (
     <React.Fragment>
-      <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => setDetail(a)}><i className="bi bi-eye me-1"></i>Detail</button>
+      <button type="button" className="btn-crud btn-crud-view" title="Lihat Detail" onClick={() => setDetail(a)}><i className="bi bi-eye"></i></button>
       <button type="button" className="btn-crud btn-crud-primary" title="Berkaskan" onClick={() => openAssign([a.id])}><i className="bi bi-folder-plus"></i></button>
-      <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => openEdit(a)}><i className="bi bi-pencil"></i></button>
-      <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void removeRow(a)}><i className="bi bi-trash"></i></button>
+      <button type="button" className="btn-crud btn-crud-edit" title="Ubah Arsip" onClick={() => openEdit(a)}><i className="bi bi-pencil"></i></button>
+      <button type="button" className="btn-crud btn-crud-del" title="Hapus Arsip" onClick={() => void removeRow(a)}><i className="bi bi-trash"></i></button>
     </React.Fragment>
   );
 
@@ -266,8 +266,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
               <i className={`bi ${busy ? 'bi-arrow-repeat' : 'bi-camera'} me-1`}></i>OCR
             </button>
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => void doImport()} disabled={busy}>
-              <i className="bi bi-file-earmark-excel me-1"></i>Import
-            </button>
+              <i className="bi bi-file-earmark-excel "></i></button>
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={openCreate}>
               <i className="bi bi-plus-lg"></i><span className="d-none d-sm-inline ms-1">Tambah</span>
             </button>
@@ -440,8 +439,8 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
                 />
               </div>
               <div className="col-md-2 d-flex align-items-end gap-2">
-                <button type="submit" className="btn btn-primary btn-sm rounded-pill fw-700 flex-grow-1"><i className="bi bi-funnel me-1"></i>Terapkan</button>
-                {hasFilters && <button type="button" className="btn btn-outline-secondary btn-sm rounded-pill fw-700" onClick={clearFilter}><i className="bi bi-x-circle me-1"></i>Reset</button>}
+                <button type="submit" className="btn btn-primary btn-sm rounded-pill fw-700 flex-grow-1"><i className="bi bi-funnel "></i></button>
+                {hasFilters && <button type="button" className="btn btn-outline-secondary btn-sm rounded-pill fw-700" onClick={clearFilter}><i className="bi bi-x-circle "></i></button>}
               </div>
             </form>
           </div>
@@ -467,9 +466,9 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
           <div className="bulk-toolbar shadow-sm">
             <div className="count-text"><i className="bi bi-check-circle me-1"></i><span>{selected.size}</span> arsip dipilih</div>
             <div className="bulk-actions">
-              <button type="button" className="btn btn-primary btn-sm rounded-pill fw-700 px-3" onClick={() => openAssign(Array.from(selected))}><i className="bi bi-folder-plus me-1"></i>Berkaskan</button>
-              <button type="button" className="btn btn-success btn-sm rounded-pill fw-700 px-3" onClick={() => openMove(Array.from(selected))}><i className="bi bi-map me-1"></i>Pindah Lokasi</button>
-              <button type="button" className="btn btn-outline-secondary btn-sm rounded-pill fw-700 px-3" onClick={() => setSelected(new Set())}><i className="bi bi-x-circle me-1"></i>Batal</button>
+              <button type="button" className="btn btn-primary btn-sm rounded-pill fw-700 px-3" onClick={() => openAssign(Array.from(selected))}><i className="bi bi-folder-plus "></i></button>
+              <button type="button" className="btn btn-success btn-sm rounded-pill fw-700 px-3" onClick={() => openMove(Array.from(selected))}><i className="bi bi-map "></i></button>
+              <button type="button" className="btn btn-outline-secondary btn-sm rounded-pill fw-700 px-3" onClick={() => setSelected(new Set())}><i className="bi bi-x-circle "></i></button>
             </div>
           </div>
         </div>
@@ -492,9 +491,15 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
           }}><i className="bi bi-link-45deg"></i><span className="d-none d-sm-inline ms-1">Copy URL</span></button>
         </div>
         <div className="d-flex gap-2">
-          <select className="form-select form-select-sm" style={{ width: 'auto', fontSize: '0.75rem' }} defaultValue="csv">
-            <option value="csv">CSV</option>
-          </select>
+          <SearchableSelect
+            options={[
+              { value: 'csv', label: 'CSV' },
+              { value: 'xlsx', label: 'XLSX' },
+            ]}
+            value="csv"
+            onChange={() => {}}
+            style={{ width: 'auto' }}
+          />
           <button type="button" className="btn btn-sm btn-success rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => void doExport()} disabled={busy}><i className="bi bi-download"></i><span className="d-none d-sm-inline ms-1">Export</span></button>
         </div>
       </div>
@@ -601,7 +606,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
                       <td><span className="status-badge" style={{ background: 'var(--brand-lt)', color: 'var(--brand)' }}>{a.kategori || 'Umum'}</span></td>
                       <td><span className="small fw-600">{a.lokasi || '-'}</span></td>
                       <td><span className={`status-badge status-${a.status}`}>{statusLabel(a.status)}</span></td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1">{crudActions(a)}</div></td>
+                      <td className="text-center"><div className="btn-crud-group">{crudActions(a)}</div></td>
                     </tr>
                   ))}
                 </tbody>

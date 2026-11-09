@@ -4,6 +4,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { listArsipDetail, getMasterOptions, moveArsip } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import SearchableSelect from '../components/SearchableSelect';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -91,15 +92,16 @@ export const PemindahanPage: React.FC = () => {
             </div>
             <div className="col-md-4">
               <label className="form-label">Lokasi Tujuan</label>
-              <select className="form-select form-select-sm" value={lokasiId} onChange={(e) => setLokasiId(e.target.value)}>
-                <option value="">— Pilih lokasi tujuan —</option>
-                {(opts.lokasiArsip ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-              </select>
+              <SearchableSelect
+                options={(opts.lokasiArsip ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                value={lokasiId}
+                onChange={(v) => setLokasiId(v)}
+                placeholder="— Pilih lokasi tujuan —"
+              />
             </div>
             <div className="col-md-3 d-flex gap-2">
               <button type="button" className="btn btn-primary btn-sm rounded-pill fw-700 flex-grow-1" disabled={busy || selected.size === 0 || !lokasiId} onClick={() => void submit()}>
-                <i className="bi bi-arrow-right-circle me-1"></i>Pindahkan ({selected.size})
-              </button>
+                <i className="bi bi-arrow-right-circle "></i></button>
               <button type="button" className="btn btn-outline-secondary btn-sm rounded-pill fw-700" disabled={selected.size === 0} onClick={() => setSelected(new Set())}>Reset</button>
             </div>
           </div>
@@ -110,8 +112,7 @@ export const PemindahanPage: React.FC = () => {
         <div className="card-header d-flex justify-content-between align-items-center" style={{ padding: '0.85rem 1.25rem' }}>
           <h5 className="fw-800 mb-0" style={{ fontSize: '0.9rem' }}><i className="bi bi-map text-primary me-2"></i>Daftar Arsip</h5>
           <button type="button" className="btn btn-sm btn-outline-primary rounded-pill fw-700" style={{ fontSize: '0.7rem' }} onClick={() => setSelected(new Set(pageRows.map((a) => a.id)))}>
-            <i className="bi bi-check2-square me-1"></i>Pilih Halaman Ini
-          </button>
+            <i className="bi bi-check2-square "></i></button>
         </div>
         <div className="card-body" style={{ padding: '1.25rem' }}>
           {loading ? (

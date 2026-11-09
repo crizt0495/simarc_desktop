@@ -10,6 +10,7 @@ import {
 } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { type PageKey } from '../components/AppSidebar';
+import SearchableSelect from '../components/SearchableSelect';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -200,11 +201,9 @@ export const LaporanPage: React.FC<{ page?: PageKey }> = ({ page }) => {
           </div>
           <div className="d-flex gap-2 flex-wrap">
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.72rem' }} onClick={() => void load()} disabled={loading}>
-              <i className="bi bi-arrow-repeat me-1"></i>Muat Ulang
-            </button>
+              <i className="bi bi-arrow-repeat "></i></button>
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => void doExport()} disabled={busy}>
-              <i className="bi bi-download me-1"></i>Export CSV
-            </button>
+              <i className="bi bi-download "></i></button>
           </div>
         </div>
       </div>
@@ -264,35 +263,46 @@ export const LaporanPage: React.FC<{ page?: PageKey }> = ({ page }) => {
               <>
                 <div className="col-md-2">
                   <label className="form-label">Status</label>
-                  <select className="form-select form-select-sm" value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
-                    <option value="">Semua</option>
-                    <option value="aktif">Aktif</option>
-                    <option value="inaktif">Inaktif</option>
-                    <option value="siap_penyusutan">Siap Penyusutan</option>
-                    <option value="musnah">Musnah</option>
-                    <option value="permanen">Permanen</option>
-                  </select>
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: 'Semua' },
+                      { value: 'aktif', label: 'Aktif' },
+                      { value: 'inaktif', label: 'Inaktif' },
+                      { value: 'siap_penyusutan', label: 'Siap Penyusutan' },
+                      { value: 'musnah', label: 'Musnah' },
+                      { value: 'permanen', label: 'Permanen' },
+                    ]}
+                    value={fStatus}
+                    onChange={(v) => setFStatus(v)}
+                    placeholder="Semua"
+                  />
                 </div>
                 <div className="col-md-2">
                   <label className="form-label">Unit Kerja</label>
-                  <select className="form-select form-select-sm" value={fUnit} onChange={(e) => setFUnit(e.target.value)}>
-                    <option value="">Semua</option>
-                    {(opts.unitKerja ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    options={(opts.unitKerja ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                    value={fUnit}
+                    onChange={(v) => setFUnit(v)}
+                    placeholder="Semua"
+                  />
                 </div>
                 <div className="col-md-2">
                   <label className="form-label">Kategori</label>
-                  <select className="form-select form-select-sm" value={fKategori} onChange={(e) => setFKategori(e.target.value)}>
-                    <option value="">Semua</option>
-                    {(opts.jenisArsip ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    options={(opts.jenisArsip ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                    value={fKategori}
+                    onChange={(v) => setFKategori(v)}
+                    placeholder="Semua"
+                  />
                 </div>
                 <div className="col-md-2">
                   <label className="form-label">Lokasi</label>
-                  <select className="form-select form-select-sm" value={fLokasi} onChange={(e) => setFLokasi(e.target.value)}>
-                    <option value="">Semua</option>
-                    {(opts.lokasiArsip ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    options={(opts.lokasiArsip ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                    value={fLokasi}
+                    onChange={(v) => setFLokasi(v)}
+                    placeholder="Semua"
+                  />
                 </div>
                 <div className="col-md-2">
                   <label className="form-label">Dari Tanggal</label>

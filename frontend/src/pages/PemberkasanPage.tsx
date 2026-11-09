@@ -130,8 +130,7 @@ export const PemberkasanPage: React.FC = () => {
               <div className="hero-sub">Berkas arsip — {nf.format(totalArsip)} arsip dalam {nf.format(rows.length)} berkas</div>
             </div>
             <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
-              <i className="bi bi-plus-lg me-1"></i>Tambah Berkas
-            </button>
+              <i className="bi bi-plus-lg "></i></button>
           </div>
         </div>
 
@@ -158,7 +157,7 @@ export const PemberkasanPage: React.FC = () => {
                       <th style={{ width: 150 }}>Unit Kerja</th>
                       <th style={{ width: 110 }}>Status</th>
                       <th style={{ width: 100 }} className="text-center">Arsip</th>
-                      <th style={{ width: 240 }} className="text-center">Aksi</th>
+                      <th style={{ width: 140 }} className="text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -171,10 +170,10 @@ export const PemberkasanPage: React.FC = () => {
                         <td><span className="small fw-600"><i className="bi bi-building text-primary me-1"></i>{b.unitKerja || b.unitKerjaId || '—'}</span></td>
                         <td><span className={`status-badge ${berkasBadge(b.statusBerkas)}`}>{statusLabel(String(b.statusBerkas ?? ''))}</span></td>
                         <td className="text-center"><span className="badge badge-soft-primary">{nf.format(Number(b.arsipCount ?? 0))} arsip</span></td>
-                        <td className="text-center"><div className="d-flex justify-content-center gap-1">
-                          <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => openArsip(b)}><i className="bi bi-eye me-1"></i>Detail</button>
-                          <button type="button" className="btn-crud btn-crud-primary" title="Isi berkas" onClick={() => openAssign(b)}><i className="bi bi-folder-plus me-1"></i>Isi</button>
-                          <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(b); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
+                        <td className="text-center"><div className="btn-crud-group">
+                          <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => openArsip(b)}><i className="bi bi-eye "></i></button>
+                          <button type="button" className="btn-crud btn-crud-primary" title="Isi berkas" onClick={() => openAssign(b)}><i className="bi bi-folder-plus "></i></button>
+                          <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(b); setFormOpen(true); }}><i className="bi bi-pencil "></i></button>
                           <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(b)}><i className="bi bi-trash"></i></button>
                         </div></td>
                       </tr>

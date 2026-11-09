@@ -37,8 +37,7 @@ export const MonitoringRetensiPage: React.FC = () => {
           <div className="d-flex gap-2">
             {[30, 60, 90, 180].map((d) => (
               <button key={d} type="button" className={`btn btn-sm rounded-pill fw-700 px-3 ${days === d ? 'btn-light' : 'btn-outline-light'}`} style={{ fontSize: '0.7rem' }} onClick={() => setDays(d)}>
-                <i className="bi bi-calendar-range me-1"></i>{d} hari
-              </button>
+                <i className="bi bi-calendar-range "></i></button>
             ))}
           </div>
         </div>

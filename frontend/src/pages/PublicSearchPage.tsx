@@ -10,6 +10,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getMasterOptions, listArsipDetail, quitApp, getUpdateInfo, downloadUpdate, installUpdate } from '../lib/bindings';
 import PublicHeader from '../components/PublicHeader';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
+import SearchableSelect from '../components/SearchableSelect';
 
 /* ── warna badge status arsip ── */
 const statusBadge = (s: unknown): string => {
@@ -213,8 +214,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
             </div>
             <div className="col-md-2 d-flex align-items-end gap-1">
               <button type="submit" className="btn btn-primary rounded-pill px-3">
-                <i className="bi bi-search me-1"></i>Cari
-              </button>
+                <i className="bi bi-search "></i></button>
             </div>
           </div>
 
@@ -222,10 +222,12 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
           <div className="row g-2 mt-2">
             <div className="col-md-3">
               <label className="form-label small fw-700 mb-1">Lokasi Arsip</label>
-              <select className="form-select form-select-sm" value={draft.lokasiArsipId ?? ''} onChange={(e) => setDraft({ ...draft, lokasiArsipId: e.target.value })}>
-                <option value="">Semua Lokasi</option>
-                {opts.lokasiArsip?.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
+              <SearchableSelect
+                options={(opts.lokasiArsip ?? []).map((o: any) => ({ value: o.id, label: o.name }))}
+                value={draft.lokasiArsipId ?? ''}
+                onChange={(v) => setDraft({ ...draft, lokasiArsipId: v })}
+                placeholder="Semua Lokasi"
+              />
             </div>
 
             <div className="col-md-6 d-flex align-items-end gap-1">
@@ -246,8 +248,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
             <div className="d-flex justify-content-between align-items-center mt-2">
               <div className="badge bg-danger">Terapkan filter: {activeFilterCount}</div>
               <button type="button" className="btn btn-outline-secondary rounded-pill px-3 text-decoration-none" onClick={clearFilter}>
-                <i className="bi bi-trash me-1"></i>Hapus filter
-              </button>
+                <i className="bi bi-trash "></i></button>
             </div>
           )}
         </form>
@@ -323,8 +324,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                       </td>
                       <td className="text-center">
                         <button type="button" className="btn btn-sm btn-outline-primary rounded-pill px-2" onClick={() => setDetail(ar)} title="Lihat detail">
-                          <i className="bi bi-eye me-1"></i>Detail
-                        </button>
+                          <i className="bi bi-eye "></i></button>
                       </td>
                     </tr>
                   ))}

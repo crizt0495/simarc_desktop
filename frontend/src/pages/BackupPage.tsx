@@ -122,8 +122,7 @@ export const BackupPage: React.FC = () => {
         <div className="card-header d-flex justify-content-between align-items-center" style={{ padding: '0.85rem 1.25rem' }}>
           <h5 className="fw-800 mb-0" style={{ fontSize: '0.9rem' }}><i className="bi bi-clock-history text-primary me-2"></i>Riwayat Backup</h5>
           <button type="button" className="btn btn-sm btn-outline-primary rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => void load()} disabled={loading}>
-            <i className="bi bi-arrow-repeat me-1"></i>Muat Ulang
-          </button>
+            <i className="bi bi-arrow-repeat "></i></button>
         </div>
         <div className="card-body" style={{ padding: '1.25rem' }}>
           {loading ? (
