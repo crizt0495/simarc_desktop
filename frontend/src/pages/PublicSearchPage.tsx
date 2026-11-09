@@ -88,7 +88,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
 
     if (q) {
       out = out.filter((a) =>
-        [a.nomor, a.nama, a.uraian, a.unit, a.kodeKlasifikasiTxt, a.lokasi].some(
+        [a.nomor, a.nama, a.uraian, a.unit, a.kodeKlasifikasiTxt, a.lokasi, a.jenisName, a.status].some(
           (f: string) => (f || '').toLowerCase().includes(q)));
     }
     if (applied.nomor) out = out.filter((a) => (a.nomor || '').toLowerCase().includes(applied.nomor.toLowerCase()));
@@ -99,6 +99,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
     if (applied.pemberkasanId) out = out.filter((a) => String(a.pemberkasanId || '') === applied.pemberkasanId);
     if (applied.kodeKlasifikasiId) out = out.filter((a) => String(a.kodeKlasifikasiId || '') === applied.kodeKlasifikasiId);
     if (applied.jenisArsipId) out = out.filter((a) => String(a.jenisArsipId || '') === applied.jenisArsipId);
+    if (applied.lokasiArsipId) out = out.filter((a) => String(a.lokasiArsipId || '') === applied.lokasiArsipId);
     if (applied.unitKerjaId) out = out.filter((a) => String(a.unitId || '') === applied.unitKerjaId);
     if (applied.startDate) out = out.filter((a) => String(a.tanggal || '') >= applied.startDate);
     if (applied.endDate) out = out.filter((a) => String(a.tanggal || '') <= applied.endDate);
@@ -148,6 +149,16 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
           onExit={() => void doExit()}
         />
 
+        {/* JUDUL HALAMAN */}
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <h2 className="h3 fw-800 mb-0">
+            <i className="bi bi-archive-fill text-primary me-2"></i>Daftar Arsip Record Center
+          </h2>
+          <span className="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill px-3 py-2">
+            <i className="bi bi-search me-1"></i>Pencarian arsip keseluruhan
+          </span>
+        </div>
+
         {/* SEARCH FORM */}
         <form onSubmit={applyFilter} className="card-body pt-3 pb-3">
           <div className="row g-2">
@@ -176,6 +187,18 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
             </div>
           </div>
 
+          {/* PENGUDIAN PENCARIAN ARSIP KESELURUHAN */}
+          <div className="row g-2 mt-2">
+            <div className="col-12">
+              <label className="form-label small fw-700 mb-1">Pencarian Arsip</label>
+              <div className="input-group input-group-sm">
+                <span className="input-group-text bg-white"><i className="bi bi-search"></i></span>
+                <input type="text" className="form-control" placeholder="Cari arsip keseluruhan: nomor, nama, uraian, lokasi, unit, status…"
+                       value={draft.q ?? ''} onChange={(e) => setDraft({ ...draft, q: e.target.value })} autoComplete="off" />
+              </div>
+            </div>
+          </div>
+
           {/* FULL FILTER PANEL */}
           <div className="row g-2 mt-2">
             <div className="col-md-3">
@@ -200,6 +223,13 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
               <select className="form-select form-select-sm" value={draft.jenisArsipId ?? ''} onChange={(e) => setDraft({ ...draft, jenisArsipId: e.target.value })}>
                 <option value="">Jenis Arsip</option>
                 {opts.jenisArsip?.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}
+              </select>
+            </div>
+
+            <div className="col-md-3">
+              <select className="form-select form-select-sm" value={draft.lokasiArsipId ?? ''} onChange={(e) => setDraft({ ...draft, lokasiArsipId: e.target.value })}>
+                <option value="">Lokasi Arsip</option>
+                {opts.lokasiArsip?.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
             </div>
 
