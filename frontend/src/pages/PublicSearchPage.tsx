@@ -161,34 +161,8 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
 
         {/* SEARCH FORM */}
         <form onSubmit={applyFilter} className="card-body pt-3 pb-3">
-          <div className="row g-2">
-            <div className="col-md-3">
-              <input type="text" className="form-control form-control-sm" placeholder="Nomor arsip"
-                     value={draft.nomor ?? ''} onChange={(e) => setDraft({ ...draft, nomor: e.target.value })} />
-            </div>
-            <div className="col-md-2">
-              <input type="text" className="form-control form-control-sm" placeholder="Nama arsip"
-                     value={draft.nama ?? ''} onChange={(e) => setDraft({ ...draft, nama: e.target.value })} />
-            </div>
-            <div className="col-md-3">
-              <input type="text" className="form-control form-control-sm" placeholder="Uraian / deskripsi"
-                     value={draft.uraian ?? ''} onChange={(e) => setDraft({ ...draft, uraian: e.target.value })} />
-            </div>
-            <div className="col-md-2">
-              <select className="form-select form-select-sm" onChange={(e) => setDraft({ ...draft, unitKerjaId: e.target.value })}>
-                <option value="">Unit Kerja</option>
-                {opts.unitKerja?.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
-            <div className="col-md-2 d-flex align-items-end gap-1">
-              <button type="submit" className="btn btn-primary rounded-pill px-3">
-                <i className="bi bi-search me-1"></i>Cari
-              </button>
-            </div>
-          </div>
-
           {/* PENGUDIAN PENCARIAN ARSIP KESELURUHAN */}
-          <div className="row g-2 mt-2">
+          <div className="row g-2">
             <div className="col-12">
               <label className="form-label small fw-700 mb-1">Pencarian Arsip</label>
               <div className="input-group input-group-sm">
@@ -197,38 +171,19 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                        value={draft.q ?? ''} onChange={(e) => setDraft({ ...draft, q: e.target.value })} autoComplete="off" />
               </div>
             </div>
+            <div className="col-md-2 d-flex align-items-end gap-1">
+              <button type="submit" className="btn btn-primary rounded-pill px-3">
+                <i className="bi bi-search me-1"></i>Cari
+              </button>
+            </div>
           </div>
 
-          {/* FULL FILTER PANEL */}
+          {/* FILTER LOKASI & TANGGAL */}
           <div className="row g-2 mt-2">
             <div className="col-md-3">
-              <select className="form-select form-select-sm" value={draft.status ?? ''} onChange={(e) => setDraft({ ...draft, status: e.target.value })}>
-                <option value="">Status</option>
-                {['aktif','diberkaskan','inaktif','siap_penyusutan','musnah'].map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-              </select>
-            </div>
-            <div className="col-md-3">
-              <select className="form-select form-select-sm" value={draft.pemberkasanId ?? ''} onChange={(e) => setDraft({ ...draft, pemberkasanId: e.target.value })}>
-                <option value="">Pemberkasan</option>
-                {opts.pemberkasan?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-            <div className="col-md-3">
-              <select className="form-select form-select-sm" value={draft.kodeKlasifikasiId ?? ''} onChange={(e) => setDraft({ ...draft, kodeKlasifikasiId: e.target.value })}>
-                <option value="">Klasifikasi</option>
-                {opts.kodeKlasifikasi?.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
-              </select>
-            </div>
-            <div className="col-md-3">
-              <select className="form-select form-select-sm" value={draft.jenisArsipId ?? ''} onChange={(e) => setDraft({ ...draft, jenisArsipId: e.target.value })}>
-                <option value="">Jenis Arsip</option>
-                {opts.jenisArsip?.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}
-              </select>
-            </div>
-
-            <div className="col-md-3">
+              <label className="form-label small fw-700 mb-1">Lokasi Arsip</label>
               <select className="form-select form-select-sm" value={draft.lokasiArsipId ?? ''} onChange={(e) => setDraft({ ...draft, lokasiArsipId: e.target.value })}>
-                <option value="">Lokasi Arsip</option>
+                <option value="">Semua Lokasi</option>
                 {opts.lokasiArsip?.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
             </div>
