@@ -1,9 +1,10 @@
 /**
- * UnitKerjaPage — modul master data Unit Kerja.
+ * UnitKerjaPage — modul master data Unit Kerja (CRUD lengkap).
  */
-import React, { useEffect, useMemo, useState } from 'react';
-import { getMasterOptions } from '../lib/bindings';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { getMasterOptions, saveUnitKerja, deleteUnitKerja } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import { FormModal } from '../components/FormModal';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -14,31 +15,54 @@ export const UnitKerjaPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const [formOpen, setFormOpen] = useState(false);
+  const [target, setTarget] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const o = await getMasterOptions();
-        if (cancelled) return;
-        setRows(Array.isArray(o?.unitKerja) ? o.unitKerja : []);
-        setError(null);
-      } catch (e) {
-        if (!cancelled) setError(String(e));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void load();
-    return () => { cancelled = true; };
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const o = await getMasterOptions();
+      setRows(Array.isArray(o?.unitKerja) ? o.unitKerja : []);
+      setError(null);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => [...rows].sort((x, y) => String(x.name ?? '').localeCompare(String(y.name ?? ''))), [rows]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * perPage, curPage * perPage);
   const startIdx = (curPage - 1) * perPage;
+
+  const submit = async (v: Record<string, any>) => {
+    setBusy(true);
+    try {
+      await saveUnitKerja(target?.id ?? '', String(v.name ?? ''));
+      push('success', target ? 'Unit kerja berhasil diperbarui' : 'Unit kerja berhasil ditambahkan');
+      setFormOpen(false);
+      setTarget(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (row: any) => {
+    if (!window.confirm(`Hapus unit kerja "${row.name}"?`)) return;
+    try {
+      await deleteUnitKerja(row.id);
+      push('success', 'Unit kerja berhasil dihapus');
+      await load();
+    } catch (e) {
+      push('danger', `Gagal menghapus: ${e}`);
+    }
+  };
 
   return (
     <div className="container-fluid py-3 py-xl-4">
@@ -48,6 +72,9 @@ export const UnitKerjaPage: React.FC = () => {
             <div className="hero-title"><i className="bi bi-building me-2"></i>Unit Kerja</div>
             <div className="hero-sub">Kelola struktur organisasi dan unit kerja pengelola arsip</div>
           </div>
+          <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
+            <i className="bi bi-plus-lg me-1"></i>Tambah Unit
+          </button>
         </div>
       </div>
 
@@ -70,6 +97,7 @@ export const UnitKerjaPage: React.FC = () => {
                     <th style={{ width: 44 }} className="text-center">#</th>
                     <th style={{ width: 80 }}>ID</th>
                     <th>Nama Unit Kerja</th>
+                    <th style={{ width: 150 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -78,6 +106,10 @@ export const UnitKerjaPage: React.FC = () => {
                       <td className="text-center text-muted fw-700 small">{startIdx + idx + 1}</td>
                       <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{u.id}</span></td>
                       <td className="fw-600">{u.name}</td>
+                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(u); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(u)}><i className="bi bi-trash me-1"></i>Hapus</button>
+                      </div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -98,6 +130,20 @@ export const UnitKerjaPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <FormModal
+        open={formOpen}
+        title={target ? 'Ubah Unit Kerja' : 'Tambah Unit Kerja'}
+        subtitle="Nama unit kerja pengelola arsip"
+        icon="building"
+        size="sm"
+        fields={[{ key: 'name', label: 'Nama Unit Kerja', required: true, col: 12, placeholder: 'Contoh: Bagian Pemerintahan' }]}
+        initial={target ? { name: target.name } : undefined}
+        busy={busy}
+        submitLabel={target ? 'Simpan Perubahan' : 'Tambah Unit'}
+        onClose={() => { if (!busy) { setFormOpen(false); setTarget(null); } }}
+        onSubmit={submit}
+      />
     </div>
   );
 };

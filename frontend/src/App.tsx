@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AppLayout } from './components/AppLayout';
 import { Dashboard } from './pages/Dashboard';
 import { ArsipPage } from './pages/ArsipPage';
-import { StaticPage } from './pages/StaticPage';
 import { PublicSearchPage } from './pages/PublicSearchPage';
 import { LoginPage } from './pages/LoginPage';
 import { PeminjamanPage } from './pages/PeminjamanPage';
@@ -25,6 +24,15 @@ import { AdvancedPage } from './pages/AdvancedPage';
 import { RolesPage } from './pages/RolesPage';
 import { StatistikPage } from './pages/StatistikPage';
 import { SearchPage } from './pages/SearchPage';
+import { PemindahanPage } from './pages/PemindahanPage';
+import { JadwalRetensiPage } from './pages/JadwalRetensiPage';
+import { LaporanPage } from './pages/LaporanPage';
+import { PengaturanPage } from './pages/PengaturanPage';
+import { BackupPage } from './pages/BackupPage';
+import { IntegrasiPage } from './pages/IntegrasiPage';
+import { QrCodePage } from './pages/QrCodePage';
+import { ImportExportPage } from './pages/ImportExportPage';
+import { ProfilPage } from './pages/ProfilPage';
 import { ITEM_BY_KEY, type PageKey } from './components/AppSidebar';
 import { getProfile, getStatus, pingBackend, type Status, type Profile } from './lib/bindings';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -100,6 +108,32 @@ const App: React.FC = () => {
         return <StatistikPage />;
       case 'search':
         return <SearchPage />;
+      case 'pemindahan':
+        return <PemindahanPage />;
+      case 'jadwal-retensi':
+        return <JadwalRetensiPage />;
+      case 'laporan':
+      case 'laporan-arsip':
+      case 'laporan-digital':
+      case 'laporan-pemberkasan':
+      case 'laporan-lokasi':
+      case 'laporan-klasifikasi':
+      case 'laporan-retensi':
+      case 'laporan-pemusnahan':
+        return <LaporanPage page={page} />;
+      case 'pengaturan':
+        return <PengaturanPage />;
+      case 'backup':
+        return <BackupPage />;
+      case 'integrasi':
+      case 'sinkronisasi':
+        return <IntegrasiPage page={page} />;
+      case 'qrcode':
+        return <QrCodePage />;
+      case 'import-export':
+        return <ImportExportPage />;
+      case 'profil':
+        return <ProfilPage />;
       case 'public-search':
         return (
           <PublicSearchPage
@@ -118,7 +152,17 @@ const App: React.FC = () => {
           />
         );
       default:
-        return <StaticPage page={page} />;
+        return (
+          <div className="container-fluid py-4">
+            <div className="card"><div className="card-body">
+              <div className="empty-state py-5">
+                <i className="bi bi-compass empty-icon"></i>
+                <p className="empty-title">Halaman Tidak Ditemukan</p>
+                <p className="empty-desc">Menu yang Anda tuju tidak tersedia pada aplikasi ini.</p>
+              </div>
+            </div></div>
+          </div>
+        );
     }
   };
 

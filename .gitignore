@@ -33,6 +33,8 @@ blob-report/
 
 # ── Environment ──
 .env*
+# .env berisi konfigurasi database & WAJIB ikut di-push (permintaan pemilik proyek).
+!.env
 # Izinkan template .env tetap dilacak (contoh untuk server & klien).
 !.env.example
 !.env.client.example

@@ -1,9 +1,10 @@
 /**
- * JenisArsipPage — modul master data Jenis Arsip.
+ * JenisArsipPage — modul master data Jenis Arsip (CRUD lengkap).
  */
-import React, { useEffect, useMemo, useState } from 'react';
-import { getMasterOptions } from '../lib/bindings';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { getMasterOptions, saveJenisArsip, deleteJenisArsip } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import { FormModal } from '../components/FormModal';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -14,31 +15,54 @@ export const JenisArsipPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const [formOpen, setFormOpen] = useState(false);
+  const [target, setTarget] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const o = await getMasterOptions();
-        if (cancelled) return;
-        setRows(Array.isArray(o?.jenisArsip) ? o.jenisArsip : []);
-        setError(null);
-      } catch (e) {
-        if (!cancelled) setError(String(e));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void load();
-    return () => { cancelled = true; };
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const o = await getMasterOptions();
+      setRows(Array.isArray(o?.jenisArsip) ? o.jenisArsip : []);
+      setError(null);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => [...rows].sort((x, y) => String(x.name ?? '').localeCompare(String(y.name ?? ''))), [rows]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * perPage, curPage * perPage);
   const startIdx = (curPage - 1) * perPage;
+
+  const submit = async (v: Record<string, any>) => {
+    setBusy(true);
+    try {
+      await saveJenisArsip({ ...v, id: target?.id ?? '' });
+      push('success', target ? 'Jenis arsip berhasil diperbarui' : 'Jenis arsip berhasil ditambahkan');
+      setFormOpen(false);
+      setTarget(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (row: any) => {
+    if (!window.confirm(`Hapus jenis arsip "${row.name}"?`)) return;
+    try {
+      await deleteJenisArsip(row.id);
+      push('success', 'Jenis arsip berhasil dihapus');
+      await load();
+    } catch (e) {
+      push('danger', `Gagal menghapus: ${e}`);
+    }
+  };
 
   return (
     <div className="container-fluid py-3 py-xl-4">
@@ -48,6 +72,9 @@ export const JenisArsipPage: React.FC = () => {
             <div className="hero-title"><i className="bi bi-folder me-2"></i>Jenis Arsip</div>
             <div className="hero-sub">Kelola kategori dan jenis arsip untuk klasifikasi dokumen</div>
           </div>
+          <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
+            <i className="bi bi-plus-lg me-1"></i>Tambah Jenis
+          </button>
         </div>
       </div>
 
@@ -68,18 +95,23 @@ export const JenisArsipPage: React.FC = () => {
                 <thead className="sticky-top">
                   <tr>
                     <th style={{ width: 44 }} className="text-center">#</th>
-                    <th style={{ width: 110 }}>ID</th>
+                    <th style={{ width: 110 }}>Kode</th>
                     <th>Nama Jenis Arsip</th>
-                    <th style={{ width: 90 }}>Keterangan</th>
+                    <th>Keterangan</th>
+                    <th style={{ width: 150 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageRows.map((j, idx) => (
                     <tr key={j.id}>
                       <td className="text-center text-muted fw-700 small">{startIdx + idx + 1}</td>
-                      <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{j.id}</span></td>
+                      <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{j.kode || '—'}</span></td>
                       <td className="fw-600">{j.name}</td>
-                      <td><span className="small text-muted">{j.keterangan || j.desc || '—'}</span></td>
+                      <td><span className="small text-muted">{j.keterangan || '—'}</span></td>
+                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(j); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(j)}><i className="bi bi-trash me-1"></i>Hapus</button>
+                      </div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -100,6 +132,23 @@ export const JenisArsipPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <FormModal
+        open={formOpen}
+        title={target ? 'Ubah Jenis Arsip' : 'Tambah Jenis Arsip'}
+        subtitle="Kategori / jenis dokumen arsip"
+        icon="folder"
+        fields={[
+          { key: 'kode', label: 'Kode Jenis', placeholder: 'Contoh: SPJ' },
+          { key: 'nama', label: 'Nama Jenis Arsip', required: true, placeholder: 'Contoh: Kawalan Digital SPJ' },
+          { key: 'keterangan', label: 'Keterangan', type: 'textarea', rows: 2, placeholder: 'Keterangan singkat…' },
+        ]}
+        initial={target ? { kode: target.kode ?? '', nama: target.name ?? '', keterangan: target.keterangan ?? '' } : undefined}
+        busy={busy}
+        submitLabel={target ? 'Simpan Perubahan' : 'Tambah Jenis'}
+        onClose={() => { if (!busy) { setFormOpen(false); setTarget(null); } }}
+        onSubmit={submit}
+      />
     </div>
   );
 };

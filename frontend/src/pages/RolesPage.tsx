@@ -1,9 +1,10 @@
 /**
- * RolesPage — Manajemen Role: daftar role & hak akses.
+ * RolesPage — Manajemen Role: daftar role & hak akses (CRUD lengkap).
  */
-import React, { useEffect, useState } from 'react';
-import { listRoles } from '../lib/bindings';
+import React, { useCallback, useEffect, useState } from 'react';
+import { listRoles, saveRole, deleteRole } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import { FormModal } from '../components/FormModal';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -14,8 +15,11 @@ export const RolesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const [formOpen, setFormOpen] = useState(false);
+  const [target, setTarget] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await listRoles();
@@ -26,15 +30,39 @@ export const RolesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
-  const filtered = [...rows].sort((x, y) => String(y.created ?? '').localeCompare(String(y.created ?? '')));
+  const filtered = [...rows].sort((x, y) => String(y.created ?? '').localeCompare(String(x.created ?? '')));
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * perPage, curPage * perPage);
   const startIdx = (curPage - 1) * perPage;
+
+  const submit = async (v: Record<string, any>) => {
+    setBusy(true);
+    try {
+      await saveRole({ ...v, id: target?.id ?? '' });
+      push('success', target ? 'Role berhasil diperbarui' : 'Role berhasil ditambahkan');
+      setFormOpen(false);
+      setTarget(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (row: any) => {
+    if (!window.confirm(`Hapus role "${row.name}"?`)) return;
+    try {
+      await deleteRole(row.id);
+      push('success', 'Role berhasil dihapus');
+      await load();
+    } catch (e) {
+      push('danger', `Gagal menghapus: ${e}`);
+    }
+  };
 
   return (
     <div className="container-fluid py-3 py-xl-4">
@@ -44,6 +72,9 @@ export const RolesPage: React.FC = () => {
             <div className="hero-title"><i className="bi bi-shield-check me-2"></i>Kontrol Akses &amp; Keamanan</div>
             <div className="hero-sub">Kelola role dan izin akses pengguna untuk menjaga integritas data kearsipan.</div>
           </div>
+          <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
+            <i className="bi bi-plus-lg me-1"></i>Tambah Role
+          </button>
         </div>
       </div>
 
@@ -64,20 +95,25 @@ export const RolesPage: React.FC = () => {
                 <thead className="sticky-top">
                   <tr>
                     <th style={{ width: 44 }} className="text-center">#</th>
-                    <th style={{ width: 120 }}>ID</th>
                     <th>Nama Role</th>
+                    <th>Nama Tampilan</th>
                     <th>Keterangan</th>
                     <th style={{ width: 140 }}>Dibuat</th>
+                    <th style={{ width: 150 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageRows.map((r, idx) => (
                     <tr key={r.id}>
                       <td className="text-center text-muted fw-700 small">{startIdx + idx + 1}</td>
-                      <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{r.id}</span></td>
-                      <td className="fw-600">{r.name}</td>
+                      <td><span className="fw-800 font-monospace" style={{ fontSize: '0.8rem' }}>{r.name}</span></td>
+                      <td className="fw-600">{r.namaRole || '—'}</td>
                       <td><span className="small text-muted">{r.keterangan || '—'}</span></td>
                       <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}>{r.created || '—'}</span></td>
+                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(r); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(r)}><i className="bi bi-trash me-1"></i>Hapus</button>
+                      </div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -98,6 +134,23 @@ export const RolesPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <FormModal
+        open={formOpen}
+        title={target ? 'Ubah Role' : 'Tambah Role'}
+        subtitle="Role dan hak akses pengguna"
+        icon="shield-check"
+        fields={[
+          { key: 'name', label: 'Nama Role (kode)', required: true, placeholder: 'contoh: admin' },
+          { key: 'namaRole', label: 'Nama Tampilan', placeholder: 'contoh: Administrator' },
+          { key: 'keterangan', label: 'Keterangan', type: 'textarea', rows: 2, placeholder: 'Deskripsi hak akses…' },
+        ]}
+        initial={target ? { name: target.name ?? '', namaRole: target.namaRole ?? '', keterangan: target.keterangan ?? '' } : undefined}
+        busy={busy}
+        submitLabel={target ? 'Simpan Perubahan' : 'Tambah Role'}
+        onClose={() => { if (!busy) { setFormOpen(false); setTarget(null); } }}
+        onSubmit={submit}
+      />
     </div>
   );
 };

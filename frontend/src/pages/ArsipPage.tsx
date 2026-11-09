@@ -4,11 +4,16 @@
  * view toggle (Card/Tabel) → arsip-card grid & tabel premium →
  * footer paginasi. CSS scoped di arsip.css (disalin dari template).
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import './arsip.css';
-import { getMasterOptions, listArsipDetail, type Status } from '../lib/bindings';
+import {
+  getMasterOptions, listArsipDetail, type Status,
+  deleteArsip, moveArsip, assignArsipToPemberkasan,
+  exportArsipCSV, importArsipCSV, extractOcrFromFile,
+} from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
+import { ArsipFormModal } from '../components/ArsipFormModal';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -27,8 +32,20 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const { push } = useToast();
   const [ready, setReady] = useState(false);
   const [detail, setDetail] = useState<any | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignIds, setAssignIds] = useState<string[]>([]);
+  const [assignPemberkasanId, setAssignPemberkasanId] = useState('');
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [moveIds, setMoveIds] = useState<string[]>([]);
+  const [moveLokasiId, setMoveLokasiId] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [ocrOpen, setOcrOpen] = useState(false);
+  const [ocrText, setOcrText] = useState('');
+  const [ocrFile, setOcrFile] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [r, o] = await Promise.all([listArsipDetail(), getMasterOptions()]);
@@ -41,9 +58,9 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   const rowsError = !ready ? error : null;
 
@@ -113,12 +130,121 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
     return arr.slice(0, 5);
   }, [totalPages, curPage]);
 
+  /* ── Aksi CRUD & batch ── */
+  const openCreate = () => { setEditTarget(null); setFormOpen(true); };
+  const openEdit = (a: any) => { setEditTarget(a); setFormOpen(true); };
+
+  const removeRow = async (a: any) => {
+    if (!window.confirm(`Hapus arsip "${a.nomor || a.nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      await deleteArsip(String(a.id));
+      push('success', `Arsip ${a.nomor || a.nama} berhasil dihapus`);
+      setSelected((s) => { const n = new Set(s); n.delete(a.id); return n; });
+      await load();
+    } catch (e) {
+      push('danger', `Gagal menghapus: ${e}`);
+    }
+  };
+
+  const openAssign = (ids: string[]) => {
+    if (ids.length === 0) { push('warning', 'Pilih minimal satu arsip'); return; }
+    setAssignIds(ids);
+    setAssignPemberkasanId('');
+    setAssignOpen(true);
+  };
+
+  const submitAssign = async () => {
+    if (!assignPemberkasanId) { push('warning', 'Pilih berkas pemberkasan tujuan'); return; }
+    setBusy(true);
+    try {
+      await assignArsipToPemberkasan(assignIds, assignPemberkasanId);
+      const berkas = (opts.pemberkasan ?? []).find((o: any) => o.id === assignPemberkasanId);
+      push('success', `${assignIds.length} arsip dimasukkan ke ${berkas?.name ?? 'berkas'}`);
+      setAssignOpen(false);
+      setSelected(new Set());
+      await load();
+    } catch (e) {
+      push('danger', `Gagal memasukkan ke berkas: ${e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openMove = (ids: string[]) => {
+    if (ids.length === 0) { push('warning', 'Pilih minimal satu arsip'); return; }
+    setMoveIds(ids);
+    setMoveLokasiId('');
+    setMoveOpen(true);
+  };
+
+  const submitMove = async () => {
+    if (!moveLokasiId) { push('warning', 'Pilih lokasi tujuan'); return; }
+    setBusy(true);
+    try {
+      const res = await moveArsip(moveIds, moveLokasiId);
+      push('success', `${res?.moved ?? moveIds.length} arsip dipindahkan ke ${res?.lokasi ?? 'lokasi tujuan'}`);
+      setMoveOpen(false);
+      setSelected(new Set());
+      await load();
+    } catch (e) {
+      push('danger', `Gagal memindahkan arsip: ${e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doExport = async () => {
+    setBusy(true);
+    try {
+      const res = await exportArsipCSV();
+      if (res?.cancelled) push('info', 'Ekspor dibatalkan');
+      else push('success', `Ekspor selesai — ${nf.format(Number(res?.rows ?? 0))} baris`);
+    } catch (e) {
+      push('danger', `Gagal mengekspor: ${e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doImport = async () => {
+    setBusy(true);
+    try {
+      const res = await importArsipCSV();
+      if (res?.cancelled) push('info', 'Impor dibatalkan');
+      else {
+        push('success', `Impor selesai — ${nf.format(Number(res?.imported ?? 0))} masuk, ${nf.format(Number(res?.skipped ?? 0))} dilewati`);
+        await load();
+      }
+    } catch (e) {
+      push('danger', `Gagal mengimpor: ${e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doOcr = async () => {
+    setBusy(true);
+    try {
+      const res = await extractOcrFromFile();
+      if (res?.cancelled) { push('info', 'OCR dibatalkan'); return; }
+      setOcrText(String(res?.text ?? ''));
+      setOcrFile(String(res?.file ?? ''));
+      setOcrOpen(true);
+      push('success', `OCR selesai — ${nf.format(Number(res?.words ?? 0))} kata terdeteksi`);
+    } catch (e) {
+      push('danger', `OCR gagal: ${e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /* ── Kartu & baris aksi (btn-crud) ── */
   const crudActions = (a: any) => (
     <React.Fragment>
       <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => setDetail(a)}><i className="bi bi-eye me-1"></i>Detail</button>
-      <button type="button" className="btn-crud btn-crud-primary" title="Berkaskan" onClick={() => push('info', 'Modul pemberkasan menyusul')}><i className="bi bi-folder-plus"></i></button>
-      <button type="button" className="btn-crud btn-crud-success" title="Download" onClick={() => push('info', a.berkas ? 'Mengunduh berkas arsip…' : 'Belum ada berkas digital')}><i className="bi bi-download"></i></button>
+      <button type="button" className="btn-crud btn-crud-primary" title="Berkaskan" onClick={() => openAssign([a.id])}><i className="bi bi-folder-plus"></i></button>
+      <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => openEdit(a)}><i className="bi bi-pencil"></i></button>
+      <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void removeRow(a)}><i className="bi bi-trash"></i></button>
     </React.Fragment>
   );
 
@@ -135,13 +261,13 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
             </div>
           </div>
           <div className="d-flex gap-2 flex-wrap">
-            <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => push('info', 'Modul OCR menyusul')}>
-              <i className="bi bi-camera me-1"></i>OCR
+            <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => void doOcr()} disabled={busy}>
+              <i className={`bi ${busy ? 'bi-arrow-repeat' : 'bi-camera'} me-1`}></i>OCR
             </button>
-            <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => push('info', 'Modul import menyusul')}>
+            <button type="button" className="btn btn-light btn-sm rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => void doImport()} disabled={busy}>
               <i className="bi bi-file-earmark-excel me-1"></i>Import
             </button>
-            <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => push('info', 'Modul tambah arsip menyusul')}>
+            <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={openCreate}>
               <i className="bi bi-plus-lg"></i><span className="d-none d-sm-inline ms-1">Tambah</span>
             </button>
           </div>
@@ -307,8 +433,8 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
           <div className="bulk-toolbar shadow-sm">
             <div className="count-text"><i className="bi bi-check-circle me-1"></i><span>{selected.size}</span> arsip dipilih</div>
             <div className="bulk-actions">
-              <button type="button" className="btn btn-primary btn-sm rounded-pill fw-700 px-3" onClick={() => push('info', 'Modul berkaskan menyusul')}><i className="bi bi-folder-plus me-1"></i>Berkaskan</button>
-              <button type="button" className="btn btn-success btn-sm rounded-pill fw-700 px-3" onClick={() => push('info', 'Modul pindah lokasi menyusul')}><i className="bi bi-map me-1"></i>Pindah Lokasi</button>
+              <button type="button" className="btn btn-primary btn-sm rounded-pill fw-700 px-3" onClick={() => openAssign(Array.from(selected))}><i className="bi bi-folder-plus me-1"></i>Berkaskan</button>
+              <button type="button" className="btn btn-success btn-sm rounded-pill fw-700 px-3" onClick={() => openMove(Array.from(selected))}><i className="bi bi-map me-1"></i>Pindah Lokasi</button>
               <button type="button" className="btn btn-outline-secondary btn-sm rounded-pill fw-700 px-3" onClick={() => setSelected(new Set())}><i className="bi bi-x-circle me-1"></i>Batal</button>
             </div>
           </div>
@@ -326,15 +452,16 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
               <i className="bi bi-table"></i> <span>Tabel</span>
             </button>
           </div>
-          <button type="button" className="btn btn-sm btn-outline-primary rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => push('success', 'Tautan arsip disalin ke clipboard')}><i className="bi bi-link-45deg"></i><span className="d-none d-sm-inline ms-1">Copy URL</span></button>
+          <button type="button" className="btn btn-sm btn-outline-primary rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={async () => {
+            try { await navigator.clipboard.writeText(`${location.origin}/#public-search`); push('success', 'Tautan berhasil disalin ke clipboard'); }
+            catch { push('warning', 'Browser menolak akses clipboard'); }
+          }}><i className="bi bi-link-45deg"></i><span className="d-none d-sm-inline ms-1">Copy URL</span></button>
         </div>
         <div className="d-flex gap-2">
-          <select className="form-select form-select-sm" style={{ width: 'auto', fontSize: '0.75rem' }} defaultValue="excel">
-            <option value="excel">Excel</option>
+          <select className="form-select form-select-sm" style={{ width: 'auto', fontSize: '0.75rem' }} defaultValue="csv">
             <option value="csv">CSV</option>
-            <option value="pdf">PDF</option>
           </select>
-          <button type="button" className="btn btn-sm btn-success rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => push('info', 'Modul ekspor menyusul')}><i className="bi bi-download"></i><span className="d-none d-sm-inline ms-1">Export</span></button>
+          <button type="button" className="btn btn-sm btn-success rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={() => void doExport()} disabled={busy}><i className="bi bi-download"></i><span className="d-none d-sm-inline ms-1">Export</span></button>
         </div>
       </div>
 
@@ -351,7 +478,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
                     </div>
                     <div className="arsip-card-title">
                       <span className="arsip-card-nomor">{a.nomor || '—'}</span>
-                      <a className="arsip-card-name" href="#" onClick={(e) => { e.preventDefault(); push('info', `Detail ${a.nomor || a.nama}`); }}>{a.nama}</a>
+                      <a className="arsip-card-name" href="#" onClick={(e) => { e.preventDefault(); setDetail(a); }}>{a.nama}</a>
                       <div className="arsip-card-badges">
                         <span className={`status-badge status-${a.status}`}>{statusLabel(a.status)}</span>
                         {a.berkas && <span className="status-badge" style={{ background: 'var(--neu-bg)', color: 'var(--ink-2)' }}><i className="bi bi-paperclip me-1"></i>Berkas</span>}
@@ -430,7 +557,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
                       <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{a.nomor || '—'}</span></td>
                       <td>
                         <div>
-                          <a href="#" onClick={(e) => { e.preventDefault(); push('info', `Detail ${a.nomor || a.nama}`); }} className="fw-800 text-decoration-none hover-primary" style={{ fontSize: '0.88rem', color: 'var(--ink-2)' }}>{a.nama}</a>
+                          <a href="#" onClick={(e) => { e.preventDefault(); setDetail(a); }} className="fw-800 text-decoration-none hover-primary" style={{ fontSize: '0.88rem', color: 'var(--ink-2)' }}>{a.nama}</a>
                           {a.uraian && <div className="text-muted mt-1" style={{ fontSize: '0.7rem', whiteSpace: 'normal', wordBreak: 'break-word' }}>{String(a.uraian)}</div>}
                         </div>
                       </td>
@@ -471,6 +598,109 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
         )}
       </div>
     </div>
+
+    {/* MODAL TAMBAH / UBAH ARSIP */}
+    <ArsipFormModal
+      open={formOpen}
+      initial={editTarget}
+      opts={opts}
+      onClose={() => { setFormOpen(false); setEditTarget(null); }}
+      onSaved={() => void load()}
+    />
+
+    {/* MODAL BERKASKAN */}
+    {assignOpen && (
+      <div className="sm sm-show" role="dialog" aria-modal="true">
+        <div className="sm-overlay sm-show" onClick={() => setAssignOpen(false)} />
+        <div className="sm-dialog"><div className="sm-content">
+          <div className="sm-header">
+            <div className="sm-header-left">
+              <div className="sm-icon sm-icon-primary"><i className="bi bi-folder-plus" /></div>
+              <div className="sm-title-group">
+                <h5 className="sm-title">Berkaskan Arsip</h5>
+                <p className="sm-subtitle">{assignIds.length} arsip dipilih</p>
+              </div>
+            </div>
+            <button type="button" className="sm-btn-close" onClick={() => setAssignOpen(false)}><i className="bi bi-x" /></button>
+          </div>
+          <div className="sm-body">
+            <label className="form-label">Pilih Berkas Pemberkasan</label>
+            <select className="form-select form-select-sm mb-2" value={assignPemberkasanId} onChange={(e) => setAssignPemberkasanId(e.target.value)}>
+              <option value="">— Pilih berkas —</option>
+              {(opts.pemberkasan ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}{o.tahun ? ` (${o.tahun})` : ''}</option>)}
+            </select>
+            <div className="small text-muted"><i className="bi bi-info-circle me-1"></i>Arsip terpilih akan dipindahkan ke berkas yang ditentukan.</div>
+          </div>
+          <div className="sm-footer">
+            <button type="button" className="sm-btn sm-btn-cancel" onClick={() => setAssignOpen(false)} disabled={busy}><i className="bi bi-x-lg me-1" />Batal</button>
+            <button type="button" className="sm-btn sm-btn-confirm" onClick={() => void submitAssign()} disabled={busy || !assignPemberkasanId}><i className="bi bi-check-lg me-1" />Simpan</button>
+          </div>
+        </div></div>
+      </div>
+    )}
+
+    {/* MODAL PINDAH LOKASI */}
+    {moveOpen && (
+      <div className="sm sm-show" role="dialog" aria-modal="true">
+        <div className="sm-overlay sm-show" onClick={() => setMoveOpen(false)} />
+        <div className="sm-dialog"><div className="sm-content">
+          <div className="sm-header">
+            <div className="sm-header-left">
+              <div className="sm-icon sm-icon-primary"><i className="bi bi-map" /></div>
+              <div className="sm-title-group">
+                <h5 className="sm-title">Pindah Lokasi Arsip</h5>
+                <p className="sm-subtitle">{moveIds.length} arsip dipilih</p>
+              </div>
+            </div>
+            <button type="button" className="sm-btn-close" onClick={() => setMoveOpen(false)}><i className="bi bi-x" /></button>
+          </div>
+          <div className="sm-body">
+            <label className="form-label">Lokasi Tujuan</label>
+            <select className="form-select form-select-sm mb-2" value={moveLokasiId} onChange={(e) => setMoveLokasiId(e.target.value)}>
+              <option value="">— Pilih lokasi tujuan —</option>
+              {(opts.lokasiArsip ?? []).map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+            <div className="small text-muted"><i className="bi bi-info-circle me-1"></i>Lokasi penyimpanan arsip akan diperbarui secara massal.</div>
+          </div>
+          <div className="sm-footer">
+            <button type="button" className="sm-btn sm-btn-cancel" onClick={() => setMoveOpen(false)} disabled={busy}><i className="bi bi-x-lg me-1" />Batal</button>
+            <button type="button" className="sm-btn sm-btn-confirm" onClick={() => void submitMove()} disabled={busy || !moveLokasiId}><i className="bi bi-check-lg me-1" />Pindahkan</button>
+          </div>
+        </div></div>
+      </div>
+    )}
+
+    {/* MODAL HASIL OCR */}
+    {ocrOpen && (
+      <div className="sm sm-show sm-lg" role="dialog" aria-modal="true">
+        <div className="sm-overlay sm-show" onClick={() => setOcrOpen(false)} />
+        <div className="sm-dialog"><div className="sm-content">
+          <div className="sm-header">
+            <div className="sm-header-left">
+              <div className="sm-icon sm-icon-primary"><i className="bi bi-camera" /></div>
+              <div className="sm-title-group">
+                <h5 className="sm-title">Hasil OCR</h5>
+                <p className="sm-subtitle">{ocrFile || 'Berkas gambar'}</p>
+              </div>
+            </div>
+            <button type="button" className="sm-btn-close" onClick={() => setOcrOpen(false)}><i className="bi bi-x" /></button>
+          </div>
+          <div className="sm-body">
+            {ocrText ? (
+              <textarea className="form-control" rows={12} value={ocrText} readOnly style={{ fontSize: '0.82rem', fontFamily: 'monospace' }} />
+            ) : (
+              <div className="text-center text-muted py-4"><i className="bi bi-file-earmark-x d-block mb-2" style={{ fontSize: '2rem', opacity: 0.3 }}></i>Tidak ada teks yang terdeteksi</div>
+            )}
+          </div>
+          <div className="sm-footer">
+            <button type="button" className="sm-btn sm-btn-cancel" onClick={() => setOcrOpen(false)}><i className="bi bi-x-lg me-1" />Tutup</button>
+            <button type="button" className="sm-btn sm-btn-confirm" disabled={!ocrText} onClick={async () => {
+              try { await navigator.clipboard.writeText(ocrText); push('success', 'Teks OCR disalin'); } catch { push('warning', 'Gagal menyalin teks'); }
+            }}><i className="bi bi-clipboard me-1" />Salin Teks</button>
+          </div>
+        </div></div>
+      </div>
+    )}
 
     {/* MODAL DETAIL ARSIP */}
     <ArsipDetailModal detail={detail} onClose={() => setDetail(null)} />

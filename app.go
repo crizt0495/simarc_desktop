@@ -266,11 +266,19 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 			"satuan":    ar.Satuan,
 			"nilai":     ar.NilaiAnggaran,
 			"nomor_spm": ar.NomorSPM,
+			"nomorSPM":  ar.NomorSPM,
 			// ID relasi untuk filter lengkap halaman publik/landing.
-			"unitId":             ar.UnitKerjaID,
-			"kodeKlasifikasiId":  ar.KodeKlasifikasiID,
-			"jenisArsipId":       derefStr(ar.JenisArsipID),
-			"pemberkasanId":      derefStr(ar.PemberkasanID),
+			"unitId":            ar.UnitKerjaID,
+			"kodeKlasifikasiId": ar.KodeKlasifikasiID,
+			"jenisArsipId":      derefStr(ar.JenisArsipID),
+			"pemberkasanId":     derefStr(ar.PemberkasanID),
+			"lokasiArsipId":     derefStr(ar.LokasiArsipID),
+			"tanggalRetensiBerakhir": func() string {
+				if ar.TanggalRetensiAkhir != nil {
+					return ar.TanggalRetensiAkhir.Format("2006-01-02")
+				}
+				return ""
+			}(),
 			"kodeKlasifikasiTxt": func() string {
 				if ar.KodeKlasifikasi != nil {
 					return ar.KodeKlasifikasi.KodeKlasifikasi
@@ -283,9 +291,9 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 				}
 				return "—"
 			}(),
-			"berkas":   ar.FilePath != "",
-			"created":  ar.CreatedAt.Format("2006-01-02 15:04:05"),
-			"updated":  ar.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"berkas":  ar.FilePath != "",
+			"created": ar.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated": ar.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	return result
@@ -324,7 +332,13 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 	database.DB.Order("kode_klasifikasi asc").Find(&klas)
 	k := make([]map[string]interface{}, len(klas))
 	for i, r := range klas {
-		k[i] = map[string]interface{}{"id": r.ID, "name": r.KodeKlasifikasi + " - " + r.NamaKlasifikasi}
+		k[i] = map[string]interface{}{
+			"id": r.ID, "name": r.KodeKlasifikasi + " - " + r.NamaKlasifikasi,
+			"kode": r.KodeKlasifikasi, "nama": r.NamaKlasifikasi,
+			"retensiAktif": r.RetensiAktif, "retensiInaktif": r.RetensiInaktif,
+			"penyusutanArsip": r.PenyusutanArsip, "klasifikasiKeamanan": r.KlasifikasiKeamanan,
+			"unitPengolah": r.UnitPengolah,
+		}
 	}
 	out["kodeKlasifikasi"] = opts(k)
 
@@ -332,7 +346,10 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 	database.DB.Order("nama_lokasi asc").Find(&lokasi)
 	l := make([]map[string]interface{}, len(lokasi))
 	for i, r := range lokasi {
-		l[i] = map[string]interface{}{"id": r.ID, "name": r.NamaLokasi}
+		l[i] = map[string]interface{}{
+			"id": r.ID, "name": r.NamaLokasi,
+			"deskripsi": r.Deskripsi, "kapasitas": derefStr(r.Kapasitas),
+		}
 	}
 	out["lokasiArsip"] = opts(l)
 
@@ -340,7 +357,10 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 	database.DB.Order("nama_jenis asc").Find(&jenis)
 	j := make([]map[string]interface{}, len(jenis))
 	for i, r := range jenis {
-		j[i] = map[string]interface{}{"id": r.ID, "name": r.NamaJenis}
+		j[i] = map[string]interface{}{
+			"id": r.ID, "name": r.NamaJenis,
+			"kode": r.KodeJenis, "keterangan": r.Keterangan,
+		}
 	}
 	out["jenisArsip"] = opts(j)
 
@@ -348,9 +368,21 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 	database.DB.Order("nama_pemberkasan asc").Find(&berkas)
 	p := make([]map[string]interface{}, len(berkas))
 	for i, r := range berkas {
-		p[i] = map[string]interface{}{"id": r.ID, "name": r.NamaPemberkasan}
+		p[i] = map[string]interface{}{
+			"id": r.ID, "name": r.NamaPemberkasan,
+			"kode": r.KodeBerkas, "tahun": r.Tahun, "status": r.StatusBerkas,
+			"unitKerjaId": derefStr(r.UnitKerjaID), "kodeKlasifikasiId": derefStr(r.KodeKlasifikasiID),
+		}
 	}
 	out["pemberkasan"] = opts(p)
+
+	var roles []models.Role
+	database.DB.Order("name asc").Find(&roles)
+	r := make([]map[string]interface{}, len(roles))
+	for i, role := range roles {
+		r[i] = map[string]interface{}{"id": role.ID, "name": role.Name}
+	}
+	out["roles"] = opts(r)
 
 	return out
 }
@@ -366,16 +398,16 @@ func (a *App) ListPeminjaman() []map[string]interface{} {
 	database.DB.Preload("Arsip").Preload("User").Order("created_at desc").Find(&list)
 	for _, p := range list {
 		row := map[string]interface{}{
-			"id":               p.ID,
-			"arsipId":          p.ArsipID,
-			"peminjamanStatus": p.Status,
-			"peminjam":         "",
-			"tanggalPinjam":    "",
+			"id":                    p.ID,
+			"arsipId":               p.ArsipID,
+			"peminjamanStatus":      p.Status,
+			"peminjam":              "",
+			"tanggalPinjam":         "",
 			"tanggalKembaliRencana": "",
-			"tanggalKembaliAktual": "",
-			"keperluan":        p.Keperluan,
-			"created":          p.CreatedAt.Format("2006-01-02 15:04:05"),
-			"updated":          p.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"tanggalKembaliAktual":  "",
+			"keperluan":             p.Keperluan,
+			"created":               p.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":               p.UpdatedAt.Format("2006-01-02 15:04:05"),
 		}
 		if p.User != nil {
 			row["peminjam"] = p.User.Name
@@ -435,14 +467,21 @@ func (a *App) ListPemberkasan() []map[string]interface{} {
 	database.DB.Preload("Arsip").Order("tahun asc, nama_pemberkasan asc").Find(&berkas)
 	for _, b := range berkas {
 		row := map[string]interface{}{
-			"id":            b.ID,
-			"kodeBerkas":   b.KodeBerkas,
-			"namaPemberkasan": b.NamaPemberkasan,
-			"tahun":        b.Tahun,
-			"statusBerkas": b.StatusBerkas,
-			"unitKerjaId": derefStr(b.UnitKerjaID),
-			"created":      b.CreatedAt.Format("2006-01-02 15:04:05"),
-			"updated":      b.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"id":                b.ID,
+			"kodeBerkas":        b.KodeBerkas,
+			"namaPemberkasan":   b.NamaPemberkasan,
+			"tahun":             b.Tahun,
+			"statusBerkas":      b.StatusBerkas,
+			"unitKerjaId":       derefStr(b.UnitKerjaID),
+			"kodeKlasifikasiId": derefStr(b.KodeKlasifikasiID),
+			"created":           b.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":           b.UpdatedAt.Format("2006-01-02 15:04:05"),
+		}
+		if b.TanggalMulai != nil {
+			row["tanggalMulai"] = b.TanggalMulai.Format("2006-01-02")
+		}
+		if b.TanggalTutup != nil {
+			row["tanggalTutup"] = b.TanggalTutup.Format("2006-01-02")
 		}
 		if b.UnitKerja != nil {
 			row["unitKerja"] = b.UnitKerja.NamaUnit
@@ -493,17 +532,17 @@ func (a *App) ListPemusnahan() []map[string]interface{} {
 	var list []models.PemusnahanArsip
 	database.DB.Preload("Arsip").Preload("UserPengaju").Order("created_at desc").Find(&list)
 	for _, p := range list {
-	 row := map[string]interface{}{
+		row := map[string]interface{}{
 			"id":                 p.ID,
 			"arsipId":            p.ArsipID,
 			"status":             p.Status,
-			"namaKegiatan":      p.NamaKegiatan,
+			"namaKegiatan":       p.NamaKegiatan,
 			"tanggalPelaksanaan": "",
-			"alasanPengajuan":   p.AlasanPengajuan,
-			"keteranganApprove": p.KeteranganApprove,
-			"keterangan":        p.Keterangan,
-			"userPengaju":       "",
-			"tanggalPengajuan":  "",
+			"alasanPengajuan":    p.AlasanPengajuan,
+			"keteranganApprove":  p.KeteranganApprove,
+			"keterangan":         p.Keterangan,
+			"userPengaju":        "",
+			"tanggalPengajuan":   "",
 			"isAuto":             p.IsAuto,
 			"created":            p.CreatedAt.Format("2006-01-02 15:04:05"),
 			"updated":            p.UpdatedAt.Format("2006-01-02 15:04:05"),
@@ -586,24 +625,30 @@ func (a *App) ListUsers() []map[string]interface{} {
 		return result
 	}
 	var users []models.User
-	database.DB.Order("created_at desc").Find(&users)
+	database.DB.Preload("Role").Preload("UnitKerja").Order("created_at desc").Find(&users)
 	for _, u := range users {
-		result = append(result, map[string]interface{}{
+		row := map[string]interface{}{
 			"id":        u.ID,
-			"username": u.Username,
+			"username":  u.Username,
 			"name":      u.Name,
 			"role":      "",
+			"roleId":    u.RoleID,
 			"unitKerja": "",
+			"unitId":    derefStr(u.UnitKerjaID),
 			"isActive":  u.IsActive,
 			"created":   u.CreatedAt.Format("2006-01-02 15:04:05"),
 			"updated":   u.UpdatedAt.Format("2006-01-02 15:04:05"),
-		})
+		}
 		if u.Role != nil {
-			result[len(result)-1]["role"] = u.Role.Name
+			row["role"] = u.Role.Name
 		}
 		if u.UnitKerja != nil {
-			result[len(result)-1]["unitKerja"] = u.UnitKerja.NamaUnit
+			row["unitKerja"] = u.UnitKerja.NamaUnit
 		}
+		if u.LastLoginAt != nil {
+			row["lastLogin"] = u.LastLoginAt.Format("2006-01-02 15:04:05")
+		}
+		result = append(result, row)
 	}
 	return result
 }
@@ -618,12 +663,12 @@ func (a *App) CreatePeminjaman(arsipId, userId, keperluan, tanggalPinjam, tangga
 		kembali = &t
 	}
 	p := models.PeminjamanArsip{
-		ID:                     uuid.NewString(),
-		ArsipID:                arsipId,
-		UserID:                 userId,
-		Keperluan:              keperluan,
-		Status:                 "pending",
-		TanggalPinjam:          pinjam,
+		ID:                    uuid.NewString(),
+		ArsipID:               arsipId,
+		UserID:                userId,
+		Keperluan:             keperluan,
+		Status:                "pending",
+		TanggalPinjam:         pinjam,
 		TanggalKembaliRencana: kembali,
 	}
 	if err := database.DB.Create(&p).Error; err != nil {
@@ -725,23 +770,23 @@ func (a *App) ListPenyusutan() []map[string]interface{} {
 			retensi = ar.TanggalRetensiAkhir.Format("2006-01-02")
 		}
 		result = append(result, map[string]interface{}{
-			"id":                  ar.ID,
-			"nomor":               ar.NomorArsip,
-			"nama":                ar.NamaArsip,
-			"uraian":              ar.Uraian,
-			"status":              ar.StatusArsip,
-			"unit":                unit,
-			"kategori":            kategori,
-			"jenisName":           kategori,
-			"tanggal":             tanggal,
+			"id":                     ar.ID,
+			"nomor":                  ar.NomorArsip,
+			"nama":                   ar.NamaArsip,
+			"uraian":                 ar.Uraian,
+			"status":                 ar.StatusArsip,
+			"unit":                   unit,
+			"kategori":               kategori,
+			"jenisName":              kategori,
+			"tanggal":                tanggal,
 			"tanggalRetensiBerakhir": retensi,
-			"jumlah":              ar.Jumlah,
-			"satuan":              ar.Satuan,
-			"nilai":               ar.NilaiAnggaran,
-			"nomor_spm":           ar.NomorSPM,
-			"berkas":              ar.FilePath != "",
-			"created":             ar.CreatedAt.Format("2006-01-02 15:04:05"),
-			"updated":             ar.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"jumlah":                 ar.Jumlah,
+			"satuan":                 ar.Satuan,
+			"nilai":                  ar.NilaiAnggaran,
+			"nomor_spm":              ar.NomorSPM,
+			"berkas":                 ar.FilePath != "",
+			"created":                ar.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":                ar.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	return result
@@ -775,23 +820,23 @@ func (a *App) ListRetensiExpiring(days int) []map[string]interface{} {
 			retensi = ar.TanggalRetensiAkhir.Format("2006-01-02")
 		}
 		result = append(result, map[string]interface{}{
-			"id":                  ar.ID,
-			"nomor":               ar.NomorArsip,
-			"nama":                ar.NamaArsip,
-			"uraian":              ar.Uraian,
-			"status":              ar.StatusArsip,
-			"unit":                unit,
-			"kategori":            kategori,
-			"jenisName":           kategori,
-			"tanggal":             tanggal,
+			"id":                     ar.ID,
+			"nomor":                  ar.NomorArsip,
+			"nama":                   ar.NamaArsip,
+			"uraian":                 ar.Uraian,
+			"status":                 ar.StatusArsip,
+			"unit":                   unit,
+			"kategori":               kategori,
+			"jenisName":              kategori,
+			"tanggal":                tanggal,
 			"tanggalRetensiBerakhir": retensi,
-			"jumlah":              ar.Jumlah,
-			"satuan":              ar.Satuan,
-			"nilai":               ar.NilaiAnggaran,
-			"nomor_spm":           ar.NomorSPM,
-			"berkas":              ar.FilePath != "",
-			"created":             ar.CreatedAt.Format("2006-01-02 15:04:05"),
-			"updated":             ar.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"jumlah":                 ar.Jumlah,
+			"satuan":                 ar.Satuan,
+			"nilai":                  ar.NilaiAnggaran,
+			"nomor_spm":              ar.NomorSPM,
+			"berkas":                 ar.FilePath != "",
+			"created":                ar.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":                ar.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	return result
@@ -830,10 +875,10 @@ func (a *App) ListRoles() []map[string]interface{} {
 		result = append(result, map[string]interface{}{
 			"id":         r.ID,
 			"name":       r.Name,
-			"namaRole":  r.NamaRole,
+			"namaRole":   r.NamaRole,
 			"keterangan": r.Keterangan,
-			"created":   r.CreatedAt.Format("2006-01-02 15:04:05"),
-			"updated":   r.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"created":    r.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated":    r.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	return result
@@ -881,22 +926,22 @@ func (a *App) GetDashboardExtras() map[string]interface{} {
 		pct = float64(totals.WithFile) / float64(totals.Total) * 100
 	}
 	out["digitalFile"] = map[string]interface{}{
-		"with":     totals.WithFile,
-		"without":  totals.Total - totals.WithFile,
-		"percent":  pct,
+		"with":    totals.WithFile,
+		"without": totals.Total - totals.WithFile,
+		"percent": pct,
 	}
 
 	// ── Box stats (record center inventory) ──
 	out["boxStats"] = map[string]interface{}{
-		"totalRcBoxes":    0,
-		"boxMurniSpj":     0,
-		"boxMurniNonSpj":  0,
-		"boxCampuran":     0,
+		"totalRcBoxes":     0,
+		"boxMurniSpj":      0,
+		"boxMurniNonSpj":   0,
+		"boxCampuran":      0,
 		"rcDigitalPercent": 0,
-		"listAll":         []string{},
-		"listMurniSpj":    []string{},
-		"listMurniNonSpj": []string{},
-		"listCampuran":    []string{},
+		"listAll":          []string{},
+		"listMurniSpj":     []string{},
+		"listMurniNonSpj":  []string{},
+		"listCampuran":     []string{},
 	}
 
 	// ── Forecast: 6-month linear regression on monthly archive growth ──

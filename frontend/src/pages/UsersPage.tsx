@@ -1,40 +1,71 @@
 /**
- * UsersPage — modul manajemen petugas (Pengguna Sistem).
+ * UsersPage — modul manajemen petugas / pengguna sistem (CRUD lengkap).
  */
-import React, { useEffect, useMemo, useState } from 'react';
-import { listUsers } from '../lib/bindings';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { listUsers, getMasterOptions, saveUser, deleteUser } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import { FormModal } from '../components/FormModal';
 
 const nf = new Intl.NumberFormat('id-ID');
+const toOpts = (arr: any[] | undefined) => (arr ?? []).map((o: any) => ({ value: String(o.id), label: String(o.name ?? o.id) }));
 
 export const UsersPage: React.FC = () => {
   const { push } = useToast();
   const [rows, setRows] = useState<any[]>([]);
+  const [opts, setOpts] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const [formOpen, setFormOpen] = useState(false);
+  const [target, setTarget] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await listUsers();
+      const [r, o] = await Promise.all([listUsers(), getMasterOptions()]);
       setRows(Array.isArray(r) ? r : []);
+      setOpts(o ?? {});
       setError(null);
     } catch (e) {
       setError(String(e));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
-  const filtered = useMemo(() => [...rows].sort((x, y) => String(y.created ?? '').localeCompare(String(y.created ?? ''))), [rows]);
+  const filtered = useMemo(() => [...rows].sort((x, y) => String(y.created ?? '').localeCompare(String(x.created ?? ''))), [rows]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * perPage, curPage * perPage);
   const startIdx = (curPage - 1) * perPage;
+
+  const submit = async (v: Record<string, any>) => {
+    setBusy(true);
+    try {
+      await saveUser({ ...v, id: target?.id ?? '', isActive: Boolean(v.isActive) });
+      push('success', target ? 'Pengguna berhasil diperbarui' : 'Pengguna berhasil ditambahkan');
+      setFormOpen(false);
+      setTarget(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (row: any) => {
+    if (!window.confirm(`Hapus pengguna "${row.name}" (${row.username})?`)) return;
+    try {
+      await deleteUser(row.id);
+      push('success', 'Pengguna berhasil dihapus');
+      await load();
+    } catch (e) {
+      push('danger', `Gagal menghapus: ${e}`);
+    }
+  };
 
   return (
     <div className="container-fluid py-3 py-xl-4">
@@ -44,6 +75,9 @@ export const UsersPage: React.FC = () => {
             <div className="hero-title"><i className="bi bi-people me-2"></i>Pengguna Sistem</div>
             <div className="hero-sub">Akun petugas dan hak akses sistem kearsipan</div>
           </div>
+          <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
+            <i className="bi bi-plus-lg me-1"></i>Tambah Petugas
+          </button>
         </div>
       </div>
 
@@ -68,8 +102,9 @@ export const UsersPage: React.FC = () => {
                     <th>Nama</th>
                     <th style={{ width: 140 }}>Role</th>
                     <th style={{ width: 180 }}>Unit Kerja</th>
-                    <th style={{ width: 110 }}>Status</th>
-                    <th style={{ width: 120 }}>Dibuat</th>
+                    <th style={{ width: 100 }}>Status</th>
+                    <th style={{ width: 150 }}>Login Terakhir</th>
+                    <th style={{ width: 150 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -81,7 +116,11 @@ export const UsersPage: React.FC = () => {
                       <td><span className="badge badge-soft-primary">{u.role || '—'}</span></td>
                       <td><span className="small fw-600">{u.unitKerja || '—'}</span></td>
                       <td><span className={`status-badge ${u.isActive ? 'status-aktif' : 'status-inaktif'}`}>{u.isActive ? 'Aktif' : 'Nonaktif'}</span></td>
-                      <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}>{u.created || '—'}</span></td>
+                      <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}>{u.lastLogin || '—'}</span></td>
+                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(u); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(u)}><i className="bi bi-trash me-1"></i>Hapus</button>
+                      </div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -102,6 +141,30 @@ export const UsersPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <FormModal
+        open={formOpen}
+        title={target ? 'Ubah Pengguna' : 'Tambah Pengguna'}
+        subtitle="Akun petugas dan hak akses"
+        icon="person-plus"
+        size="lg"
+        fields={[
+          { key: 'username', label: 'Username', required: true, placeholder: 'contoh: arsiparis' },
+          { key: 'name', label: 'Nama Lengkap', required: true, placeholder: 'Nama petugas' },
+          { key: 'password', label: target ? 'Password Baru' : 'Password', type: 'password', col: 12, placeholder: target ? 'Kosongkan bila tidak diubah' : 'Default: simarc123' },
+          { key: 'roleId', label: 'Role', type: 'select', options: toOpts(opts.roles), placeholder: '— Pilih role —' },
+          { key: 'unitKerjaId', label: 'Unit Kerja', type: 'select', options: toOpts(opts.unitKerja), placeholder: '— Pilih unit —' },
+          { key: 'isActive', label: 'Akun aktif', type: 'checkbox', col: 12 },
+        ]}
+        initial={target ? {
+          username: target.username ?? '', name: target.name ?? '', roleId: target.roleId ?? '',
+          unitKerjaId: target.unitId ?? '', isActive: Boolean(target.isActive),
+        } : { isActive: true }}
+        busy={busy}
+        submitLabel={target ? 'Simpan Perubahan' : 'Tambah Pengguna'}
+        onClose={() => { if (!busy) { setFormOpen(false); setTarget(null); } }}
+        onSubmit={submit}
+      />
     </div>
   );
 };

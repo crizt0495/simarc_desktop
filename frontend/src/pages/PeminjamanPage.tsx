@@ -4,7 +4,7 @@
  * Mode 'create' → form pengajuan permohonan pinjam baru.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { listPeminjaman, listArsipDetail, listUsers, createPeminjaman } from '../lib/bindings';
+import { listPeminjaman, listArsipDetail, listUsers, createPeminjaman, updatePeminjamanStatus } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 
@@ -84,6 +84,18 @@ export const PeminjamanPage: React.FC<{ mode?: 'list' | 'create' }> = ({ mode: i
   const selesaiCount = rows.filter((p) => String(p.peminjamanStatus ?? '').toLowerCase().includes('return') || String(p.peminjamanStatus ?? '').toLowerCase().includes('dikembalikan') || String(p.peminjamanStatus ?? '').toLowerCase().includes('selesai')).length;
 
   const openArsip = (p: any) => { if (p && p.nomor) setDetail(p); };
+
+  const setStatus = async (p: any, status: string) => {
+    const label = status === 'disetujui' ? 'menyetujui' : status === 'ditolak' ? 'menolak' : 'menandai dikembalikan';
+    if (!window.confirm(`Yakin ${label} permohonan pinjam ${p.nama || p.nomor}?`)) return;
+    try {
+      await updatePeminjamanStatus(p.id, status, '');
+      push('success', `Status peminjaman diperbarui: ${status.replace(/_/g, ' ')}`);
+      await load();
+    } catch (e) {
+      push('danger', `Gagal memperbarui: ${e}`);
+    }
+  };
 
   if (mode === 'create') {
     return (
@@ -203,8 +215,17 @@ export const PeminjamanPage: React.FC<{ mode?: 'list' | 'create' }> = ({ mode: i
                       <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}><i className="bi bi-calendar3 me-1"></i>{p.tanggalPinjam || '—'}</span></td>
                       <td><span className="small fw-600" style={{ color: 'var(--ink-3)' }}><i className="bi bi-calendar3 me-1"></i>{p.tanggalKembaliRencana || '—'}</span></td>
                       <td><span className={`status-badge ${pinjamBadge(p.peminjamanStatus)}`}>{statusLabel(String(p.peminjamanStatus ?? ''))}</span></td>
-                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
-                        <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => openArsip(p)}><i className="bi bi-eye me-1"></i>Detail</button>
+                      <td className="text-center"><div className="d-flex justify-content-center gap-1 flex-wrap">
+                        <button type="button" className="btn-crud btn-crud-view" title="Detail" onClick={() => openArsip(p)}><i className="bi bi-eye"></i></button>
+                        {String(p.peminjamanStatus ?? '').toLowerCase().includes('pending') && (
+                          <>
+                            <button type="button" className="btn-crud btn-crud-success" title="Setujui" onClick={() => void setStatus(p, 'disetujui')}><i className="bi bi-check-lg"></i></button>
+                            <button type="button" className="btn-crud btn-crud-del" title="Tolak" onClick={() => void setStatus(p, 'ditolak')}><i className="bi bi-x-lg"></i></button>
+                          </>
+                        )}
+                        {(String(p.peminjamanStatus ?? '').toLowerCase().includes('approved') || String(p.peminjamanStatus ?? '').toLowerCase().includes('dipinjam') || String(p.peminjamanStatus ?? '').toLowerCase().includes('disetujui')) && (
+                          <button type="button" className="btn-crud btn-crud-primary" title="Tandai dikembalikan" onClick={() => void setStatus(p, 'dikembalikan')}><i className="bi bi-arrow-return-left"></i></button>
+                        )}
                       </div></td>
                     </tr>
                   ))}

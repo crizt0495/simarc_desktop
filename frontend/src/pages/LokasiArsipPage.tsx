@@ -1,9 +1,10 @@
 /**
- * LokasiArsipPage — modul master data Lokasi Arsip.
+ * LokasiArsipPage — modul master data Lokasi Arsip (CRUD lengkap).
  */
-import React, { useEffect, useMemo, useState } from 'react';
-import { getMasterOptions } from '../lib/bindings';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { getMasterOptions, saveLokasiArsip, deleteLokasiArsip } from '../lib/bindings';
 import { useToast } from '../lib/toast';
+import { FormModal } from '../components/FormModal';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -14,31 +15,54 @@ export const LokasiArsipPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const [formOpen, setFormOpen] = useState(false);
+  const [target, setTarget] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const o = await getMasterOptions();
-        if (cancelled) return;
-        setRows(Array.isArray(o?.lokasiArsip) ? o.lokasiArsip : []);
-        setError(null);
-      } catch (e) {
-        if (!cancelled) setError(String(e));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void load();
-    return () => { cancelled = true; };
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const o = await getMasterOptions();
+      setRows(Array.isArray(o?.lokasiArsip) ? o.lokasiArsip : []);
+      setError(null);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => [...rows].sort((x, y) => String(x.name ?? '').localeCompare(String(y.name ?? ''))), [rows]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * perPage, curPage * perPage);
   const startIdx = (curPage - 1) * perPage;
+
+  const submit = async (v: Record<string, any>) => {
+    setBusy(true);
+    try {
+      await saveLokasiArsip({ ...v, id: target?.id ?? '' });
+      push('success', target ? 'Lokasi berhasil diperbarui' : 'Lokasi berhasil ditambahkan');
+      setFormOpen(false);
+      setTarget(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (row: any) => {
+    if (!window.confirm(`Hapus lokasi "${row.name}"?`)) return;
+    try {
+      await deleteLokasiArsip(row.id);
+      push('success', 'Lokasi berhasil dihapus');
+      await load();
+    } catch (e) {
+      push('danger', `Gagal menghapus: ${e}`);
+    }
+  };
 
   return (
     <div className="container-fluid py-3 py-xl-4">
@@ -48,6 +72,9 @@ export const LokasiArsipPage: React.FC = () => {
             <div className="hero-title"><i className="bi bi-geo-alt me-2"></i>Lokasi Arsip</div>
             <div className="hero-sub">Kelola lokasi penyimpanan fisik arsip di lingkungan record center</div>
           </div>
+          <button type="button" className="btn btn-light btn-sm rounded-pill fw-800 px-3" style={{ fontSize: '0.75rem' }} onClick={() => { setTarget(null); setFormOpen(true); }}>
+            <i className="bi bi-plus-lg me-1"></i>Tambah Lokasi
+          </button>
         </div>
       </div>
 
@@ -71,6 +98,8 @@ export const LokasiArsipPage: React.FC = () => {
                     <th style={{ width: 80 }}>ID</th>
                     <th>Nama Lokasi</th>
                     <th>Deskripsi</th>
+                    <th style={{ width: 120 }}>Kapasitas</th>
+                    <th style={{ width: 150 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -80,6 +109,11 @@ export const LokasiArsipPage: React.FC = () => {
                       <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{l.id}</span></td>
                       <td className="fw-600">{l.name}</td>
                       <td><span className="small text-muted">{l.deskripsi || '—'}</span></td>
+                      <td><span className="small fw-600">{l.kapasitas || '—'}</span></td>
+                      <td className="text-center"><div className="d-flex justify-content-center gap-1">
+                        <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(l); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
+                        <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(l)}><i className="bi bi-trash me-1"></i>Hapus</button>
+                      </div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -100,6 +134,23 @@ export const LokasiArsipPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <FormModal
+        open={formOpen}
+        title={target ? 'Ubah Lokasi Arsip' : 'Tambah Lokasi Arsip'}
+        subtitle="Lokasi fisik penyimpanan arsip"
+        icon="geo-alt"
+        fields={[
+          { key: 'nama', label: 'Nama Lokasi', required: true, col: 12, placeholder: 'Contoh: Ruang Record Center Lt. 1' },
+          { key: 'deskripsi', label: 'Deskripsi', type: 'textarea', rows: 2, placeholder: 'Keterangan lokasi…' },
+          { key: 'kapasitas', label: 'Kapasitas', placeholder: 'Contoh: 120 box' },
+        ]}
+        initial={target ? { nama: target.name, deskripsi: target.deskripsi ?? '', kapasitas: target.kapasitas ?? '' } : undefined}
+        busy={busy}
+        submitLabel={target ? 'Simpan Perubahan' : 'Tambah Lokasi'}
+        onClose={() => { if (!busy) { setFormOpen(false); setTarget(null); } }}
+        onSubmit={submit}
+      />
     </div>
   );
 };

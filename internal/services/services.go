@@ -542,8 +542,9 @@ func (s *AnalyticsService) GetArsipGrowth(months int) []map[string]interface{} {
 		Total int64  `gorm:"column:total"`
 	}
 	var rows []Row
-	database.DB.Raw(database.AdaptSQL(`SELECT TO_CHAR(created_at, 'YYYY-MM') as month, COUNT(*) as total
-		FROM arsip WHERE deleted_at IS NULL GROUP BY month ORDER BY month DESC LIMIT ?`), months).Scan(&rows)
+	database.DB.Raw(database.AdaptSQL(fmt.Sprintf(`SELECT %s as month, COUNT(*) as total
+		FROM arsip WHERE deleted_at IS NULL GROUP BY month ORDER BY month DESC LIMIT ?`,
+		database.SQLYearMonth("created_at"))), months).Scan(&rows)
 	result := make([]map[string]interface{}, len(rows))
 	for i, r := range rows {
 		result[i] = map[string]interface{}{"month": r.Month, "total": r.Total}
@@ -812,8 +813,9 @@ func (s *DataScienceService) GetGrowthTrend(months int) []map[string]interface{}
 		Total int64  `gorm:"column:total"`
 	}
 	var rows []Row
-	database.DB.Raw(database.AdaptSQL(`SELECT TO_CHAR(created_at, 'YYYY-MM') as month, COUNT(*) as total
-		FROM arsip WHERE deleted_at IS NULL GROUP BY month ORDER BY month DESC LIMIT ?`), months).Scan(&rows)
+	database.DB.Raw(database.AdaptSQL(fmt.Sprintf(`SELECT %s as month, COUNT(*) as total
+		FROM arsip WHERE deleted_at IS NULL GROUP BY month ORDER BY month DESC LIMIT ?`,
+		database.SQLYearMonth("created_at"))), months).Scan(&rows)
 	result := make([]map[string]interface{}, len(rows))
 	for i, r := range rows {
 		result[i] = map[string]interface{}{"month": r.Month, "total": r.Total}
