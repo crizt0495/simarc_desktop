@@ -549,8 +549,6 @@ kbd {
   inset: 0;
   z-index: calc(var(--z-sidebar) - 1);
   background: rgba(11, 18, 32, 0.55);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -2080,6 +2078,12 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   opacity: 1;
   visibility: visible;
 }
+/* Pastikan dialog berada di atas overlay (overlay memakai --z-modal; dialog
+   harus menang pada lapisan stacking untuk tetap bisa diklik & diblokir klik scrim). */
+.sm-dialog {
+  position: relative;
+  z-index: calc(var(--z-modal) + 1);
+}
 
 .sm-content {
   position: relative;
@@ -2376,8 +2380,6 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   justify-content: center;
   gap: 0.8rem;
   background: rgba(255,255,255,0.82);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
 }
 [data-theme="dark"] .loading-overlay { background: rgba(11,18,32,0.82); }
 .spinner-border {
@@ -2563,7 +2565,7 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   color: var(--nb-on-accent);
 }
 .striped-bar { height: 4px; border-radius: 2px; background: repeating-linear-gradient(45deg, var(--nb-primary), var(--nb-primary) 6px, var(--nb-primary-light) 6px, var(--nb-primary-light) 12px); }
-.backdrop-blur { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+/* no glass effect: modal/overlay tidak memakai backdrop-filter */
 
 /* ═══════════════════════════════════════════════════════════════════════
    19. MOBILE — bottom nav, off-canvas, compact tables

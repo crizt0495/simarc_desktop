@@ -72,7 +72,7 @@ export const SmModal: React.FC<{
       style={isOpen ? undefined : { visibility: 'hidden', opacity: 0 }}
       aria-hidden={!isOpen}
     >
-      <div className="sm-overlay" onClick={() => SimarcModal.hide(id)} />
+      <div className={`sm-overlay${isOpen ? ' sm-show' : ''}`} onClick={() => SimarcModal.hide(id)} />
       <div className="sm-dialog">
         <div className="sm-content">{children}</div>
       </div>
