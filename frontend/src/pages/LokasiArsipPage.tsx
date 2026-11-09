@@ -5,18 +5,22 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getMasterOptions, saveLokasiArsip, deleteLokasiArsip } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { FormModal } from '../components/FormModal';
+import { ArsipFormModal } from '../components/ArsipFormModal';
 
 const nf = new Intl.NumberFormat('id-ID');
 
 export const LokasiArsipPage: React.FC = () => {
   const { push } = useToast();
   const [rows, setRows] = useState<any[]>([]);
+  const [opts, setOpts] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [formOpen, setFormOpen] = useState(false);
   const [target, setTarget] = useState<any | null>(null);
+  const [arsipFormOpen, setArsipFormOpen] = useState(false);
+  const [arsipLokasi, setArsipLokasi] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -24,6 +28,7 @@ export const LokasiArsipPage: React.FC = () => {
     try {
       const o = await getMasterOptions();
       setRows(Array.isArray(o?.lokasiArsip) ? o.lokasiArsip : []);
+      setOpts(o ?? {});
       setError(null);
     } catch (e) {
       setError(String(e));
@@ -64,6 +69,11 @@ export const LokasiArsipPage: React.FC = () => {
     }
   };
 
+  const openAddArsip = (l: any) => {
+    setArsipLokasi(l);
+    setArsipFormOpen(true);
+  };
+
   return (
     <div className="container-fluid py-3 py-xl-4">
       <div className="lokasi-hero">
@@ -99,7 +109,7 @@ export const LokasiArsipPage: React.FC = () => {
                     <th>Nama Lokasi</th>
                     <th>Deskripsi</th>
                     <th style={{ width: 120 }}>Kapasitas</th>
-                    <th style={{ width: 150 }} className="text-center">Aksi</th>
+                    <th style={{ width: 220 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -111,6 +121,7 @@ export const LokasiArsipPage: React.FC = () => {
                       <td><span className="small text-muted">{l.deskripsi || '—'}</span></td>
                       <td><span className="small fw-600">{l.kapasitas || '—'}</span></td>
                       <td className="text-center"><div className="d-flex justify-content-center gap-1">
+                        <button type="button" className="btn-crud btn-crud-primary" title="Tambah Arsip" onClick={() => openAddArsip(l)}><i className="bi bi-plus-circle me-1"></i>Tambah Arsip</button>
                         <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(l); setFormOpen(true); }}><i className="bi bi-pencil me-1"></i>Ubah</button>
                         <button type="button" className="btn-crud btn-crud-del" title="Hapus" onClick={() => void remove(l)}><i className="bi bi-trash me-1"></i>Hapus</button>
                       </div></td>
@@ -150,6 +161,14 @@ export const LokasiArsipPage: React.FC = () => {
         submitLabel={target ? 'Simpan Perubahan' : 'Tambah Lokasi'}
         onClose={() => { if (!busy) { setFormOpen(false); setTarget(null); } }}
         onSubmit={submit}
+      />
+
+      <ArsipFormModal
+        open={arsipFormOpen}
+        initial={arsipLokasi ? { lokasiArsipId: arsipLokasi.id } : null}
+        opts={opts}
+        onClose={() => { setArsipFormOpen(false); setArsipLokasi(null); }}
+        onSaved={() => { void load(); setArsipFormOpen(false); setArsipLokasi(null); }}
       />
     </div>
   );
