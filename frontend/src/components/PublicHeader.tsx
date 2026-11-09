@@ -8,12 +8,15 @@ export interface PublicHeaderProps {
   onLogin: () => void;
   sessionName?: string | null;
   onEnterDashboard?: () => void;
+  /** Menutup aplikasi desktop (opsional). */
+  onExit?: () => void;
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({
   onLogin,
   sessionName,
   onEnterDashboard,
+  onExit,
 }) => (
   <div className="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white">
     <div className="d-flex align-items-center gap-2">
@@ -26,32 +29,44 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
       </div>
     </div>
 
-    {/* tombol login — pojok kanan atas */}
-    {sessionName ? (
-      <div className="d-flex align-items-center gap-2">
-        <span className="d-flex flex-column text-end lh-sm">
-          <span className="small fw-semibold">{sessionName}</span>
-          <span className="text-muted" style={{ fontSize: '.72rem' }}>Sesi aktif</span>
-        </span>
+    {/* tombol login / dashboard + keluar — pojok kanan atas */}
+    <div className="d-flex align-items-center gap-2 flex-wrap">
+      {sessionName ? (
+        <div className="d-flex align-items-center gap-2">
+          <span className="d-flex flex-column text-end lh-sm">
+            <span className="small fw-semibold">{sessionName}</span>
+            <span className="text-muted" style={{ fontSize: '.72rem' }}>Sesi aktif</span>
+          </span>
+          <button
+            type="button"
+            className="btn btn-success btn-sm rounded-pill px-3"
+            onClick={onEnterDashboard}
+            title="Masuk ke Dashboard"
+          >
+            <i className="bi bi-speedometer2 me-1"></i>Dashboard
+          </button>
+        </div>
+      ) : (
         <button
           type="button"
-          className="btn btn-success btn-sm rounded-pill px-3"
-          onClick={onEnterDashboard}
-          title="Masuk ke Dashboard"
+          className="btn btn-outline-primary btn-sm rounded-pill px-3"
+          onClick={onLogin}
+          title="Masuk sebagai petugas"
         >
-          <i className="bi bi-speedometer2 me-1"></i>Dashboard
+          <i className="bi bi-box-arrow-in-right me-1"></i>Login
         </button>
-      </div>
-    ) : (
-      <button
-        type="button"
-        className="btn btn-outline-primary btn-sm rounded-pill px-3"
-        onClick={onLogin}
-        title="Masuk sebagai petugas"
-      >
-        <i className="bi bi-box-arrow-in-right me-1"></i>Login
-      </button>
-    )}
+      )}
+      {onExit && (
+        <button
+          type="button"
+          className="btn btn-outline-danger btn-sm rounded-pill px-3"
+          onClick={onExit}
+          title="Tutup aplikasi"
+        >
+          <i className="bi bi-power me-1"></i>Keluar
+        </button>
+      )}
+    </div>
   </div>
 );
 

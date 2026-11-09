@@ -7,7 +7,7 @@
  * - Hasil ditampilkan dalam tabel kaya + pagination + action cart.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { getMasterOptions, listArsipDetail } from '../lib/bindings';
+import { getMasterOptions, listArsipDetail, quitApp } from '../lib/bindings';
 import PublicHeader from '../components/PublicHeader';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 
@@ -127,6 +127,16 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
     setPage(1);
   };
 
+  /* ── tombol keluar: tutup aplikasi desktop ── */
+  const doExit = async () => {
+    if (!window.confirm('Keluar dari aplikasi SIMARC?')) return;
+    try {
+      await quitApp();
+    } catch {
+      window.close();
+    }
+  };
+
   return (
     <>
     <div className="container-fluid py-3 py-xl-4">
@@ -136,6 +146,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
           onLogin={() => onLogin?.()}
           sessionName={sessionName ?? null}
           onEnterDashboard={onLogin}
+          onExit={() => void doExit()}
         />
 
         {/* SEARCH FORM */}
@@ -237,21 +248,20 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
         ) : (
           <>
             <div className="table-responsive">
-              <table className="table table-hover table-striped table-sm align-middle mb-0" style={{ tableLayout: 'fixed', minWidth: 1240, width: '100%' }}>
+              <table className="table table-hover table-striped table-sm align-middle mb-0" style={{ tableLayout: 'fixed', minWidth: 1140, width: '100%' }}>
                 <thead className="table-light sticky-top">
                   <tr>
                     <th className="text-center" style={{ width: 46 }}>#</th>
-                    <th style={{ width: 150 }}>Nomor</th>
+                    <th style={{ width: 140 }}>Nomor</th>
                     <th>Nama Arsip</th>
-                    <th style={{ width: 200 }}>Uraian</th>
-                    <th style={{ width: 150 }}>Unit Kerja</th>
-                    <th style={{ width: 160 }}>Lokasi Arsip</th>
-                    <th style={{ width: 130 }}>Kategori</th>
-                    <th style={{ width: 120 }}>Jenis</th>
-                    <th className="text-center" style={{ width: 96 }}>Tanggal</th>
+                    <th style={{ width: 180 }}>Uraian</th>
+                    <th style={{ width: 140 }}>Unit Kerja</th>
+                    <th style={{ width: 150 }}>Lokasi Arsip</th>
+                    <th style={{ width: 110 }}>Jenis</th>
+                    <th className="text-center" style={{ width: 92 }}>Tanggal</th>
                     <th className="text-center" style={{ width: 60 }}>Berkas</th>
-                    <th className="text-center" style={{ width: 110 }}>Status</th>
-                    <th className="text-center" style={{ width: 90 }}>Aksi</th>
+                    <th className="text-center" style={{ width: 100 }}>Status</th>
+                    <th className="text-center" style={{ width: 84 }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -263,7 +273,6 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                       <td className="small" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>{ar.uraian || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word' }}>{ar.unit || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word' }}>{ar.lokasi || '—'}</td>
-                      <td className="small" style={{ wordBreak: 'break-word' }}>{ar.kategori || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word' }}>{ar.jenisName || '—'}</td>
                       <td className="text-center small text-muted">{ar.tanggal || '—'}</td>
                       <td className="text-center">

@@ -136,6 +136,9 @@ async function call<T>(name: string, ...args: any[]): Promise<T> {
   return (await app[name](...args)) as T;
 }
 
+/** Menutup aplikasi desktop (dipakai tombol "Keluar" di landing page). */
+export const quitApp = () => call<void>('QuitApp');
+
 export const createArsipFull = (input: Record<string, any>) => call<Record<string, any>>('CreateArsipFull', input);
 export const updateArsip = (id: string, input: Record<string, any>) => call<Record<string, any>>('UpdateArsip', id, input);
 export const deleteArsip = (id: string) => call<void>('DeleteArsip', id);
