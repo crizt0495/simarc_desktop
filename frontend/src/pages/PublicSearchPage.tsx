@@ -7,7 +7,7 @@
  * - Hasil ditampilkan dalam tabel kaya + pagination + action cart.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { getMasterOptions, listArsipDetail, quitApp } from '../lib/bindings';
+import { getMasterOptions, listArsipDetail, quitApp, getUpdateInfo, downloadUpdate, installUpdate } from '../lib/bindings';
 import PublicHeader from '../components/PublicHeader';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 
@@ -32,6 +32,9 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<any | null>(null);
+  const [update, setUpdate] = useState<{ hasUpdate: boolean; current: string; latest: string; url: string } | null>(null);
+  const [updateBusy, setUpdateBusy] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
 
   /* ── draft filter (user input) ── */
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -73,6 +76,24 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
     };
 
     void load();
+    return () => { cancelled = true; };
+  }, []);
+
+  /* ── pemeriksaan pembaruan dari GitHub Releases (auto-update) ── */
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const u = await getUpdateInfo();
+        if (cancelled) return;
+        if (u?.hasUpdate) {
+          setUpdate({ hasUpdate: true, current: String(u.current ?? ''), latest: String(u.latest ?? ''), url: String(u.downloadURL ?? '') });
+        } else {
+          setUpdate(null);
+        }
+      } catch { /* abaikan kegagalan cek pembaruan */ }
+    };
+    void check();
     return () => { cancelled = true; };
   }, []);
 
@@ -134,6 +155,25 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
       await quitApp();
     } catch {
       window.close();
+    }
+  };
+
+  /* ── pembaruan: unduh & instal paket .deb terbaru ── */
+  const doUpdate = async () => {
+    if (!update?.url) return;
+    setUpdateBusy(true);
+    setUpdateMsg(null);
+    try {
+      const path = await downloadUpdate(update.url);
+      if (!path) throw new Error('Gagal mengunduh paket pembaruan');
+      await installUpdate(path);
+      setUpdate(null);
+      setUpdateMsg(`Pembaruan SIMARC v${update.latest} berhasil diinstal. Silakan restart aplikasi untuk menerapkan.`);
+    } catch (e) {
+      setUpdateMsg(`Gagal memperbarui: ${String(e)}`);
+      setUpdate(null);
+    } finally {
+      setUpdateBusy(false);
     }
   };
 
@@ -211,6 +251,22 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
             </div>
           )}
         </form>
+
+        {/* PEMBARUAN APLIKASI */}
+        {update?.hasUpdate && (
+          <div className="card mb-3">
+            <div className="card-body d-flex align-items-center justify-content-between flex-wrap gap-2 py-3">
+              <div>
+                <div className="fw-800"><i className="bi bi-arrow-up-circle me-1"></i>Pembaruan tersedia</div>
+                <div className="text-muted small">SIMARC v{update.latest} tersedia (versi saat ini v{update.current}). Klik tombol di bawah untuk memperbarui.</div>
+                {updateMsg && <div className="small text-danger mt-1">{updateMsg}</div>}
+              </div>
+              <button type="button" className="btn btn-success rounded-pill px-3" onClick={() => void doUpdate()} disabled={updateBusy}>
+                <i className={`bi ${updateBusy ? 'bi-arrow-repeat' : 'bi-arrow-up-circle'} me-1`}></i>{updateBusy ? 'Mengunduh…' : 'Perbarui Sekarang'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* RESULTS */}
         {loading ? (

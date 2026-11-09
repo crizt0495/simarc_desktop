@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 	"time"
@@ -86,6 +90,89 @@ func (a *App) PingBackend() string {
 // QuitApp exits the application cleanly (dipanggil dari menu "Keluar").
 func (a *App) QuitApp() {
 	wailsruntime.Quit(a.ctx)
+}
+
+// AppVersion mengembalikan versi aplikasi yang sedang berjalan.
+func (a *App) AppVersion() string {
+	if v := strings.TrimSpace(os.Getenv("SIMARC_VERSION")); v != "" {
+		return v
+	}
+	return "1.0.0"
+}
+
+// GetUpdateInfo memeriksa apakah tersedia rilis terbaru dari GitHub Releases.
+func (a *App) GetUpdateInfo() (map[string]interface{}, error) {
+	var latest struct {
+		TagName string `json:"tag_name"`
+		URL     string `json:"browser_download_url"`
+		Draft   bool   `json:"draft"`
+		Pre     bool   `json:"prerelease"`
+	}
+	client := &http.Client{Timeout: 20 * time.Second}
+	resp, err := client.Get("https://api.github.com/repos/crizt0495/simarc_desktop/releases/latest")
+	if err != nil {
+		return map[string]interface{}{"hasUpdate": false}, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return map[string]interface{}{"hasUpdate": false}, err
+	}
+	if err := json.Unmarshal(body, &latest); err != nil {
+		return map[string]interface{}{"hasUpdate": false}, err
+	}
+	tag := strings.TrimPrefix(strings.TrimSpace(latest.TagName), "v")
+	cur := a.AppVersion()
+	hasUpdate := tag != "" && tag != cur && !latest.Draft && !latest.Pre
+	return map[string]interface{}{
+		"hasUpdate":   hasUpdate,
+		"current":     cur,
+		"latest":      latest.TagName,
+		"downloadURL": latest.URL,
+	}, nil
+}
+
+// DownloadUpdate mengunduh paket .deb dari URL ke direktori temp lokal.
+func (a *App) DownloadUpdate(url string) (string, error) {
+	client := &http.Client{Timeout: 10 * time.Minute}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "SIMARC-Updater")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("gagal mengunduh update: status HTTP %d", resp.StatusCode)
+	}
+	f, err := os.CreateTemp("", "simarc-update-*.deb")
+	if err != nil {
+		return "", err
+	}
+	tmp := f.Name()
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		os.Remove(tmp)
+		return "", err
+	}
+	if err := f.Close(); err != nil {
+		os.Remove(tmp)
+		return "", err
+	}
+	return tmp, nil
+}
+
+// InstallUpdate memasang paket .deb yang sudah diunduh (membutuhkan privilege).
+func (a *App) InstallUpdate(path string) error {
+	cmd := exec.Command("pkexec", "dpkg", "-i", path)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("instalasi gagal: %s", strings.TrimSpace(string(out)))
+	}
+	return nil
 }
 
 // ListArsip returns recent arsip records.

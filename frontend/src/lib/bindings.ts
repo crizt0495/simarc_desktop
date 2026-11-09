@@ -139,6 +139,11 @@ async function call<T>(name: string, ...args: any[]): Promise<T> {
 /** Menutup aplikasi desktop (dipakai tombol "Keluar" di landing page). */
 export const quitApp = () => call<void>('QuitApp');
 
+/* ── Pembaruan aplikasi (auto-update via GitHub Releases) ── */
+export const getUpdateInfo = () => call<Record<string, any>>('GetUpdateInfo');
+export const downloadUpdate = (url: string) => call<string>('DownloadUpdate', url);
+export const installUpdate = (path: string) => call<boolean>('InstallUpdate', path);
+
 export const createArsipFull = (input: Record<string, any>) => call<Record<string, any>>('CreateArsipFull', input);
 export const updateArsip = (id: string, input: Record<string, any>) => call<Record<string, any>>('UpdateArsip', id, input);
 export const deleteArsip = (id: string) => call<void>('DeleteArsip', id);
