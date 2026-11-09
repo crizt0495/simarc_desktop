@@ -88,7 +88,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
 
     if (q) {
       out = out.filter((a) =>
-        [a.nomor, a.nama, a.uraian, a.unit, a.kodeKlasifikasiTxt].some(
+        [a.nomor, a.nama, a.uraian, a.unit, a.kodeKlasifikasiTxt, a.lokasi].some(
           (f: string) => (f || '').toLowerCase().includes(q)));
     }
     if (applied.nomor) out = out.filter((a) => (a.nomor || '').toLowerCase().includes(applied.nomor.toLowerCase()));
@@ -237,7 +237,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
         ) : (
           <>
             <div className="table-responsive">
-              <table className="table table-hover table-striped table-sm align-middle mb-0" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <table className="table table-hover table-striped table-sm align-middle mb-0" style={{ tableLayout: 'fixed', minWidth: 1240, width: '100%' }}>
                 <thead className="table-light sticky-top">
                   <tr>
                     <th className="text-center" style={{ width: 46 }}>#</th>
@@ -245,6 +245,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                     <th>Nama Arsip</th>
                     <th style={{ width: 200 }}>Uraian</th>
                     <th style={{ width: 150 }}>Unit Kerja</th>
+                    <th style={{ width: 160 }}>Lokasi Arsip</th>
                     <th style={{ width: 130 }}>Kategori</th>
                     <th style={{ width: 120 }}>Jenis</th>
                     <th className="text-center" style={{ width: 96 }}>Tanggal</th>
@@ -261,6 +262,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                       <td className="small" style={{ wordBreak: 'break-word' }}>{ar.nama || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>{ar.uraian || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word' }}>{ar.unit || '—'}</td>
+                      <td className="small" style={{ wordBreak: 'break-word' }}>{ar.lokasi || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word' }}>{ar.kategori || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word' }}>{ar.jenisName || '—'}</td>
                       <td className="text-center small text-muted">{ar.tanggal || '—'}</td>
