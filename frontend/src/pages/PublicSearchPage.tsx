@@ -108,7 +108,6 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * perPage, curPage * perPage);
-  const startIdx = (curPage - 1) * perPage;
 
   const activeFilterCount = Object.values(applied).filter((v) => v && v !== '').length;
 
@@ -248,10 +247,9 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
         ) : (
           <>
             <div className="table-responsive">
-              <table className="table table-hover table-striped table-sm align-middle mb-0" style={{ tableLayout: 'fixed', minWidth: 1140, width: '100%' }}>
+              <table className="table table-hover table-striped table-sm align-middle mb-0" style={{ tableLayout: 'fixed', minWidth: 1100, width: '100%' }}>
                 <thead className="table-light sticky-top">
                   <tr>
-                    <th className="text-center" style={{ width: 46 }}>#</th>
                     <th style={{ width: 140 }}>Nomor</th>
                     <th>Nama Arsip</th>
                     <th style={{ width: 180 }}>Uraian</th>
@@ -265,9 +263,8 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                   </tr>
                 </thead>
                 <tbody>
-                  {pageRows.map((ar, i) => (
+                  {pageRows.map((ar) => (
                     <tr key={ar.id}>
-                      <td className="text-center text-muted small">{String(startIdx + i + 1).padStart(3, '0')}</td>
                       <td className="fw-semibold small" style={{ wordBreak: 'break-word' }}>{ar.nomor || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word' }}>{ar.nama || '—'}</td>
                       <td className="small" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>{ar.uraian || '—'}</td>
