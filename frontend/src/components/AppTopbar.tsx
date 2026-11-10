@@ -7,6 +7,7 @@
 import React from 'react';
 import { useTheme } from '../lib/theme';
 import { SimarcModal } from '../lib/modal';
+import { WindowControls } from './WindowControls';
 
 export interface SessionUser {
   name: string;
@@ -84,6 +85,8 @@ export const AppTopbar: React.FC<{
             </li>
           </ul>
         </div>
+
+        <WindowControls />
       </div>
     </header>
   );

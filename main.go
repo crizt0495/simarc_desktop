@@ -21,7 +21,9 @@ var assets embed.FS
 func main() {
 	app := NewApp()
 
-	window := strings.ToLower(readDotEnv("SIMARC_WINDOW", "fullscreen"))
+	// Mode jendela: "maximized" (default, judul + tombol OS tetap ada),
+	// "normal", "fullscreen", atau "kiosk".
+	window := strings.ToLower(readDotEnv("SIMARC_WINDOW", "maximized"))
 
 	opts := &options.App{
 		Title:     "SIMARC — Arsip Record Center",
@@ -74,7 +76,7 @@ func windowOpts(mode string) windowFlags {
 	case "fullscreen":
 		return windowFlags{startState: options.Fullscreen}
 	}
-	return windowFlags{startState: options.Fullscreen}
+	return windowFlags{startState: options.Maximised}
 }
 
 func readDotEnv(key, fb string) string {

@@ -3510,3 +3510,44 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   table.dataTable tbody tr:nth-child(even) td { background: #fafafa !important; }
   .d-print-block { display: block !important; }
 }
+/* ═══════════════════════════════════════════════════════════════════════
+   KONTROL JENDELA — Minimalkan / Maksimalkan / Tutup
+   ═══════════════════════════════════════════════════════════════════════ */
+.win-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--nb-border);
+  border-radius: 9px;
+  background: var(--nb-surface-2);
+  flex-shrink: 0;
+}
+.win-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 27px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--nb-ink-3);
+  font-size: 0.78rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.win-btn:hover { background: var(--nb-surface); color: var(--nb-ink); }
+.win-btn:focus-visible { outline: 2px solid var(--nb-primary); outline-offset: 1px; }
+.win-btn-close:hover { background: #dc2626; color: #fff; }
+.win-btn-close:focus-visible { outline-color: #dc2626; }
+.win-controls-floating {
+  position: fixed;
+  top: 0.65rem;
+  right: 0.8rem;
+  z-index: calc(var(--z-modal) + 5);
+  box-shadow: var(--nb-shadow-sm);
+  background: var(--nb-surface);
+}

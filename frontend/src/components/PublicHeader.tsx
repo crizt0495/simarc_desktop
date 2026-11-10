@@ -3,6 +3,7 @@
  * di pojok kanan atas (permintaan UI: landing page tampil pertama kali).
  */
 import React from 'react';
+import { WindowControls } from './WindowControls';
 
 export interface PublicHeaderProps {
   onLogin: () => void;
@@ -66,6 +67,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
           <i className="bi bi-power me-1"></i>Keluar
         </button>
       )}
+      <WindowControls />
     </div>
   </div>
 );
