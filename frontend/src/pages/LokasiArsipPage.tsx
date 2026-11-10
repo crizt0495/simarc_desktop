@@ -6,8 +6,10 @@ import { getMasterOptions, saveLokasiArsip, deleteLokasiArsip, listArsipDetail }
 import { useToast } from '../lib/toast';
 import { FormModal } from '../components/FormModal';
 import { ArsipFormModal } from '../components/ArsipFormModal';
+import { ArsipDetailModal } from '../components/ArsipDetailModal';
 
 const nf = new Intl.NumberFormat('id-ID');
+const statusLabel = (s: string) => (s ? s.replace(/_/g, ' ') : '—');
 
 export const LokasiArsipPage: React.FC = () => {
   const { push } = useToast();
@@ -23,6 +25,13 @@ export const LokasiArsipPage: React.FC = () => {
   const [arsipLokasi, setArsipLokasi] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const [arsipList, setArsipList] = useState<any[]>([]);
+
+  /* ── Modal lihat daftar arsip per lokasi ── */
+  const [viewLokasi, setViewLokasi] = useState<any | null>(null);
+  const [viewQ, setViewQ] = useState('');
+  const [viewPage, setViewPage] = useState(1);
+  const [viewDetail, setViewDetail] = useState<any | null>(null);
+  const viewPerPage = 10;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,6 +65,33 @@ export const LokasiArsipPage: React.FC = () => {
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * perPage, curPage * perPage);
   const startIdx = (curPage - 1) * perPage;
+
+  /* Daftar arsip pada lokasi yang sedang dilihat (dengan pencarian). */
+  const viewRowsFiltered = useMemo(() => {
+    if (!viewLokasi) return [];
+    const id = String(viewLokasi.id);
+    const q = viewQ.trim().toLowerCase();
+    return arsipList
+      .filter((a) => {
+        if (String(a?.lokasiArsipId ?? '') !== id) return false;
+        if (!q) return true;
+        return [a.nomor, a.nama, a.uraian, a.unit, a.kodeKlasifikasiTxt, a.kodeKlasifikasiNama, a.status]
+          .some((f) => String(f ?? '').toLowerCase().includes(q));
+      })
+      .sort((x, y) => String(x.nomor ?? '').localeCompare(String(y.nomor ?? ''), 'id', { numeric: true }));
+  }, [arsipList, viewLokasi, viewQ]);
+
+  const viewTotalPages = Math.max(1, Math.ceil(viewRowsFiltered.length / viewPerPage));
+  const viewCurPage = Math.min(viewPage, viewTotalPages);
+  const viewRows = viewRowsFiltered.slice((viewCurPage - 1) * viewPerPage, viewCurPage * viewPerPage);
+  const viewStartIdx = (viewCurPage - 1) * viewPerPage;
+
+  const openViewArsip = (l: any) => {
+    setViewLokasi(l);
+    setViewQ('');
+    setViewPage(1);
+    setViewDetail(null);
+  };
 
   const submit = async (v: Record<string, any>) => {
     setBusy(true);
@@ -121,7 +157,7 @@ export const LokasiArsipPage: React.FC = () => {
                     <th>Deskripsi</th>
                     <th style={{ width: 120 }}>Kapasitas</th>
                     <th style={{ width: 110 }} className="text-center">Jumlah Arsip</th>
-                    <th style={{ width: 120 }} className="text-center">Aksi</th>
+                    <th style={{ width: 150 }} className="text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -132,9 +168,19 @@ export const LokasiArsipPage: React.FC = () => {
                       <td className="fw-600">{l.name}</td>
                       <td><span className="small text-muted">{l.deskripsi || '—'}</span></td>
                       <td><span className="small fw-600">{l.kapasitas || '—'}</span></td>
-                      <td className="text-center"><span className="small fw-700">{nf.format(arsipCountByLokasi.get(String(l.id)) ?? 0)}</span></td>
+                      <td className="text-center">
+                        <button
+                          type="button"
+                          className="btn btn-link p-0 small fw-800 text-decoration-none"
+                          title="Lihat daftar arsip pada lokasi ini"
+                          onClick={() => openViewArsip(l)}
+                        >
+                          {nf.format(arsipCountByLokasi.get(String(l.id)) ?? 0)}
+                        </button>
+                      </td>
                       <td className="text-center">
                         <div className="btn-crud-group">
+                          <button type="button" className="btn-crud btn-crud-view" title="Lihat Daftar Arsip" onClick={() => openViewArsip(l)}><i className="bi bi-list-ul"></i></button>
                           <button type="button" className="btn-crud btn-crud-primary" title="Tambah Arsip di Lokasi Ini" onClick={() => openAddArsip(l)}><i className="bi bi-plus-circle"></i></button>
                           <button type="button" className="btn-crud btn-crud-edit" title="Ubah Lokasi" onClick={() => { setTarget(l); setFormOpen(true); }}><i className="bi bi-pencil"></i></button>
                           <button type="button" className="btn-crud btn-crud-del" title="Hapus Lokasi" onClick={() => void remove(l)}><i className="bi bi-trash"></i></button>
@@ -160,6 +206,119 @@ export const LokasiArsipPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* ── Modal: daftar arsip pada satu lokasi ── */}
+      {viewLokasi && (
+        <div className="sm sm-show sm-xl" role="dialog" aria-modal="true">
+          <div className="sm-overlay sm-show" onClick={() => setViewLokasi(null)} />
+          <div className="sm-dialog"><div className="sm-content">
+            <div className="sm-header">
+              <div className="sm-header-left">
+                <div className="sm-icon sm-icon-primary"><i className="bi bi-list-ul" /></div>
+                <div className="sm-title-group">
+                  <h5 className="sm-title">Daftar Arsip</h5>
+                  <p className="sm-subtitle">
+                    <i className="bi bi-geo-alt me-1" />{viewLokasi.name}
+                    {' · '}{nf.format(viewRowsFiltered.length)} arsip
+                    {viewLokasi.kapasitas ? ` · Kapasitas ${viewLokasi.kapasitas}` : ''}
+                  </p>
+                </div>
+              </div>
+              <button type="button" className="sm-btn-close" onClick={() => setViewLokasi(null)} aria-label="Tutup"><i className="bi bi-x" /></button>
+            </div>
+            <div className="sm-body">
+              <div className="input-group mb-2" style={{ maxWidth: 420 }}>
+                <span className="input-group-text bg-white"><i className="bi bi-search"></i></span>
+                <input
+                  type="search"
+                  className="form-control form-control-sm"
+                  placeholder="Cari nomor / nama / kode klasifikasi / unit…"
+                  value={viewQ}
+                  onChange={(e) => { setViewQ(e.target.value); setViewPage(1); }}
+                />
+              </div>
+
+              {viewRowsFiltered.length === 0 ? (
+                <div className="empty-state py-4">
+                  <i className="bi bi-inbox empty-icon"></i>
+                  <p className="empty-title">{viewQ ? 'Tidak Ada Hasil' : 'Belum Ada Arsip'}</p>
+                  <p className="empty-desc">{viewQ ? 'Tidak ada arsip yang cocok dengan pencarian.' : 'Belum ada arsip yang disimpan pada lokasi ini.'}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="table-responsive">
+                    <table className="table table-sm table-hover table-premium mb-0">
+                      <thead className="sticky-top">
+                        <tr>
+                          <th style={{ width: 40 }} className="text-center">#</th>
+                          <th>Arsip</th>
+                          <th style={{ width: 180 }}>Kode Klasifikasi</th>
+                          <th style={{ width: 110 }}>Status</th>
+                          <th style={{ width: 60 }} className="text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewRows.map((a, idx) => (
+                          <tr key={a.id}>
+                            <td className="text-center text-muted fw-700 small">{viewStartIdx + idx + 1}</td>
+                            <td>
+                              <span className="fw-800 font-monospace" style={{ fontSize: '0.75rem' }}>{a.nomor || '—'}</span>
+                              <a
+                                href="#"
+                                className="fw-700 text-decoration-none d-block"
+                                style={{ fontSize: '0.84rem', color: 'var(--ink-2)' }}
+                                onClick={(e) => { e.preventDefault(); setViewDetail(a); }}
+                              >
+                                {a.nama || '—'}
+                              </a>
+                              <div className="text-muted" style={{ fontSize: '0.68rem' }}><i className="bi bi-building me-1"></i>{a.unit || '—'}</div>
+                            </td>
+                            <td>
+                              <span className="small fw-700 font-monospace" style={{ color: 'var(--ink-2)' }}>{a.kodeKlasifikasiTxt || '—'}</span>
+                              {a.kodeKlasifikasiNama && <div className="text-muted" style={{ fontSize: '0.68rem' }}>{a.kodeKlasifikasiNama}</div>}
+                            </td>
+                            <td><span className={`status-badge status-${String(a.status ?? '').toLowerCase()}`}>{statusLabel(String(a.status ?? ''))}</span></td>
+                            <td className="text-center">
+                              <div className="btn-crud-group">
+                                <button type="button" className="btn-crud btn-crud-view" title="Detail arsip" onClick={() => setViewDetail(a)}><i className="bi bi-eye"></i></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
+                    <small className="text-muted fw-600">
+                      Menampilkan <strong>{viewRowsFiltered.length === 0 ? 0 : viewStartIdx + 1}</strong>–<strong>{Math.min(viewCurPage * viewPerPage, viewRowsFiltered.length)}</strong> dari <strong>{nf.format(viewRowsFiltered.length)}</strong> arsip
+                    </small>
+                    {viewTotalPages > 1 && (
+                      <nav><ul className="pagination pagination-sm mb-0">
+                        <li className={`page-item${viewCurPage <= 1 ? ' disabled' : ''}`}><a className="page-link" href="#" onClick={(e) => { e.preventDefault(); setViewPage(Math.max(1, viewCurPage - 1)); }} title="Sebelum"><i className="bi bi-chevron-left"></i></a></li>
+                        {Array.from({ length: viewTotalPages }, (_, i) => i + 1)
+                          .filter((pn) => pn === 1 || pn === viewTotalPages || Math.abs(pn - viewCurPage) <= 1)
+                          .map((pn, i, arr) => (
+                            <React.Fragment key={pn}>
+                              {i > 0 && pn - arr[i - 1] > 1 && <li className="page-item disabled"><span className="page-link">…</span></li>}
+                              <li className={`page-item${pn === viewCurPage ? ' active' : ''}`}><a className="page-link" href="#" onClick={(e) => { e.preventDefault(); setViewPage(pn); }}>{pn}</a></li>
+                            </React.Fragment>
+                          ))}
+                        <li className={`page-item${viewCurPage >= viewTotalPages ? ' disabled' : ''}`}><a className="page-link" href="#" onClick={(e) => { e.preventDefault(); setViewPage(Math.min(viewTotalPages, viewCurPage + 1)); }} title="Berikut"><i className="bi bi-chevron-right"></i></a></li>
+                      </ul></nav>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="sm-footer">
+              <button type="button" className="sm-btn sm-btn-cancel" onClick={() => setViewLokasi(null)}><i className="bi bi-x-lg me-1" />Tutup</button>
+              <button type="button" className="sm-btn sm-btn-confirm" onClick={() => { const l = viewLokasi; setViewLokasi(null); openAddArsip(l); }}><i className="bi bi-plus-lg me-1" />Tambah Arsip</button>
+            </div>
+          </div></div>
+        </div>
+      )}
+
+      <ArsipDetailModal detail={viewDetail} onClose={() => setViewDetail(null)} zIndex={6000} />
 
       <FormModal
         open={formOpen}

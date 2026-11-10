@@ -28,11 +28,13 @@ export interface ArsipDetail {
 interface Props {
   detail: ArsipDetail | null;
   onClose: () => void;
+  /** Naikkan z-index bila modal detail dibuka di atas modal lain (mis. daftar arsip per lokasi). */
+  zIndex?: number;
 }
 
 const nf = new Intl.NumberFormat('id-ID');
 
-export const ArsipDetailModal: React.FC<Props> = ({ detail, onClose }) => {
+export const ArsipDetailModal: React.FC<Props> = ({ detail, onClose, zIndex }) => {
   if (!detail) return null;
   const fields: Array<[string, React.ReactNode]> = [
     ['Nomor Arsip', detail.nomor],
@@ -52,7 +54,7 @@ export const ArsipDetailModal: React.FC<Props> = ({ detail, onClose }) => {
   ];
 
   return (
-    <div className="modal fade show d-block" tabIndex={-1} role="dialog" aria-modal="true" style={{ backgroundColor: 'rgba(15,23,42,.55)' }} onClick={onClose}>
+    <div className="modal fade show d-block" tabIndex={-1} role="dialog" aria-modal="true" style={{ backgroundColor: 'rgba(15,23,42,.55)', zIndex: zIndex ?? 1055 }} onClick={onClose}>
       <div className="modal-dialog modal-lg modal-dialog-scrollable" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content" style={{ borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
           <div className="modal-header" style={{ background: 'var(--surface-2)' }}>
