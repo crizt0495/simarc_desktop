@@ -346,6 +346,7 @@ export const LokasiArsipPage: React.FC = () => {
         onClose={() => { setArsipFormOpen(false); setArsipLokasi(null); }}
         onSaved={() => { void load(); setArsipFormKey((k) => k + 1); }}
         keepOpenOnSave
+        showSuccessToast={false}
       />
     </div>
   );

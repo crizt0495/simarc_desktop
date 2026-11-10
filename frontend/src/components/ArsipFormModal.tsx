@@ -36,7 +36,8 @@ export const ArsipFormModal: React.FC<{
   onClose: () => void;
   onSaved: () => void;
   keepOpenOnSave?: boolean;
-}> = ({ open, initial, opts, onClose, onSaved, keepOpenOnSave = false }) => {
+  showSuccessToast?: boolean;
+}> = ({ open, initial, opts, onClose, onSaved, keepOpenOnSave = false, showSuccessToast = true }) => {
   const { push } = useToast();
   const [busy, setBusy] = useState(false);
   const editing = Boolean(initial?.id);
@@ -110,7 +111,7 @@ export const ArsipFormModal: React.FC<{
           const b64 = await fileToBase64(digitalFile);
           await uploadArsipDigitalData(String(initial!.id), digitalFile.name, b64);
         }
-        push('success', 'Data arsip berhasil diperbarui');
+        if (showSuccessToast) push('success', 'Data arsip berhasil diperbarui');
       } else {
         const res = await createArsipFull(payload);
         const newId = res?.id ? String(res.id) : '';
@@ -118,7 +119,7 @@ export const ArsipFormModal: React.FC<{
           const b64 = await fileToBase64(digitalFile);
           await uploadArsipDigitalData(newId, digitalFile.name, b64);
         }
-        push('success', `Arsip ${res?.nomor ?? ''} berhasil ditambahkan`);
+        if (showSuccessToast) push('success', `Arsip ${res?.nomor ?? ''} berhasil ditambahkan`);
       }
       onSaved();
       if (!keepOpenOnSave) onClose();
