@@ -19,22 +19,20 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   onEnterDashboard,
   onExit,
 }) => (
-  <div className="card-header d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white">
-    <div className="d-flex align-items-center gap-2">
-      <span className="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white" style={{ width: 36, height: 36 }}>
+  <div className="card-header public-brand-header d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white">
+    <div className="d-flex align-items-center gap-3">
+      <span className="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white flex-shrink-0" style={{ width: 40, height: 40 }}>
         <i className="bi bi-archive-fill"></i>
       </span>
-      <div>
-        <div className="h5 mb-0 fw-800">SIMARC</div>
-        <div
-          className="simarc-marquee text-muted"
-          style={{ fontSize: '.72rem' }}
-          title="Sistem Informasi Manajemen Arsip Record Center"
-        >
-          <div className="simarc-marquee-track">
-            <span className="simarc-marquee-item">Sistem Informasi Manajemen Arsip Record Center</span>
-            <span className="simarc-marquee-item" aria-hidden="true">Sistem Informasi Manajemen Arsip Record Center</span>
-          </div>
+      <div className="brand-lockup">
+        <div className="brand-name">SIMARC</div>
+        <div className="simarc-marquee text-muted" style={{ fontSize: '.72rem' }}>
+          <span
+            className="simarc-marquee-track"
+            data-text="Sistem Informasi Manajemen Arsip Record Center"
+          >
+            Sistem Informasi Manajemen Arsip Record Center
+          </span>
         </div>
       </div>
     </div>

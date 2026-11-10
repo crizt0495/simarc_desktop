@@ -3552,27 +3552,50 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   background: var(--nb-surface);
 }
 
-/* ── Teks berjalan (marquee) — branding landing page ────────────────────── */
+/* Area judul halaman landing — padding sejajar dengan header & form. */
+.public-page-heading {
+  padding: 0.85rem 1.15rem 0.75rem;
+  border-bottom: 1px solid var(--nb-border);
+}
+.public-page-heading .h3 { font-size: 1.35rem; }
+
+/* ── Branding landing page ──────────────────────────────────────────────── */
+.brand-lockup { min-width: 0; }
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--nb-ink);
+}
+
+/* Teks berjalan (marquee) — satu teks di DOM, salinan loop dibuat via ::after
+   agar tidak muncul dua baris teks saat disalin/dibaca. */
 .simarc-marquee {
   overflow: hidden;
   white-space: nowrap;
-  max-width: min(46vw, 380px);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+  width: clamp(190px, 38vw, 420px);
+  max-width: 100%;
+  user-select: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
 }
 .simarc-marquee-track {
-  display: flex;
-  width: max-content;
-  animation: simarc-marquee-scroll 16s linear infinite;
+  display: inline-block;
+  padding-right: 1.6rem;
+  animation: simarc-marquee-scroll 18s linear infinite;
   will-change: transform;
 }
+.simarc-marquee-track::after {
+  content: attr(data-text);
+  padding-left: 1.6rem;
+}
 .simarc-marquee:hover .simarc-marquee-track { animation-play-state: paused; }
-.simarc-marquee-item { padding-right: 3rem; }
 @keyframes simarc-marquee-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
 @media (prefers-reduced-motion: reduce) {
   .simarc-marquee-track { animation: none; }
-  .simarc-marquee-item[aria-hidden="true"] { display: none; }
+  .simarc-marquee-track::after { content: none; }
 }
