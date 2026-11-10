@@ -63,7 +63,7 @@ export const ArsipFormModal: React.FC<{
     { key: 'tanggalDibuat', label: 'Tanggal Arsip', type: 'date' },
     { key: 'jumlah', label: 'Jumlah', type: 'number', min: 1, placeholder: '1' },
     { key: 'satuan', label: 'Satuan', placeholder: 'Berkas' },
-    { key: 'nilaiAnggaran', label: 'Nilai Anggaran (Rp)', type: 'number', step: '0.01', placeholder: '0' },
+    { key: 'nilaiAnggaran', label: 'Nilai Anggaran (Rp)', type: 'currency', placeholder: '0' },
     { key: 'nomorSPM', label: 'Nomor SPM', placeholder: 'Opsional' },
     // opts sengaja jadi dependency agar opsi ikut terbarui setelah data dimuat.
   ], [opts]);
@@ -72,7 +72,7 @@ export const ArsipFormModal: React.FC<{
     const spjExtras: FieldDef[] = isSpj
       ? [
           { key: 'nomorSPM', label: 'Nomor SPM', placeholder: 'Nomor SPM terkait arsip' },
-          { key: 'nilaiAnggaran', label: 'Nominal Anggaran (Rp)', type: 'number', step: '0.01', placeholder: '0' },
+          { key: 'nilaiAnggaran', label: 'Nominal Anggaran (Rp)', type: 'currency', placeholder: '0' },
         ]
       : [];
     const core = baseFields.filter((f) => f.key !== 'nomorSPM' && f.key !== 'nilaiAnggaran');

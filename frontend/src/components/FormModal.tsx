@@ -5,11 +5,12 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import SearchableSelect, { type SearchableSelectOption } from './SearchableSelect';
+import { formatCurrency, parseCurrencyInput } from '../lib/currency';
 
 export type FieldDef = {
   key: string;
   label: string;
-  type?: 'text' | 'number' | 'date' | 'textarea' | 'select' | 'checkbox' | 'password' | 'email';
+  type?: 'text' | 'number' | 'currency' | 'date' | 'textarea' | 'select' | 'checkbox' | 'password' | 'email';
   options?: Array<{ value: string; label: string }>;
   required?: boolean;
   placeholder?: string;
@@ -145,6 +146,17 @@ export const FormModal: React.FC<FormModalProps> = ({
                             value={values[f.key] ?? ''}
                             placeholder={f.placeholder}
                             onChange={(e) => set(f.key, e.target.value)}
+                            disabled={f.disabled || busy}
+                            style={{ fontSize: '0.85rem' }}
+                          />
+                        ) : f.type === 'currency' ? (
+                          <input
+                            className="form-control form-control-sm text-end font-monospace"
+                            type="text"
+                            inputMode="numeric"
+                            value={formatCurrency(values[f.key])}
+                            placeholder={f.placeholder}
+                            onChange={(e) => set(f.key, parseCurrencyInput(e.target.value))}
                             disabled={f.disabled || busy}
                             style={{ fontSize: '0.85rem' }}
                           />

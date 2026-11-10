@@ -15,6 +15,7 @@ import { useToast } from '../lib/toast';
 import SearchableSelect from '../components/SearchableSelect';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 import { ArsipFormModal } from '../components/ArsipFormModal';
+import { currencyToNumber, formatCurrency, parseCurrencyInput } from '../lib/currency';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -80,6 +81,8 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
     if (applied.end_date) out = out.filter((a) => (a.tanggal || '') <= applied.end_date);
     if (applied.status_berkas_digital === 'sudah_ada') out = out.filter((a) => a.berkas);
     if (applied.status_berkas_digital === 'belum_ada') out = out.filter((a) => !a.berkas);
+    if (applied.nilai_min) out = out.filter((a) => a.nilai != null && currencyToNumber(a.nilai) >= currencyToNumber(applied.nilai_min));
+    if (applied.nilai_max) out = out.filter((a) => a.nilai != null && currencyToNumber(a.nilai) <= currencyToNumber(applied.nilai_max));
     const has = Object.keys(applied).filter((k) => applied[k]).length > 0;
     return has ? out : out;
   }, [rows, applied]);
@@ -392,11 +395,11 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
               </div>
               <div className="col-md-2">
                 <label className="form-label">Nilai Min</label>
-                <input type="number" step="0.01" className="form-control form-control-sm" name="nilai_min" value={draft.nilai_min ?? ''} placeholder="0" onChange={(e) => setDraft((d) => ({ ...d, nilai_min: e.target.value }))} style={{ fontSize: '0.85rem' }} />
+                <input type="text" inputMode="numeric" className="form-control form-control-sm text-end font-monospace" name="nilai_min" value={formatCurrency(draft.nilai_min)} placeholder="0" onChange={(e) => setDraft((d) => ({ ...d, nilai_min: parseCurrencyInput(e.target.value) }))} style={{ fontSize: '0.85rem' }} />
               </div>
               <div className="col-md-2">
                 <label className="form-label">Nilai Max</label>
-                <input type="number" step="0.01" className="form-control form-control-sm" name="nilai_max" value={draft.nilai_max ?? ''} placeholder="1000000" onChange={(e) => setDraft((d) => ({ ...d, nilai_max: e.target.value }))} style={{ fontSize: '0.85rem' }} />
+                <input type="text" inputMode="numeric" className="form-control form-control-sm text-end font-monospace" name="nilai_max" value={formatCurrency(draft.nilai_max)} placeholder="1.000.000" onChange={(e) => setDraft((d) => ({ ...d, nilai_max: parseCurrencyInput(e.target.value) }))} style={{ fontSize: '0.85rem' }} />
               </div>
               <div className="col-md-2">
                 <label className="form-label">Urutkan</label>
@@ -456,6 +459,8 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
           {applied.unit_kerja_id && <span className="filter-badge badge-soft-success"><i className="bi bi-building"></i> Unit <a href="#" className="remove" onClick={(e) => { e.preventDefault(); setApplied((s) => { const n = { ...s }; delete n.unit_kerja_id; return n; }); }}>&times;</a></span>}
           {applied.start_date || applied.end_date ? <span className="filter-badge badge-soft-danger"><i className="bi bi-calendar"></i> {applied.start_date || '…'} ~ {applied.end_date || '…'} <a href="#" className="remove" onClick={(e) => { e.preventDefault(); setApplied((s) => { const n = { ...s }; delete n.start_date; delete n.end_date; return n; }); }}>&times;</a></span> : null}
           {applied.status_berkas_digital && <span className="filter-badge badge-soft-primary"><i className="bi bi-file-earmark"></i> Berkas: {applied.status_berkas_digital === 'sudah_ada' ? 'Ada' : 'Belum'} <a href="#" className="remove" onClick={(e) => { e.preventDefault(); setApplied((s) => { const n = { ...s }; delete n.status_berkas_digital; return n; }); }}>&times;</a></span>}
+          {applied.nilai_min && <span className="filter-badge badge-soft-success"><i className="bi bi-cash"></i> Nilai ≥ Rp {formatCurrency(applied.nilai_min)} <a href="#" className="remove" onClick={(e) => { e.preventDefault(); setApplied((s) => { const n = { ...s }; delete n.nilai_min; return n; }); }}>&times;</a></span>}
+          {applied.nilai_max && <span className="filter-badge badge-soft-success"><i className="bi bi-cash"></i> Nilai ≤ Rp {formatCurrency(applied.nilai_max)} <a href="#" className="remove" onClick={(e) => { e.preventDefault(); setApplied((s) => { const n = { ...s }; delete n.nilai_max; return n; }); }}>&times;</a></span>}
           <a href="#" className="filter-badge" onClick={(e) => { e.preventDefault(); clearFilter(); }} style={{ background: 'var(--chip-bg)', color: 'var(--chip-text)', textDecoration: 'none' }}><i className="bi bi-x-circle"></i> Hapus Semua</a>
         </div>
       )}

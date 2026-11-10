@@ -65,6 +65,44 @@ func mInt(m map[string]interface{}, key string) int {
 	return int(mFloat(m, key))
 }
 
+// currencyFloat membaca nominal rupiah yang mungkin dikirim dengan pemisah
+// ribuan id-ID, mis. "1.500.000", "Rp 1.500.000", atau "517.999,99".
+func currencyFloat(m map[string]interface{}, key string) float64 {
+	v, ok := m[key]
+	if !ok || v == nil {
+		return 0
+	}
+	switch t := v.(type) {
+	case float64:
+		return t
+	case float32:
+		return float64(t)
+	case int:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case string:
+		s := strings.TrimSpace(t)
+		s = strings.ReplaceAll(s, "Rp", "")
+		s = strings.ReplaceAll(s, "rp", "")
+		s = strings.ReplaceAll(s, " ", "")
+		s = strings.ReplaceAll(s, "\u00a0", "")
+		if s == "" {
+			return 0
+		}
+		if strings.Contains(s, ",") {
+			// id-ID: titik = ribuan, koma = desimal.
+			s = strings.ReplaceAll(s, ".", "")
+			s = strings.ReplaceAll(s, ",", ".")
+		} else if strings.Count(s, ".") > 1 {
+			s = strings.ReplaceAll(s, ".", "")
+		}
+		f, _ := strconv.ParseFloat(s, 64)
+		return f
+	}
+	return 0
+}
+
 func mBool(m map[string]interface{}, key string) bool {
 	v, ok := m[key]
 	if !ok || v == nil {
@@ -211,10 +249,7 @@ func (a *App) CreateArsipFull(in map[string]interface{}) (map[string]interface{}
 	if v := mStr(in, "satuan"); v != "" {
 		ar.Satuan = v
 	}
-	if v := mStr(in, "nilaiAnggaran"); v != "" {
-		f, _ := strconv.ParseFloat(v, 64)
-		ar.NilaiAnggaran = &f
-	} else if f := mFloat(in, "nilaiAnggaran"); f != 0 {
+	if f := currencyFloat(in, "nilaiAnggaran"); f != 0 {
 		ar.NilaiAnggaran = &f
 	}
 	if d := parseDate(mStr(in, "tanggalDibuat")); d != nil {
@@ -292,7 +327,7 @@ func (a *App) UpdateArsip(id string, in map[string]interface{}) (map[string]inte
 		updates["satuan"] = mStr(in, "satuan")
 	}
 	if hasKey(in, "nilaiAnggaran") {
-		if f := mFloat(in, "nilaiAnggaran"); f != 0 {
+		if f := currencyFloat(in, "nilaiAnggaran"); f != 0 {
 			updates["nilai_anggaran"] = f
 		} else {
 			updates["nilai_anggaran"] = nil
