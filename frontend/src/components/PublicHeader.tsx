@@ -26,7 +26,16 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
       </span>
       <div>
         <div className="h5 mb-0 fw-800">SIMARC</div>
-        <div className="text-muted" style={{ fontSize: '.72rem' }}>Sistem Informasi Manajemen Arsip Record Center</div>
+        <div
+          className="simarc-marquee text-muted"
+          style={{ fontSize: '.72rem' }}
+          title="Sistem Informasi Manajemen Arsip Record Center"
+        >
+          <div className="simarc-marquee-track">
+            <span className="simarc-marquee-item">Sistem Informasi Manajemen Arsip Record Center</span>
+            <span className="simarc-marquee-item" aria-hidden="true">Sistem Informasi Manajemen Arsip Record Center</span>
+          </div>
+        </div>
       </div>
     </div>
 

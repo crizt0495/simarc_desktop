@@ -3551,3 +3551,28 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   box-shadow: var(--nb-shadow-sm);
   background: var(--nb-surface);
 }
+
+/* ── Teks berjalan (marquee) — branding landing page ────────────────────── */
+.simarc-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: min(46vw, 380px);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+}
+.simarc-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: simarc-marquee-scroll 16s linear infinite;
+  will-change: transform;
+}
+.simarc-marquee:hover .simarc-marquee-track { animation-play-state: paused; }
+.simarc-marquee-item { padding-right: 3rem; }
+@keyframes simarc-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .simarc-marquee-track { animation: none; }
+  .simarc-marquee-item[aria-hidden="true"] { display: none; }
+}
