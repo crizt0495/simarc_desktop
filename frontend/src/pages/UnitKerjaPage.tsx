@@ -94,7 +94,6 @@ export const UnitKerjaPage: React.FC = () => {
                 <thead className="sticky-top">
                   <tr>
                     <th style={{ width: 44 }} className="text-center">#</th>
-                    <th style={{ width: 80 }}>ID</th>
                     <th>Nama Unit Kerja</th>
                     <th style={{ width: 100 }} className="text-center">Aksi</th>
                   </tr>
@@ -103,7 +102,6 @@ export const UnitKerjaPage: React.FC = () => {
                   {pageRows.map((u, idx) => (
                     <tr key={u.id}>
                       <td className="text-center text-muted fw-700 small">{startIdx + idx + 1}</td>
-                      <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{u.id}</span></td>
                       <td className="fw-600">{u.name}</td>
                       <td className="text-center"><div className="btn-crud-group">
                         <button type="button" className="btn-crud btn-crud-edit" title="Ubah" onClick={() => { setTarget(u); setFormOpen(true); }}><i className="bi bi-pencil "></i></button>

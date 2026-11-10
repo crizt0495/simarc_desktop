@@ -154,7 +154,6 @@ export const LokasiArsipPage: React.FC = () => {
                 <thead className="sticky-top">
                   <tr>
                     <th style={{ width: 44 }} className="text-center">#</th>
-                    <th style={{ width: 80 }}>ID</th>
                     <th>Nama Lokasi</th>
                     <th>Deskripsi</th>
                     <th style={{ width: 120 }}>Kapasitas</th>
@@ -166,7 +165,6 @@ export const LokasiArsipPage: React.FC = () => {
                   {pageRows.map((l, idx) => (
                     <tr key={l.id}>
                       <td className="text-center text-muted fw-700 small">{startIdx + idx + 1}</td>
-                      <td><span className="fw-800 font-monospace" style={{ fontSize: '0.78rem' }}>{l.id}</span></td>
                       <td className="fw-600">{l.name}</td>
                       <td><span className="small text-muted">{l.deskripsi || '—'}</span></td>
                       <td><span className="small fw-600">{l.kapasitas || '—'}</span></td>
