@@ -23,6 +23,7 @@ export const LokasiArsipPage: React.FC = () => {
   const [target, setTarget] = useState<any | null>(null);
   const [arsipFormOpen, setArsipFormOpen] = useState(false);
   const [arsipLokasi, setArsipLokasi] = useState<any | null>(null);
+  const [arsipFormKey, setArsipFormKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [arsipList, setArsipList] = useState<any[]>([]);
 
@@ -119,6 +120,7 @@ export const LokasiArsipPage: React.FC = () => {
 
   const openAddArsip = (l: any) => {
     setArsipLokasi(l);
+    setArsipFormKey(0);
     setArsipFormOpen(true);
   };
 
@@ -339,10 +341,11 @@ export const LokasiArsipPage: React.FC = () => {
 
       <ArsipFormModal
         open={arsipFormOpen}
-        initial={arsipLokasi ? { lokasiArsipId: arsipLokasi.id } : null}
+        initial={arsipLokasi ? { lokasiArsipId: arsipLokasi.id, _k: arsipFormKey } : null}
         opts={opts}
         onClose={() => { setArsipFormOpen(false); setArsipLokasi(null); }}
-        onSaved={() => { void load(); setArsipFormOpen(false); setArsipLokasi(null); }}
+        onSaved={() => { void load(); setArsipFormKey((k) => k + 1); push('success', 'Arsip tersimpan. Silakan tambah arsip berikutnya atau tutup.'); }}
+        keepOpenOnSave
       />
     </div>
   );

@@ -35,7 +35,8 @@ export const ArsipFormModal: React.FC<{
   opts: Record<string, any[]>;
   onClose: () => void;
   onSaved: () => void;
-}> = ({ open, initial, opts, onClose, onSaved }) => {
+  keepOpenOnSave?: boolean;
+}> = ({ open, initial, opts, onClose, onSaved, keepOpenOnSave = false }) => {
   const { push } = useToast();
   const [busy, setBusy] = useState(false);
   const editing = Boolean(initial?.id);
@@ -120,7 +121,7 @@ export const ArsipFormModal: React.FC<{
         push('success', `Arsip ${res?.nomor ?? ''} berhasil ditambahkan`);
       }
       onSaved();
-      onClose();
+      if (!keepOpenOnSave) onClose();
     } finally {
       setBusy(false);
     }
