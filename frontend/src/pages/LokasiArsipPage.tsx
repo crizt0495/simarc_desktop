@@ -344,7 +344,7 @@ export const LokasiArsipPage: React.FC = () => {
         initial={arsipLokasi ? { lokasiArsipId: arsipLokasi.id, _k: arsipFormKey } : null}
         opts={opts}
         onClose={() => { setArsipFormOpen(false); setArsipLokasi(null); }}
-        onSaved={() => { void load(); setArsipFormKey((k) => k + 1); push('success', 'Arsip tersimpan. Silakan tambah arsip berikutnya atau tutup.'); }}
+        onSaved={() => { void load(); setArsipFormKey((k) => k + 1); }}
         keepOpenOnSave
       />
     </div>
