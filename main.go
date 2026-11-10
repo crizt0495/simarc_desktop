@@ -18,6 +18,9 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed .env
+var embeddedDotEnv string
+
 func main() {
 	app := NewApp()
 
@@ -92,7 +95,6 @@ func readDotEnv(key, fb string) string {
 		if err != nil {
 			continue
 		}
-		defer f.Close()
 		sc := bufio.NewScanner(f)
 		for sc.Scan() {
 			line := strings.TrimSpace(sc.Text())
@@ -100,8 +102,20 @@ func readDotEnv(key, fb string) string {
 				continue
 			}
 			if eq := strings.Index(line, "="); eq > 0 && strings.TrimSpace(line[:eq]) == key {
+				f.Close()
 				return strings.Trim(strings.TrimSpace(line[eq+1:]), `"'`)
 			}
+		}
+		f.Close()
+	}
+	// Fallback: .env yang di-embed ke biner (agar .exe Windows standalone).
+	for _, line := range strings.Split(embeddedDotEnv, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if eq := strings.Index(line, "="); eq > 0 && strings.TrimSpace(line[:eq]) == key {
+			return strings.Trim(strings.TrimSpace(line[eq+1:]), `"'`)
 		}
 	}
 	return fb
