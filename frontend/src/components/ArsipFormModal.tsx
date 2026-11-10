@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { FormModal, type FieldDef } from './FormModal';
-import { createArsipFull, updateArsip } from '../lib/bindings';
+import { createArsipFull, updateArsip, uploadArsipDigitalData } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 
 const STATUS_OPTIONS = [
@@ -17,6 +17,17 @@ const STATUS_OPTIONS = [
 ];
 
 const toOpts = (arr: any[] | undefined) => (arr ?? []).map((o: any) => ({ value: String(o.id), label: String(o.name ?? o.id) }));
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const res = String(reader.result ?? '');
+      resolve(res);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 
 export const ArsipFormModal: React.FC<{
   open: boolean;
@@ -64,6 +75,7 @@ export const ArsipFormModal: React.FC<{
     { key: 'jumlah', label: 'Jumlah', type: 'number', min: 1, placeholder: '1' },
     { key: 'satuan', label: 'Satuan', placeholder: 'Berkas' },
     { key: 'nilaiAnggaran', label: 'Nilai Anggaran (Rp)', type: 'currency', placeholder: '0' },
+    { key: 'berkasDigital', label: 'Berkas Digital (opsional)', type: 'file', col: 12, help: 'Unggah berkas digital arsip (PDF/gambar). Boleh dikosongkan.' },
     { key: 'nomorSPM', label: 'Nomor SPM', placeholder: 'Opsional' },
     // opts sengaja jadi dependency agar opsi ikut terbarui setelah data dimuat.
   ], [opts]);
@@ -82,8 +94,10 @@ export const ArsipFormModal: React.FC<{
   const submit = async (v: Record<string, any>) => {
     setBusy(true);
     try {
+      const digitalFile = v.berkasDigital instanceof File ? (v.berkasDigital as File) : null;
       const payload = {
         ...v,
+        berkasDigital: undefined,
         jumlah: v.jumlah ? Number(v.jumlah) : 1,
         nilaiAnggaran: v.nilaiAnggaran ? String(v.nilaiAnggaran) : '',
         status: v.status || 'aktif',
@@ -91,9 +105,18 @@ export const ArsipFormModal: React.FC<{
       };
       if (editing) {
         await updateArsip(String(initial!.id), payload);
+        if (digitalFile) {
+          const b64 = await fileToBase64(digitalFile);
+          await uploadArsipDigitalData(String(initial!.id), digitalFile.name, b64);
+        }
         push('success', 'Data arsip berhasil diperbarui');
       } else {
         const res = await createArsipFull(payload);
+        const newId = res?.id ? String(res.id) : '';
+        if (digitalFile && newId) {
+          const b64 = await fileToBase64(digitalFile);
+          await uploadArsipDigitalData(newId, digitalFile.name, b64);
+        }
         push('success', `Arsip ${res?.nomor ?? ''} berhasil ditambahkan`);
       }
       onSaved();

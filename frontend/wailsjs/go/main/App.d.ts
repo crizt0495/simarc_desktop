@@ -144,3 +144,5 @@ export function UpdatePemusnahanStatus(arg1:string,arg2:string,arg3:string):Prom
 export function UpdateProfile(arg1:string):Promise<Record<string, any>>;
 
 export function UploadArsipDigital(arg1:string):Promise<Record<string, any>>;
+
+export function UploadArsipDigitalData(arg1:string,arg2:string,arg3:string):Promise<Record<string, any>>;

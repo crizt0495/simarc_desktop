@@ -10,7 +10,7 @@ import { formatCurrency, parseCurrencyInput } from '../lib/currency';
 export type FieldDef = {
   key: string;
   label: string;
-  type?: 'text' | 'number' | 'currency' | 'date' | 'textarea' | 'select' | 'checkbox' | 'password' | 'email';
+  type?: 'text' | 'number' | 'currency' | 'date' | 'textarea' | 'select' | 'checkbox' | 'password' | 'email' | 'file';
   options?: Array<{ value: string; label: string }>;
   required?: boolean;
   placeholder?: string;
@@ -40,7 +40,7 @@ export interface FormModalProps {
 
 const emptyFor = (fields: FieldDef[]): Record<string, any> => {
   const out: Record<string, any> = {};
-  fields.forEach((f) => { out[f.key] = f.type === 'checkbox' ? false : ''; });
+  fields.forEach((f) => { out[f.key] = f.type === 'checkbox' ? false : f.type === 'file' ? null : ''; });
   return out;
 };
 
@@ -157,6 +157,14 @@ export const FormModal: React.FC<FormModalProps> = ({
                             value={formatCurrency(values[f.key])}
                             placeholder={f.placeholder}
                             onChange={(e) => set(f.key, parseCurrencyInput(e.target.value))}
+                            disabled={f.disabled || busy}
+                            style={{ fontSize: '0.85rem' }}
+                          />
+                        ) : f.type === 'file' ? (
+                          <input
+                            className="form-control form-control-sm"
+                            type="file"
+                            onChange={(e) => set(f.key, e.target.files?.[0] ?? null)}
                             disabled={f.disabled || busy}
                             style={{ fontSize: '0.85rem' }}
                           />

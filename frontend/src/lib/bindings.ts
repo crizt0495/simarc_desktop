@@ -147,6 +147,7 @@ export const installUpdate = (path: string) => call<boolean>('InstallUpdate', pa
 export const createArsipFull = (input: Record<string, any>) => call<Record<string, any>>('CreateArsipFull', input);
 export const updateArsip = (id: string, input: Record<string, any>) => call<Record<string, any>>('UpdateArsip', id, input);
 export const deleteArsip = (id: string) => call<void>('DeleteArsip', id);
+export const uploadArsipDigitalData = (id: string, filename: string, dataBase64: string) => call<Record<string, any>>('UploadArsipDigitalData', id, filename, dataBase64);
 export const uploadArsipDigital = (id: string) => call<Record<string, any>>('UploadArsipDigital', id);
 export const openArsipDigital = (id: string) => call<Record<string, any>>('OpenArsipDigital', id);
 export const deleteArsipDigital = (id: string) => call<Record<string, any>>('DeleteArsipDigital', id);

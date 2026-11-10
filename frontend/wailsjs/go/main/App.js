@@ -289,3 +289,7 @@ export function UpdateProfile(arg1) {
 export function UploadArsipDigital(arg1) {
   return window['go']['main']['App']['UploadArsipDigital'](arg1);
 }
+
+export function UploadArsipDigitalData(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UploadArsipDigitalData'](arg1, arg2, arg3);
+}

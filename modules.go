@@ -1628,6 +1628,50 @@ func (a *App) UploadArsipDigital(arsipId string) (map[string]interface{}, error)
 	}, nil
 }
 
+// UploadArsipDigitalData menerima berkas digital (base64) dari form Tambah/Ubah
+// arsip, menyimpannya ke folder digital, dan mencatat path-nya pada arsip.
+func (a *App) UploadArsipDigitalData(arsipId, filename, dataBase64 string) (map[string]interface{}, error) {
+	if database.DB == nil {
+		return nil, fmt.Errorf("database belum siap")
+	}
+	arsipId = strings.TrimSpace(arsipId)
+	if arsipId == "" {
+		return nil, fmt.Errorf("id arsip kosong")
+	}
+	var ar models.Arsip
+	if err := database.DB.First(&ar, "id = ?", arsipId).Error; err != nil {
+		return nil, fmt.Errorf("arsip tidak ditemukan")
+	}
+	dataBase64 = strings.TrimSpace(dataBase64)
+	if dataBase64 == "" {
+		return map[string]interface{}{"cancelled": true}, nil
+	}
+	// Buang prefix data URL bila ada.
+	if idx := strings.Index(dataBase64, ","); idx >= 0 && strings.HasPrefix(dataBase64, "data:") {
+		dataBase64 = dataBase64[idx+1:]
+	}
+	raw, err := base64.StdEncoding.DecodeString(dataBase64)
+	if err != nil {
+		return nil, fmt.Errorf("data berkas tidak valid: %v", err)
+	}
+	if filename == "" {
+		filename = "berkas-digital"
+	}
+	filename = filepath.Base(filename)
+	dir := filepath.Join(digitalArsipDir(), arsipId)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, fmt.Errorf("gagal membuat folder digital: %v", err)
+	}
+	dst := filepath.Join(dir, filename)
+	if err := os.WriteFile(dst, raw, 0644); err != nil {
+		return nil, fmt.Errorf("gagal menyimpan berkas: %v", err)
+	}
+	database.DB.Model(&models.Arsip{}).Where("id = ?", arsipId).Update("file_path", dst)
+	a.invalidateMasterCache()
+	a.writeActivity("upload_digital", "Upload berkas digital: "+filename, "arsip", arsipId)
+	return map[string]interface{}{"path": dst, "filename": filename, "size": len(raw)}, nil
+}
+
 // OpenArsipDigital membuka berkas digital arsip dengan aplikasi default OS.
 func (a *App) OpenArsipDigital(arsipId string) (map[string]interface{}, error) {
 	if database.DB == nil {
