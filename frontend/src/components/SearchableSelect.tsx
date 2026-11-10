@@ -40,7 +40,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number; openUp: boolean; maxHeight: number } | null>(null);
 
   const sel = useMemo(() => options.find((o) => o.value === value) ?? null, [options, value]);
 
@@ -56,7 +56,14 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const input = wrapRef.current?.querySelector('input');
     if (!input) return;
     const r = input.getBoundingClientRect();
-    setRect({ top: r.bottom + 4, left: r.left, width: r.width });
+    const spaceBelow = window.innerHeight - r.bottom - 8;
+    const spaceAbove = r.top - 8;
+    // Flip ke atas bila ruang di bawah tidak cukup dan atas lebih lega.
+    const openUp = spaceBelow < 160 && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(120, Math.min(PANEL_MAX_HEIGHT, openUp ? spaceAbove : spaceBelow));
+    const top = openUp ? Math.max(8, r.top - 4 - maxHeight) : r.bottom + 4;
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - r.width - 8));
+    setRect({ top, left, width: r.width, openUp, maxHeight });
   }, []);
 
   useEffect(() => {
@@ -106,7 +113,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         border: '1px solid var(--nb-border, #e2e8f0)',
         borderRadius: 8,
         boxShadow: 'var(--nb-shadow-lg, 0 10px 30px rgba(15, 23, 42, 0.18))',
-        maxHeight: PANEL_MAX_HEIGHT,
+        maxHeight: rect.maxHeight,
         overflowY: 'auto',
       }
     : undefined;

@@ -47,7 +47,10 @@ export const ArsipFormModal: React.FC<{
     return s.includes('SPJ');
   })();
 
-  const baseFields: FieldDef[] = [
+  // PENTING: opts dimuat async oleh parent. baseFields WAJIB ikut dihitung
+  // ulang saat opts berubah — jika tidak, dropdown tetap kosong karena memo
+  // menyimpan opsi dari render pertama (opts masih {}).
+  const baseFields: FieldDef[] = useMemo(() => [
     { key: 'nomor', label: 'Nomor Arsip', placeholder: 'Kosongkan untuk dibuat otomatis', help: 'Nomor unik arsip; boleh dikosongkan.' },
     { key: 'nama', label: 'Nama / Identitas Arsip', required: true, placeholder: 'Contoh: SK Pembinaan Kearsipan 2026' },
     { key: 'uraian', label: 'Uraian / Deskripsi', type: 'textarea', rows: 3, placeholder: 'Ringkasan isi arsip…' },
@@ -63,7 +66,8 @@ export const ArsipFormModal: React.FC<{
     { key: 'satuan', label: 'Satuan', placeholder: 'Berkas' },
     { key: 'nilaiAnggaran', label: 'Nilai Anggaran (Rp)', type: 'number', step: '0.01', placeholder: '0' },
     { key: 'nomorSPM', label: 'Nomor SPM', placeholder: 'Opsional' },
-  ];
+    // opts sengaja jadi dependency agar opsi ikut terbarui setelah data dimuat.
+  ], [opts]);
 
   const fields: FieldDef[] = useMemo(() => {
     const spjExtras: FieldDef[] = isSpj
@@ -74,7 +78,7 @@ export const ArsipFormModal: React.FC<{
       : [];
     const core = baseFields.filter((f) => f.key !== 'nomorSPM' && f.key !== 'nilaiAnggaran');
     return [...core, ...spjExtras];
-  }, [isSpj]);
+  }, [baseFields, isSpj]);
 
   const submit = async (v: Record<string, any>) => {
     setBusy(true);
