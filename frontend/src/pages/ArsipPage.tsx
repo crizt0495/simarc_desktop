@@ -554,7 +554,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
 
       {/* ZONE 5: CONTENT VIEW (CARD + TABLE) */}
       <div className="card fade-up-d2">
-        <div id="viewTable" className="view-container">
+        <div id="viewTable" className="view-container active">
             <div className="table-responsive">
               <table className="table table-hover table-premium datatable">
                 <thead className="sticky-top">
