@@ -7,7 +7,7 @@
  * - Hasil ditampilkan dalam tabel kaya + pagination + action cart.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { getMasterOptions, listArsipDetail, quitApp, getUpdateInfo, downloadUpdate, installUpdate } from '../lib/bindings';
+import { getMasterOptions, listArsipDetail, quitApp, getUpdateInfo, downloadUpdate, installUpdate, openArsipDigital } from '../lib/bindings';
 import PublicHeader from '../components/PublicHeader';
 import { ArsipDetailModal } from '../components/ArsipDetailModal';
 import SearchableSelect from '../components/SearchableSelect';
@@ -79,6 +79,14 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
     void load();
     return () => { cancelled = true; };
   }, []);
+
+  const handleOpenDigital = async (id: string) => {
+    try {
+      await openArsipDigital(id);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   /* ── pemeriksaan pembaruan dari GitHub Releases (auto-update) ── */
   useEffect(() => {
@@ -326,6 +334,10 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                         <span className={`badge ${statusBadge(ar.status)}`}>{ar.status ? ar.status.replace(/_/g, ' ') : '—'}</span>
                       </td>
                       <td className="text-center">
+                        {ar.berkas && (
+                          <button type="button" className="btn btn-sm btn-outline-success rounded-pill px-2 me-1" onClick={() => void handleOpenDigital(ar.id)} title="Buka berkas digital">
+                            <i className="bi bi-file-earmark-check"></i></button>
+                        )}
                         <button type="button" className="btn btn-sm btn-outline-primary rounded-pill px-2" onClick={() => setDetail(ar)} title="Lihat detail">
                           <i className="bi bi-eye "></i></button>
                       </td>
@@ -363,7 +375,7 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
         )}
       </div>
     </div>
-    <ArsipDetailModal detail={detail} onClose={() => setDetail(null)} />
+    <ArsipDetailModal detail={detail} onClose={() => setDetail(null)} onOpenDigital={handleOpenDigital} />
   </>
   );
 };
