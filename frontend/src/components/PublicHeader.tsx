@@ -25,13 +25,12 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
         <i className="bi bi-archive-fill"></i>
       </span>
       <div className="brand-lockup">
-        <div className="brand-name">SIMARC</div>
-        <div className="simarc-marquee text-muted" style={{ fontSize: '.72rem' }}>
+        <div className="simarc-marquee" style={{ fontSize: '1.05rem', fontWeight: 800 }}>
           <span
             className="simarc-marquee-track"
-            data-text="Sistem Informasi Manajemen Arsip Record Center"
+            data-text="SIMARC Sistem Informasi Manajemen Arsip Record Center"
           >
-            Sistem Informasi Manajemen Arsip Record Center
+            SIMARC Sistem Informasi Manajemen Arsip Record Center
           </span>
         </div>
       </div>
