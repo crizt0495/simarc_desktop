@@ -156,6 +156,8 @@ func (a *App) writeActivity(action, description, modelType, modelID string) {
 		ModelType:   modelType,
 		ModelID:     modelID,
 	}).Error
+	// Setiap aktivitas tulis menandakan data berubah → buang cache baca.
+	a.invalidateMasterCache()
 }
 
 // ── ARSIP (Tambah / Ubah / Hapus / Pindah) ────────────────────────────────────
@@ -376,7 +378,11 @@ func (a *App) SaveUnitKerja(id, nama string) (map[string]interface{}, error) {
 }
 
 func (a *App) DeleteUnitKerja(id string) error {
-	return database.DB.Delete(&models.UnitKerja{}, "id = ?", id).Error
+	if err := database.DB.Delete(&models.UnitKerja{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	a.invalidateMasterCache()
+	return nil
 }
 
 func (a *App) SaveLokasiArsip(in map[string]interface{}) (map[string]interface{}, error) {
@@ -399,6 +405,7 @@ func (a *App) SaveLokasiArsip(in map[string]interface{}) (map[string]interface{}
 		if err := database.DB.Create(&l).Error; err != nil {
 			return nil, err
 		}
+		a.invalidateMasterCache()
 		return map[string]interface{}{"id": l.ID}, nil
 	}
 	updates := map[string]interface{}{
@@ -409,11 +416,16 @@ func (a *App) SaveLokasiArsip(in map[string]interface{}) (map[string]interface{}
 	if err := database.DB.Model(&models.LokasiArsip{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return nil, err
 	}
+	a.invalidateMasterCache()
 	return map[string]interface{}{"id": id}, nil
 }
 
 func (a *App) DeleteLokasiArsip(id string) error {
-	return database.DB.Delete(&models.LokasiArsip{}, "id = ?", id).Error
+	if err := database.DB.Delete(&models.LokasiArsip{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	a.invalidateMasterCache()
+	return nil
 }
 
 func (a *App) SaveKodeKlasifikasi(in map[string]interface{}) (map[string]interface{}, error) {
@@ -441,6 +453,7 @@ func (a *App) SaveKodeKlasifikasi(in map[string]interface{}) (map[string]interfa
 		if err := database.DB.Create(&k).Error; err != nil {
 			return nil, err
 		}
+		a.invalidateMasterCache()
 		return map[string]interface{}{"id": k.ID}, nil
 	}
 	updates := map[string]interface{}{
@@ -455,11 +468,16 @@ func (a *App) SaveKodeKlasifikasi(in map[string]interface{}) (map[string]interfa
 	if err := database.DB.Model(&models.KodeKlasifikasi{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return nil, err
 	}
+	a.invalidateMasterCache()
 	return map[string]interface{}{"id": id}, nil
 }
 
 func (a *App) DeleteKodeKlasifikasi(id string) error {
-	return database.DB.Delete(&models.KodeKlasifikasi{}, "id = ?", id).Error
+	if err := database.DB.Delete(&models.KodeKlasifikasi{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	a.invalidateMasterCache()
+	return nil
 }
 
 func (a *App) SaveJenisArsip(in map[string]interface{}) (map[string]interface{}, error) {
@@ -481,6 +499,7 @@ func (a *App) SaveJenisArsip(in map[string]interface{}) (map[string]interface{},
 		if err := database.DB.Create(&j).Error; err != nil {
 			return nil, err
 		}
+		a.invalidateMasterCache()
 		return map[string]interface{}{"id": j.ID}, nil
 	}
 	updates := map[string]interface{}{
@@ -491,11 +510,16 @@ func (a *App) SaveJenisArsip(in map[string]interface{}) (map[string]interface{},
 	if err := database.DB.Model(&models.JenisArsip{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return nil, err
 	}
+	a.invalidateMasterCache()
 	return map[string]interface{}{"id": id}, nil
 }
 
 func (a *App) DeleteJenisArsip(id string) error {
-	return database.DB.Delete(&models.JenisArsip{}, "id = ?", id).Error
+	if err := database.DB.Delete(&models.JenisArsip{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	a.invalidateMasterCache()
+	return nil
 }
 
 func (a *App) SaveRole(in map[string]interface{}) (map[string]interface{}, error) {
@@ -520,6 +544,7 @@ func (a *App) SaveRole(in map[string]interface{}) (map[string]interface{}, error
 		if err := database.DB.Create(&r).Error; err != nil {
 			return nil, err
 		}
+		a.invalidateMasterCache()
 		return map[string]interface{}{"id": r.ID}, nil
 	}
 	updates := map[string]interface{}{
@@ -530,11 +555,16 @@ func (a *App) SaveRole(in map[string]interface{}) (map[string]interface{}, error
 	if err := database.DB.Model(&models.Role{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return nil, err
 	}
+	a.invalidateMasterCache()
 	return map[string]interface{}{"id": id}, nil
 }
 
 func (a *App) DeleteRole(id string) error {
-	return database.DB.Delete(&models.Role{}, "id = ?", id).Error
+	if err := database.DB.Delete(&models.Role{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	a.invalidateMasterCache()
+	return nil
 }
 
 func (a *App) SaveUser(in map[string]interface{}) (map[string]interface{}, error) {
@@ -602,7 +632,11 @@ func (a *App) SaveUser(in map[string]interface{}) (map[string]interface{}, error
 }
 
 func (a *App) DeleteUser(id string) error {
-	return database.DB.Delete(&models.User{}, "id = ?", id).Error
+	if err := database.DB.Delete(&models.User{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	a.invalidateMasterCache()
+	return nil
 }
 
 // ── PEMBERKASAN ──────────────────────────────────────────────────────────────
@@ -655,6 +689,7 @@ func (a *App) SavePemberkasan(in map[string]interface{}) (map[string]interface{}
 	if err := database.DB.Model(&models.Pemberkasan{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return nil, err
 	}
+	a.invalidateMasterCache()
 	return map[string]interface{}{"id": id}, nil
 }
 
@@ -663,7 +698,11 @@ func (a *App) DeletePemberkasan(id string) error {
 		return fmt.Errorf("database belum siap")
 	}
 	database.DB.Model(&models.Arsip{}).Where("pemberkasan_id = ?", id).Update("pemberkasan_id", nil)
-	return database.DB.Delete(&models.Pemberkasan{}, "id = ?", id).Error
+	if err := database.DB.Delete(&models.Pemberkasan{}, "id = ?", id).Error; err != nil {
+		return err
+	}
+	a.invalidateMasterCache()
+	return nil
 }
 
 // AssignArsipToPemberkasan memasukkan arsip terpilih ke sebuah berkas.

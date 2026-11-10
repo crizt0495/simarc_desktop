@@ -36,14 +36,76 @@ func tableExists(name string) bool {
 }
 
 // schemaIsCurrent reports whether the database is already migrated to
-// SchemaVersion (one cheap query when up to date).
+// SchemaVersion. Satu query saja (tabel yang belum ada otomatis dianggap
+// belum migrasi lewat error), jauh lebih cepat daripada cek tabel + hitung.
 func schemaIsCurrent() bool {
-	if !tableExists("schema_migrations") {
+	var n int64
+	if err := DB.Raw("SELECT COUNT(1) FROM schema_migrations WHERE version = ?", SchemaVersion).Scan(&n).Error; err != nil {
 		return false
 	}
-	var n int64
-	DB.Raw("SELECT COUNT(1) FROM schema_migrations WHERE version = ?", SchemaVersion).Scan(&n)
 	return n > 0
+}
+
+// verifyCoreInvariants memeriksa semua invariant inti yang harus selalu benar
+// dalam SATU query information_schema (dulu 6–7 query berurutan ke TiDB Cloud).
+//
+//   - activity_logs.id harus VARCHAR(36)/CHAR(36) (bukan BIGINT AUTO_INCREMENT);
+//   - permissions harus memiliki kolom label, description, menu_identifier.
+//
+// Perbaikan (ALTER) hanya dijalankan bila memang terdeteksi rusak.
+func verifyCoreInvariants() {
+	var rows []struct {
+		TableName  string `gorm:"column:table_name"`
+		ColumnName string `gorm:"column:column_name"`
+		ColumnType string `gorm:"column:column_type"`
+	}
+	DB.Raw(`SELECT table_name, column_name, column_type
+		FROM information_schema.columns
+		WHERE table_schema = DATABASE() AND (
+			(table_name = 'activity_logs' AND column_name = 'id') OR
+			(table_name = 'permissions' AND column_name IN ('label','description','menu_identifier'))
+		)`).Scan(&rows)
+
+	type colKey struct{ table, name string }
+	found := make(map[colKey]bool, len(rows))
+	for _, r := range rows {
+		found[colKey{r.TableName, r.ColumnName}] = true
+		if r.TableName == "activity_logs" && r.ColumnName == "id" {
+			lower := strings.ToLower(r.ColumnType)
+			if !strings.HasPrefix(lower, "varchar") && !strings.HasPrefix(lower, "char") {
+				if err := DB.Exec("ALTER TABLE activity_logs MODIFY COLUMN id VARCHAR(36) NOT NULL").Error; err != nil {
+					log.Println("[MIGRASI] Gagal memperbaiki kolom id activity_logs:", err)
+				} else {
+					log.Println("[MIGRASI] Memperbaiki kolom id tabel activity_logs menjadi VARCHAR(36) UUID")
+				}
+			}
+		}
+	}
+
+	// permissions: tambahkan kolom yang hilang pada skema lama.
+	if found[colKey{"permissions", "label"}] ||
+		found[colKey{"permissions", "description"}] ||
+		found[colKey{"permissions", "menu_identifier"}] {
+		missing := []struct {
+			name string
+			ddl  string
+		}{
+			{"label", "VARCHAR(255) NOT NULL DEFAULT ''"},
+			{"description", "VARCHAR(255) NULL"},
+			{"menu_identifier", "VARCHAR(255) NULL"},
+		}
+		// Hanya jalankan bila tabel permissions ada (minimal satu kolom dikenali).
+		for _, c := range missing {
+			if found[colKey{"permissions", c.name}] {
+				continue
+			}
+			if err := DB.Exec("ALTER TABLE permissions ADD COLUMN " + c.name + " " + c.ddl).Error; err != nil {
+				log.Println("[MIGRASI] Gagal menambah kolom", c.name, "ke permissions:", err)
+			} else {
+				log.Println("[MIGRASI] Menambah kolom", c.name, "ke tabel permissions")
+			}
+		}
+	}
 }
 
 // markSchemaVersion records SchemaVersion as applied.
@@ -279,6 +341,20 @@ func Migrate() error {
 	// Quiet GORM SQL logging for migration step (we explicitly log meaningful events).
 	DB.Logger = logger.Default.LogMode(logger.Error)
 
+	// Invariant inti diverifikasi lewat SATU query metadata (murah), lalu
+	// fast-path versi skema. Bila database sudah di versi terbaru, boot tidak
+	// menjalankan pemeriksaan berat/berurutan apa pun — hanya 2 round-trip.
+	verifyCoreInvariants()
+	// Fast path: already migrated to the current schema version — skip all
+	// heavy checks/updates (they would otherwise run on every serverless
+	// cold start and dominate request latency).
+	if schemaIsCurrent() {
+		log.Println("[MIGRASI] Skema sudah versi terbaru, lewati pemeriksaan berat")
+		return nil
+	}
+
+	log.Println("[MIGRASI] Memeriksa dan memperbarui skema database...")
+
 	// Post-2.0: any table that joins multi-computer sync must use UUID keys
 	// instead of AUTO_INCREMENT (numeric ids collide across computers, so the
 	// sync engine ignores such tables). Convert once, idempotently, before the
@@ -286,25 +362,6 @@ func Migrate() error {
 	if err := migrateAutoIncToUUID(); err != nil {
 		return err
 	}
-
-	// Always-verified invariants (cheap information_schema checks). These run
-	// before the schema-version fast path so a database that was already
-	// marked "current" can still be repaired.
-	//
-	// activity_logs.id must stay a VARCHAR(36) UUID column: legacy builds
-	// wrongly forced it to BIGINT AUTO_INCREMENT, which breaks activity
-	// logging. Repair it whenever an integer type is detected.
-	ensureActivityLogIDColumn()
-	ensurePermissionColumns()
-	// Fast path: already migrated to the current schema version — skip all
-	// heavy checks/updates (they would otherwise run on every serverless
-	// cold start and dominate request latency).
-	if tableExists("roles") && schemaIsCurrent() {
-		log.Println("[MIGRASI] Skema sudah versi terbaru, lewati pemeriksaan berat")
-		return nil
-	}
-
-	log.Println("[MIGRASI] Memeriksa dan memperbarui skema database...")
 
 	// AutoMigrate all models (creates tables if they don't exist).
 	log.Println("[MIGRASI] Database baru, menjalankan migrasi penuh...")

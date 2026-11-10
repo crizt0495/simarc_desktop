@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -31,6 +32,17 @@ type App struct {
 	ctx            context.Context
 	currentUserID  string // set setelah Login() sukses; kosong = mode publik/viewer
 	currentProfile map[string]interface{}
+
+	// Cache baca (in-memory) untuk data yang mahal diambil dari TiDB Cloud.
+	// Setiap halaman (dashboard, arsip, landing, laporan, …) memanggil
+	// ListArsipDetail/GetMasterOptions; tanpa cache, tiap navigasi menunggu
+	// round-trip cloud 2–8 detik. Cache diinvalidasi otomatis setiap ada
+	// perubahan data (lihat invalidateMasterCache).
+	cacheMu      sync.RWMutex
+	arsipCache   []map[string]interface{}
+	arsipCacheAt time.Time
+	optsCache    map[string][]map[string]interface{}
+	optsCacheAt  time.Time
 }
 
 func NewApp() *App {
@@ -60,6 +72,12 @@ func (a *App) startup(ctx context.Context) {
 
 	// Seed default data
 	database.SeedIfNeeded()
+
+	// Hangatkan cache data berat di latar belakang. Proses ini berjalan
+	// bersamaan dengan pemuatan bundle frontend, sehingga landing page dan
+	// navigasi pertama langsung memakai data yang sudah siap.
+	go a.ListArsipDetail()
+	go a.GetMasterOptions()
 }
 
 // shutdown closes the database connection.
@@ -313,31 +331,125 @@ func (a *App) Logout() {
 	a.currentProfile = nil
 }
 
+// arsipDetailRow menampung hasil satu query JOIN arsip + master data.
+// Dulu ListArsipDetail memakai 5 Preload terpisah (6 round-trip ke TiDB
+// Cloud ≈ 6–8 detik). Dengan JOIN tunggal, seluruh data diambil sekali
+// jalan (≈ 2 detik) dan hasilnya di-cache.
+type arsipDetailRow struct {
+	ID                string     `gorm:"column:id"`
+	NomorArsip        string     `gorm:"column:nomor_arsip"`
+	NamaArsip         string     `gorm:"column:nama_arsip"`
+	Uraian            string     `gorm:"column:uraian"`
+	StatusArsip       string     `gorm:"column:status_arsip"`
+	UnitKerjaID       string     `gorm:"column:unit_kerja_id"`
+	KodeKlasifikasiID string     `gorm:"column:kode_klasifikasi_id"`
+	JenisArsipID      *string    `gorm:"column:jenis_arsip_id"`
+	PemberkasanID     *string    `gorm:"column:pemberkasan_id"`
+	LokasiArsipID     *string    `gorm:"column:lokasi_arsip_id"`
+	TanggalDibuat     *time.Time `gorm:"column:tanggal_dibuat"`
+	TanggalRetensi    *time.Time `gorm:"column:tanggal_retensi_berakhir"`
+	Jumlah            int        `gorm:"column:jumlah"`
+	Satuan            string     `gorm:"column:satuan"`
+	NilaiAnggaran     *float64   `gorm:"column:nilai_anggaran"`
+	NomorSPM          string     `gorm:"column:nomor_spm"`
+	FilePath          string     `gorm:"column:file_path"`
+	CreatedAt         *time.Time `gorm:"column:created_at"`
+	UpdatedAt         *time.Time `gorm:"column:updated_at"`
+	UnitNama          *string    `gorm:"column:unit_nama"`
+	JenisNama         *string    `gorm:"column:jenis_nama"`
+	KKKode            *string    `gorm:"column:kk_kode"`
+	KKNama            *string    `gorm:"column:kk_nama"`
+	KKPenyusutan      *string    `gorm:"column:kk_penyusutan"`
+	KKRetensiAktif    *int       `gorm:"column:kk_retensi_aktif"`
+	KKRetensiInaktif  *int       `gorm:"column:kk_retensi_inaktif"`
+	LokasiNama        *string    `gorm:"column:lokasi_nama"`
+}
+
 // ListArsipDetail returns full arsip records (with joins) for the arsip page.
+// Hasil di-cache di memori agar perpindahan halaman (dashboard, arsip,
+// landing, laporan, …) tidak mengulang query cloud yang mahal.
 func (a *App) ListArsipDetail() []map[string]interface{} {
-	result := []map[string]interface{}{}
 	if database.DB == nil {
+		return []map[string]interface{}{}
+	}
+	if cached, ok := a.getArsipCache(); ok {
+		return cached
+	}
+	rows := a.queryArsipDetail()
+	a.setArsipCache(rows)
+	return rows
+}
+
+// queryArsipDetail mengambil seluruh arsip beserta relasi master data dalam
+// SATU query JOIN (bukan 6 query Preload).
+func (a *App) queryArsipDetail() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	var rows []arsipDetailRow
+	err := database.DB.Raw(`
+		SELECT
+			a.id, a.nomor_arsip, a.nama_arsip, a.uraian, a.status_arsip,
+			a.unit_kerja_id, a.kode_klasifikasi_id, a.jenis_arsip_id,
+			a.pemberkasan_id, a.lokasi_arsip_id, a.tanggal_dibuat,
+			a.tanggal_retensi_berakhir, a.jumlah, a.satuan,
+			a.nilai_anggaran, a.nomor_spm, a.file_path,
+			a.created_at, a.updated_at,
+			u.nama_unit    AS unit_nama,
+			j.nama_jenis   AS jenis_nama,
+			k.kode_klasifikasi AS kk_kode,
+			k.nama_klasifikasi AS kk_nama,
+			k.penyusutan_arsip AS kk_penyusutan,
+			k.retensi_aktif    AS kk_retensi_aktif,
+			k.retensi_inaktif  AS kk_retensi_inaktif,
+			l.nama_lokasi  AS lokasi_nama
+		FROM arsip a
+		LEFT JOIN unit_kerja       u ON u.id = a.unit_kerja_id       AND u.deleted_at IS NULL
+		LEFT JOIN jenis_arsip      j ON j.id = a.jenis_arsip_id
+		LEFT JOIN kode_klasifikasi k ON k.id = a.kode_klasifikasi_id AND k.deleted_at IS NULL
+		LEFT JOIN lokasi_arsips    l ON l.id = a.lokasi_arsip_id     AND l.deleted_at IS NULL
+		WHERE a.deleted_at IS NULL
+		ORDER BY a.created_at DESC
+	`).Scan(&rows).Error
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[simarc] gagal memuat arsip: %v\n", err)
 		return result
 	}
-	var arsip []models.Arsip
-	database.DB.
-		Preload("UnitKerja").
-		Preload("JenisArsipRel").
-		Preload("KodeKlasifikasi").
-		Preload("Pemberkasan").
-		Preload("LokasiArsip").
-		Order("created_at desc").Find(&arsip)
-	for _, ar := range arsip {
+
+	str := func(p *string) string {
+		if p == nil {
+			return ""
+		}
+		return *p
+	}
+	intv := func(p *int) int {
+		if p == nil {
+			return 0
+		}
+		return *p
+	}
+	tgl := func(p *time.Time) string {
+		if p == nil {
+			return ""
+		}
+		return p.Format("2006-01-02")
+	}
+	ts := func(p *time.Time) string {
+		if p == nil {
+			return ""
+		}
+		return p.Format("2006-01-02 15:04:05")
+	}
+
+	for _, ar := range rows {
 		unit, kategori := "-", "Umum"
-		if ar.UnitKerja != nil && ar.UnitKerja.NamaUnit != "" {
-			unit = ar.UnitKerja.NamaUnit
+		if u := str(ar.UnitNama); u != "" {
+			unit = u
 		}
-		if ar.JenisArsipRel != nil && ar.JenisArsipRel.NamaJenis != "" {
-			kategori = ar.JenisArsipRel.NamaJenis
+		if j := str(ar.JenisNama); j != "" {
+			kategori = j
 		}
-		tanggal := ""
-		if ar.TanggalDibuat != nil {
-			tanggal = ar.TanggalDibuat.Format("2006-01-02")
+		lokasi := str(ar.LokasiNama)
+		if lokasi == "" {
+			lokasi = "—"
 		}
 		result = append(result, map[string]interface{}{
 			"id":        ar.ID,
@@ -348,65 +460,30 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 			"unit":      unit,
 			"kategori":  kategori,
 			"jenisName": kategori,
-			"tanggal":   tanggal,
+			"tanggal":   tgl(ar.TanggalDibuat),
 			"jumlah":    ar.Jumlah,
 			"satuan":    ar.Satuan,
 			"nilai":     ar.NilaiAnggaran,
 			"nomor_spm": ar.NomorSPM,
 			"nomorSPM":  ar.NomorSPM,
 			// ID relasi untuk filter lengkap halaman publik/landing.
-			"unitId":            ar.UnitKerjaID,
-			"kodeKlasifikasiId": ar.KodeKlasifikasiID,
-			"jenisArsipId":      derefStr(ar.JenisArsipID),
-			"pemberkasanId":     derefStr(ar.PemberkasanID),
-			"lokasiArsipId":     derefStr(ar.LokasiArsipID),
-			"tanggalRetensiBerakhir": func() string {
-				if ar.TanggalRetensiAkhir != nil {
-					return ar.TanggalRetensiAkhir.Format("2006-01-02")
-				}
-				return ""
-			}(),
-			"kodeKlasifikasiTxt": func() string {
-				if ar.KodeKlasifikasi != nil {
-					return ar.KodeKlasifikasi.KodeKlasifikasi
-				}
-				return ""
-			}(),
+			"unitId":                 ar.UnitKerjaID,
+			"kodeKlasifikasiId":      ar.KodeKlasifikasiID,
+			"jenisArsipId":           derefStr(ar.JenisArsipID),
+			"pemberkasanId":          derefStr(ar.PemberkasanID),
+			"lokasiArsipId":          derefStr(ar.LokasiArsipID),
+			"tanggalRetensiBerakhir": tgl(ar.TanggalRetensi),
+			"kodeKlasifikasiTxt":     str(ar.KKKode),
 			// Relasi arsip → kode_klasifikasi: dipakai halaman Pemusnahan untuk
 			// mendeteksi arsip berkategori penyusutan "musnah" secara otomatis.
-			"kodeKlasifikasiNama": func() string {
-				if ar.KodeKlasifikasi != nil {
-					return ar.KodeKlasifikasi.NamaKlasifikasi
-				}
-				return ""
-			}(),
-			"penyusutanArsip": func() string {
-				if ar.KodeKlasifikasi != nil {
-					return strings.ToLower(strings.TrimSpace(ar.KodeKlasifikasi.PenyusutanArsip))
-				}
-				return ""
-			}(),
-			"retensiAktif": func() int {
-				if ar.KodeKlasifikasi != nil {
-					return ar.KodeKlasifikasi.RetensiAktif
-				}
-				return 0
-			}(),
-			"retensiInaktif": func() int {
-				if ar.KodeKlasifikasi != nil {
-					return ar.KodeKlasifikasi.RetensiInaktif
-				}
-				return 0
-			}(),
-			"lokasi": func() string {
-				if ar.LokasiArsip != nil && ar.LokasiArsip.NamaLokasi != "" {
-					return ar.LokasiArsip.NamaLokasi
-				}
-				return "—"
-			}(),
-			"berkas":  ar.FilePath != "",
-			"created": ar.CreatedAt.Format("2006-01-02 15:04:05"),
-			"updated": ar.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"kodeKlasifikasiNama": str(ar.KKNama),
+			"penyusutanArsip":     strings.ToLower(strings.TrimSpace(str(ar.KKPenyusutan))),
+			"retensiAktif":        intv(ar.KKRetensiAktif),
+			"retensiInaktif":      intv(ar.KKRetensiInaktif),
+			"lokasi":              lokasi,
+			"berkas":              ar.FilePath != "",
+			"created":             ts(ar.CreatedAt),
+			"updated":             ts(ar.UpdatedAt),
 		})
 	}
 	return result
@@ -421,82 +498,115 @@ func derefStr(p *string) string {
 }
 
 // GetMasterOptions returns master-data dropdown options for the arsip filter panel.
+// Enam tabel master diambil secara paralel (bukan berurutan) dan hasilnya
+// di-cache, sehingga total waktu turun dari ~jumlah semua query menjadi
+// ~query terlama. Cache diinvalidasi setiap ada perubahan master data.
 func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
-	out := map[string][]map[string]interface{}{}
 	if database.DB == nil {
-		return out
+		return map[string][]map[string]interface{}{}
 	}
-	opts := func(rows []map[string]interface{}) []map[string]interface{} {
+	if cached, ok := a.getOptsCache(); ok {
+		return cached
+	}
+
+	out := map[string][]map[string]interface{}{}
+	var mu sync.Mutex
+	set := func(key string, rows []map[string]interface{}) {
 		if rows == nil {
-			return []map[string]interface{}{}
+			rows = []map[string]interface{}{}
 		}
-		return rows
+		mu.Lock()
+		out[key] = rows
+		mu.Unlock()
 	}
 
-	var units []models.UnitKerja
-	database.DB.Order("nama_unit asc").Find(&units)
-	u := make([]map[string]interface{}, len(units))
-	for i, r := range units {
-		u[i] = map[string]interface{}{"id": r.ID, "name": r.NamaUnit}
-	}
-	out["unitKerja"] = opts(u)
+	var wg sync.WaitGroup
+	wg.Add(6)
 
-	var klas []models.KodeKlasifikasi
-	database.DB.Order("kode_klasifikasi asc").Find(&klas)
-	k := make([]map[string]interface{}, len(klas))
-	for i, r := range klas {
-		k[i] = map[string]interface{}{
-			"id": r.ID, "name": r.KodeKlasifikasi + " - " + r.NamaKlasifikasi,
-			"kode": r.KodeKlasifikasi, "nama": r.NamaKlasifikasi,
-			"retensiAktif": r.RetensiAktif, "retensiInaktif": r.RetensiInaktif,
-			"penyusutanArsip": r.PenyusutanArsip, "klasifikasiKeamanan": r.KlasifikasiKeamanan,
-			"unitPengolah": r.UnitPengolah,
+	go func() {
+		defer wg.Done()
+		var units []models.UnitKerja
+		database.DB.Order("nama_unit asc").Find(&units)
+		u := make([]map[string]interface{}, len(units))
+		for i, r := range units {
+			u[i] = map[string]interface{}{"id": r.ID, "name": r.NamaUnit}
 		}
-	}
-	out["kodeKlasifikasi"] = opts(k)
+		set("unitKerja", u)
+	}()
 
-	var lokasi []models.LokasiArsip
-	database.DB.Order("nama_lokasi asc").Find(&lokasi)
-	l := make([]map[string]interface{}, len(lokasi))
-	for i, r := range lokasi {
-		l[i] = map[string]interface{}{
-			"id": r.ID, "name": r.NamaLokasi,
-			"deskripsi": r.Deskripsi, "kapasitas": derefStr(r.Kapasitas),
+	go func() {
+		defer wg.Done()
+		var klas []models.KodeKlasifikasi
+		database.DB.Order("kode_klasifikasi asc").Find(&klas)
+		k := make([]map[string]interface{}, len(klas))
+		for i, r := range klas {
+			k[i] = map[string]interface{}{
+				"id": r.ID, "name": r.KodeKlasifikasi + " - " + r.NamaKlasifikasi,
+				"kode": r.KodeKlasifikasi, "nama": r.NamaKlasifikasi,
+				"retensiAktif": r.RetensiAktif, "retensiInaktif": r.RetensiInaktif,
+				"penyusutanArsip": r.PenyusutanArsip, "klasifikasiKeamanan": r.KlasifikasiKeamanan,
+				"unitPengolah": r.UnitPengolah,
+			}
 		}
-	}
-	out["lokasiArsip"] = opts(l)
+		set("kodeKlasifikasi", k)
+	}()
 
-	var jenis []models.JenisArsip
-	database.DB.Order("nama_jenis asc").Find(&jenis)
-	j := make([]map[string]interface{}, len(jenis))
-	for i, r := range jenis {
-		j[i] = map[string]interface{}{
-			"id": r.ID, "name": r.NamaJenis,
-			"kode": r.KodeJenis, "keterangan": r.Keterangan,
+	go func() {
+		defer wg.Done()
+		var lokasi []models.LokasiArsip
+		database.DB.Order("nama_lokasi asc").Find(&lokasi)
+		l := make([]map[string]interface{}, len(lokasi))
+		for i, r := range lokasi {
+			l[i] = map[string]interface{}{
+				"id": r.ID, "name": r.NamaLokasi,
+				"deskripsi": r.Deskripsi, "kapasitas": derefStr(r.Kapasitas),
+			}
 		}
-	}
-	out["jenisArsip"] = opts(j)
+		set("lokasiArsip", l)
+	}()
 
-	var berkas []models.Pemberkasan
-	database.DB.Order("nama_pemberkasan asc").Find(&berkas)
-	p := make([]map[string]interface{}, len(berkas))
-	for i, r := range berkas {
-		p[i] = map[string]interface{}{
-			"id": r.ID, "name": r.NamaPemberkasan,
-			"kode": r.KodeBerkas, "tahun": r.Tahun, "status": r.StatusBerkas,
-			"unitKerjaId": derefStr(r.UnitKerjaID), "kodeKlasifikasiId": derefStr(r.KodeKlasifikasiID),
+	go func() {
+		defer wg.Done()
+		var jenis []models.JenisArsip
+		database.DB.Order("nama_jenis asc").Find(&jenis)
+		j := make([]map[string]interface{}, len(jenis))
+		for i, r := range jenis {
+			j[i] = map[string]interface{}{
+				"id": r.ID, "name": r.NamaJenis,
+				"kode": r.KodeJenis, "keterangan": r.Keterangan,
+			}
 		}
-	}
-	out["pemberkasan"] = opts(p)
+		set("jenisArsip", j)
+	}()
 
-	var roles []models.Role
-	database.DB.Order("name asc").Find(&roles)
-	r := make([]map[string]interface{}, len(roles))
-	for i, role := range roles {
-		r[i] = map[string]interface{}{"id": role.ID, "name": role.Name}
-	}
-	out["roles"] = opts(r)
+	go func() {
+		defer wg.Done()
+		var berkas []models.Pemberkasan
+		database.DB.Order("nama_pemberkasan asc").Find(&berkas)
+		p := make([]map[string]interface{}, len(berkas))
+		for i, r := range berkas {
+			p[i] = map[string]interface{}{
+				"id": r.ID, "name": r.NamaPemberkasan,
+				"kode": r.KodeBerkas, "tahun": r.Tahun, "status": r.StatusBerkas,
+				"unitKerjaId": derefStr(r.UnitKerjaID), "kodeKlasifikasiId": derefStr(r.KodeKlasifikasiID),
+			}
+		}
+		set("pemberkasan", p)
+	}()
 
+	go func() {
+		defer wg.Done()
+		var roles []models.Role
+		database.DB.Order("name asc").Find(&roles)
+		r := make([]map[string]interface{}, len(roles))
+		for i, role := range roles {
+			r[i] = map[string]interface{}{"id": role.ID, "name": role.Name}
+		}
+		set("roles", r)
+	}()
+
+	wg.Wait()
+	a.setOptsCache(out)
 	return out
 }
 

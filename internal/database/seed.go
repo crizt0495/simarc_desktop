@@ -110,7 +110,13 @@ func seedAdmin() {
 }
 
 func seedLokasiRakA() {
-	// Create the main Record Center location if it doesn't exist
+	// Create the main Record Center location only when it is missing. A single
+	// COUNT is enough for the common case (already exists) and avoids the
+	// SELECT + UPDATE that previously ran on every boot.
+	var n int64
+	if err := DB.Model(&models.LokasiArsip{}).Where("nama_lokasi = ?", "Record Center").Count(&n).Error; err != nil || n > 0 {
+		return
+	}
 	upsertLokasi("Record Center", "Rak A")
 }
 
