@@ -14,14 +14,6 @@ import {
   WindowToggleMaximise,
 } from '../../wailsjs/runtime/runtime';
 
-const safe = (fn: () => void) => {
-  try {
-    fn();
-  } catch {
-    /* Runtime Wails belum siap (mis. preview browser) — abaikan. */
-  }
-};
-
 export const WindowControls: React.FC<{
   /** Kelas tambahan untuk penempatan khusus. */
   className?: string;
@@ -45,18 +37,21 @@ export const WindowControls: React.FC<{
     return () => window.removeEventListener('resize', syncState);
   }, [syncState]);
 
-  const minimise = () => safe(() => WindowMinimise());
+  const minimise = () => {
+    try { WindowMinimise(); } catch (e) { console.error('minimise', e); }
+  };
 
   const toggleMaximise = () => {
-    safe(() => WindowToggleMaximise());
+    try { WindowToggleMaximise(); } catch (e) { console.error('toggleMaximise', e); }
     window.setTimeout(() => void syncState(), 120);
   };
 
   const exit = () => {
     try {
       Quit();
-    } catch {
-      window.close();
+    } catch (e) {
+      console.error('quit', e);
+      try { window.close(); } catch {}
     }
   };
 
@@ -65,6 +60,7 @@ export const WindowControls: React.FC<{
       className={`win-controls${floating ? ' win-controls-floating' : ''}${className ? ' ' + className : ''}`}
       role="group"
       aria-label="Kontrol jendela"
+      style={{ WebkitAppRegion: 'no-drag' } as any}
     >
       <button
         type="button"
@@ -72,6 +68,7 @@ export const WindowControls: React.FC<{
         title="Minimalkan"
         aria-label="Minimalkan jendela"
         onClick={minimise}
+        style={{ WebkitAppRegion: 'no-drag' } as any}
       >
         <i className="bi bi-dash-lg" aria-hidden="true" />
       </button>
@@ -82,6 +79,7 @@ export const WindowControls: React.FC<{
         aria-label={maximised ? 'Kembalikan ukuran jendela' : 'Maksimalkan jendela'}
         aria-pressed={maximised}
         onClick={toggleMaximise}
+        style={{ WebkitAppRegion: 'no-drag' } as any}
       >
         <i className={maximised ? 'bi bi-fullscreen-exit' : 'bi bi-fullscreen'} aria-hidden="true" />
       </button>
@@ -91,6 +89,7 @@ export const WindowControls: React.FC<{
         title="Tutup aplikasi"
         aria-label="Tutup aplikasi"
         onClick={exit}
+        style={{ WebkitAppRegion: 'no-drag' } as any}
       >
         <i className="bi bi-x-lg" aria-hidden="true" />
       </button>

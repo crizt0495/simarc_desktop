@@ -3527,18 +3527,21 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 27px;
+  width: 36px;
+  height: 32px;
   padding: 0;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--nb-ink-3);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
+  pointer-events: auto;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
+.win-controls { pointer-events: auto; --wails-draggable: no-drag; position: relative; z-index: 1000; }
+.win-btn { --wails-draggable: no-drag; }
 .win-btn:hover { background: var(--nb-surface); color: var(--nb-ink); }
 .win-btn:focus-visible { outline: 2px solid var(--nb-primary); outline-offset: 1px; }
 .win-btn-close:hover { background: #dc2626; color: #fff; }
