@@ -131,6 +131,8 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
     if (applied.jenisArsipId) out = out.filter((a) => String(a.jenisArsipId || '') === applied.jenisArsipId);
     if (applied.lokasiArsipId) out = out.filter((a) => String(a.lokasiArsipId || '') === applied.lokasiArsipId);
     if (applied.unitKerjaId) out = out.filter((a) => String(a.unitId || '') === applied.unitKerjaId);
+    if (applied.berkasDigital === 'sudah_ada') out = out.filter((a) => a.berkas);
+    if (applied.berkasDigital === 'belum_ada') out = out.filter((a) => !a.berkas);
     if (applied.startDate) out = out.filter((a) => String(a.tanggal || '') >= applied.startDate);
     if (applied.endDate) out = out.filter((a) => String(a.tanggal || '') <= applied.endDate);
     return out;
@@ -238,6 +240,20 @@ export const PublicSearchPage: React.FC<PublicSearchPageProps> = ({ onLogin, ses
                 value={draft.lokasiArsipId ?? ''}
                 onChange={(v) => setDraft({ ...draft, lokasiArsipId: v })}
                 placeholder="Semua Lokasi"
+              />
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label small fw-700 mb-1">Berkas Digital</label>
+              <SearchableSelect
+                options={[
+                  { value: '', label: 'Semua' },
+                  { value: 'sudah_ada', label: 'Sudah Ada' },
+                  { value: 'belum_ada', label: 'Belum Ada' },
+                ]}
+                value={draft.berkasDigital ?? ''}
+                onChange={(v) => setDraft({ ...draft, berkasDigital: v })}
+                placeholder="Semua"
               />
             </div>
 
