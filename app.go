@@ -482,6 +482,7 @@ func (a *App) queryArsipDetail() []map[string]interface{} {
 			"retensiInaktif":      intv(ar.KKRetensiInaktif),
 			"lokasi":              lokasi,
 			"berkas":              ar.FilePath != "",
+			"filePath":            ar.FilePath,
 			"created":             ts(ar.CreatedAt),
 			"updated":             ts(ar.UpdatedAt),
 		})

@@ -20,6 +20,7 @@ export interface ArsipDetail {
   nilai?: number | string | null;
   nomor_spm?: string;
   berkas?: boolean;
+  filePath?: string | null;
   created?: string;
   updated?: string;
   lokasi?: string;
@@ -30,11 +31,15 @@ interface Props {
   onClose: () => void;
   /** Naikkan z-index bila modal detail dibuka di atas modal lain (mis. daftar arsip per lokasi). */
   zIndex?: number;
+  onUploadDigital?: (id: string) => void;
+  onOpenDigital?: (id: string) => void;
+  onDeleteDigital?: (id: string) => void;
+  busyDigital?: boolean;
 }
 
 const nf = new Intl.NumberFormat('id-ID');
 
-export const ArsipDetailModal: React.FC<Props> = ({ detail, onClose, zIndex }) => {
+export const ArsipDetailModal: React.FC<Props> = ({ detail, onClose, zIndex, onUploadDigital, onOpenDigital, onDeleteDigital, busyDigital }) => {
   if (!detail) return null;
   const fields: Array<[string, React.ReactNode]> = [
     ['Nomor Arsip', detail.nomor],
@@ -47,7 +52,7 @@ export const ArsipDetailModal: React.FC<Props> = ({ detail, onClose, zIndex }) =
     ['Jumlah', `${detail.jumlah ?? 0} ${detail.satuan || ''}`.trim()],
     ['Nilai Anggaran', detail.nilai != null && Number(detail.nilai) !== 0 ? `Rp ${nf.format(Number(detail.nilai))}` : '—'],
     ['Nomor SPM', detail.nomor_spm],
-    ['Berkas Digital', detail.berkas ? 'Tersedia' : 'Belum ada'],
+    ['Berkas Digital', detail.berkas ? (detail.filePath ? detail.filePath.split('/').pop() : 'Tersedia') : 'Belum ada'],
     ['Dibuat', detail.created],
     ['Diperbarui', detail.updated],
     ['Lokasi Arsip', detail.lokasi],
@@ -80,8 +85,23 @@ export const ArsipDetailModal: React.FC<Props> = ({ detail, onClose, zIndex }) =
               </div>
             )}
           </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-outline-secondary rounded-pill px-3" onClick={onClose}><i className="bi bi-x-lg me-1"></i>Tutup</button>
+          <div className="modal-footer d-flex flex-wrap gap-2">
+            {detail.id && !detail.berkas && (
+              <button type="button" className="btn btn-primary rounded-pill px-3" disabled={busyDigital} onClick={() => onUploadDigital?.(detail.id as string)}>
+                <i className="bi bi-cloud-upload me-1"></i>{busyDigital ? 'Mengunggah…' : 'Upload Berkas Digital'}
+              </button>
+            )}
+            {detail.id && detail.berkas && (
+              <>
+                <button type="button" className="btn btn-success rounded-pill px-3" disabled={busyDigital} onClick={() => onOpenDigital?.(detail.id as string)}>
+                  <i className="bi bi-eye me-1"></i>Buka Berkas
+                </button>
+                <button type="button" className="btn btn-outline-danger rounded-pill px-3" disabled={busyDigital} onClick={() => onDeleteDigital?.(detail.id as string)}>
+                  <i className="bi bi-trash me-1"></i>Hapus Berkas
+                </button>
+              </>
+            )}
+            <button type="button" className="btn btn-outline-secondary rounded-pill px-3 ms-auto" onClick={onClose}><i className="bi bi-x-lg me-1"></i>Tutup</button>
           </div>
         </div>
       </div>

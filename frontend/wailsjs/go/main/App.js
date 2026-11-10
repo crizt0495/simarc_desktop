@@ -42,6 +42,10 @@ export function DeleteArsip(arg1) {
   return window['go']['main']['App']['DeleteArsip'](arg1);
 }
 
+export function DeleteArsipDigital(arg1) {
+  return window['go']['main']['App']['DeleteArsipDigital'](arg1);
+}
+
 export function DeleteJadwalRetensi(arg1) {
   return window['go']['main']['App']['DeleteJadwalRetensi'](arg1);
 }
@@ -202,6 +206,10 @@ export function MoveArsip(arg1, arg2) {
   return window['go']['main']['App']['MoveArsip'](arg1, arg2);
 }
 
+export function OpenArsipDigital(arg1) {
+  return window['go']['main']['App']['OpenArsipDigital'](arg1);
+}
+
 export function PingBackend() {
   return window['go']['main']['App']['PingBackend']();
 }
@@ -276,4 +284,8 @@ export function UpdatePemusnahanStatus(arg1, arg2, arg3) {
 
 export function UpdateProfile(arg1) {
   return window['go']['main']['App']['UpdateProfile'](arg1);
+}
+
+export function UploadArsipDigital(arg1) {
+  return window['go']['main']['App']['UploadArsipDigital'](arg1);
 }

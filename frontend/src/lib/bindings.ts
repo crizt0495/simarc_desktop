@@ -147,6 +147,9 @@ export const installUpdate = (path: string) => call<boolean>('InstallUpdate', pa
 export const createArsipFull = (input: Record<string, any>) => call<Record<string, any>>('CreateArsipFull', input);
 export const updateArsip = (id: string, input: Record<string, any>) => call<Record<string, any>>('UpdateArsip', id, input);
 export const deleteArsip = (id: string) => call<void>('DeleteArsip', id);
+export const uploadArsipDigital = (id: string) => (window as any)?.go?.main?.App?.UploadArsipDigital?.(id);
+export const openArsipDigital = (id: string) => (window as any)?.go?.main?.App?.OpenArsipDigital?.(id);
+export const deleteArsipDigital = (id: string) => (window as any)?.go?.main?.App?.DeleteArsipDigital?.(id);
 export const moveArsip = (ids: string[], lokasiId: string) => call<Record<string, any>>('MoveArsip', ids, lokasiId);
 
 export const saveUnitKerja = (id: string, nama: string) => call<Record<string, any>>('SaveUnitKerja', id, nama);

@@ -21,6 +21,8 @@ export function CreatePemusnahan(arg1:Array<string>,arg2:string,arg3:string):Pro
 
 export function DeleteArsip(arg1:string):Promise<void>;
 
+export function DeleteArsipDigital(arg1:string):Promise<Record<string, any>>;
+
 export function DeleteJadwalRetensi(arg1:string):Promise<void>;
 
 export function DeleteJenisArsip(arg1:string):Promise<void>;
@@ -101,6 +103,8 @@ export function Logout():Promise<void>;
 
 export function MoveArsip(arg1:Array<string>,arg2:string):Promise<Record<string, any>>;
 
+export function OpenArsipDigital(arg1:string):Promise<Record<string, any>>;
+
 export function PingBackend():Promise<string>;
 
 export function ProsesJadwalRetensi(arg1:string):Promise<Record<string, any>>;
@@ -138,3 +142,5 @@ export function UpdatePeminjamanStatus(arg1:string,arg2:string,arg3:string):Prom
 export function UpdatePemusnahanStatus(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function UpdateProfile(arg1:string):Promise<Record<string, any>>;
+
+export function UploadArsipDigital(arg1:string):Promise<Record<string, any>>;

@@ -10,6 +10,7 @@ import {
   getMasterOptions, listArsipDetail, type Status,
   deleteArsip, moveArsip, assignArsipToPemberkasan,
   exportArsipCSV, importArsipCSV, extractOcrFromFile,
+  uploadArsipDigital, openArsipDigital, deleteArsipDigital,
 } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import SearchableSelect from '../components/SearchableSelect';
@@ -43,6 +44,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const [moveIds, setMoveIds] = useState<string[]>([]);
   const [moveLokasiId, setMoveLokasiId] = useState('');
   const [busy, setBusy] = useState(false);
+  const [busyDigital, setBusyDigital] = useState(false);
   const [ocrOpen, setOcrOpen] = useState(false);
   const [ocrText, setOcrText] = useState('');
   const [ocrFile, setOcrFile] = useState('');
@@ -108,6 +110,50 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   };
 
   const clearFilter = () => { setApplied({}); setDraft({}); setPage(1); };
+
+  const handleUploadDigital = async (id: string) => {
+    setBusyDigital(true);
+    try {
+      const res = await uploadArsipDigital(id);
+      if (res?.cancelled) return;
+      push('success', `Berkas digital ${res?.filename ?? ''} berhasil diunggah`);
+      const freshRows = await listArsipDetail();
+      setRows(freshRows);
+      if (detail?.id === id) {
+        const fresh = freshRows.find((r: any) => r.id === id);
+        if (fresh) setDetail(fresh);
+      }
+    } catch (e) {
+      push('danger', String(e));
+    } finally {
+      setBusyDigital(false);
+    }
+  };
+  const handleOpenDigital = async (id: string) => {
+    try {
+      await openArsipDigital(id);
+    } catch (e) {
+      push('danger', String(e));
+    }
+  };
+  const handleDeleteDigital = async (id: string) => {
+    if (!window.confirm('Hapus berkas digital arsip ini?')) return;
+    setBusyDigital(true);
+    try {
+      await deleteArsipDigital(id);
+      push('success', 'Berkas digital dihapus');
+      const freshRows = await listArsipDetail();
+      setRows(freshRows);
+      if (detail?.id === id) {
+        const fresh = freshRows.find((r: any) => r.id === id);
+        if (fresh) setDetail(fresh);
+      }
+    } catch (e) {
+      push('danger', String(e));
+    } finally {
+      setBusyDigital(false);
+    }
+  };
 
   const toggleRow = (id: string) => {
     setSelected((s) => {
@@ -245,6 +291,11 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   /* ── Kartu & baris aksi (btn-crud) ── */
   const crudActions = (a: any) => (
     <React.Fragment>
+      {a.berkas ? (
+        <button type="button" className="btn-crud btn-crud-primary" title="Buka Berkas Digital" disabled={busyDigital} onClick={() => void handleOpenDigital(a.id)}><i className="bi bi-file-earmark-check"></i></button>
+      ) : (
+        <button type="button" className="btn-crud btn-crud-primary" title="Upload Berkas Digital" disabled={busyDigital} onClick={() => void handleUploadDigital(a.id)}><i className="bi bi-cloud-upload"></i></button>
+      )}
       <button type="button" className="btn-crud btn-crud-view" title="Lihat Detail" onClick={() => setDetail(a)}><i className="bi bi-eye"></i></button>
       <button type="button" className="btn-crud btn-crud-primary" title="Berkaskan" onClick={() => openAssign([a.id])}><i className="bi bi-folder-plus"></i></button>
       <button type="button" className="btn-crud btn-crud-edit" title="Ubah Arsip" onClick={() => openEdit(a)}><i className="bi bi-pencil"></i></button>
@@ -751,7 +802,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
     )}
 
     {/* MODAL DETAIL ARSIP */}
-    <ArsipDetailModal detail={detail} onClose={() => setDetail(null)} />
+    <ArsipDetailModal detail={detail} onClose={() => setDetail(null)} busyDigital={busyDigital} onUploadDigital={handleUploadDigital} onOpenDigital={handleOpenDigital} onDeleteDigital={handleDeleteDigital} />
     </>
   );
 };

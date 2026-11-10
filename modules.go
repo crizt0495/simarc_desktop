@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -1561,6 +1562,109 @@ func (a *App) QueryArsipLaporan(unitID, kodeID, lokasiID, status string) []map[s
 		out = append(out, r)
 	}
 	return out
+}
+
+// digitalArsipDir mengembalikan folder penyimpanan berkas digital arsip.
+func digitalArsipDir() string {
+	home, _ := os.UserHomeDir()
+	if home == "" {
+		home = "."
+	}
+	return filepath.Join(home, ".local", "share", "simarc", "digital")
+}
+
+// UploadArsipDigital membuka dialog pilih berkas, menyalinnya ke folder digital,
+// dan menyimpan path-nya pada arsip terkait.
+func (a *App) UploadArsipDigital(arsipId string) (map[string]interface{}, error) {
+	if database.DB == nil {
+		return nil, fmt.Errorf("database belum siap")
+	}
+	arsipId = strings.TrimSpace(arsipId)
+	if arsipId == "" {
+		return nil, fmt.Errorf("id arsip kosong")
+	}
+	var ar models.Arsip
+	if err := database.DB.First(&ar, "id = ?", arsipId).Error; err != nil {
+		return nil, fmt.Errorf("arsip tidak ditemukan")
+	}
+	path, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
+		Title: "Pilih berkas digital arsip",
+		Filters: []wailsruntime.FileFilter{
+			{DisplayName: "Semua berkas (*.*)", Pattern: "*.*"},
+			{DisplayName: "PDF (*.pdf)", Pattern: "*.pdf"},
+			{DisplayName: "Gambar (*.png;*.jpg;*.jpeg)", Pattern: "*.png;*.jpg;*.jpeg"},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if path == "" {
+		return map[string]interface{}{"cancelled": true}, nil
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("berkas tidak dapat dibaca: %v", err)
+	}
+	dir := filepath.Join(digitalArsipDir(), arsipId)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, fmt.Errorf("gagal membuat folder digital: %v", err)
+	}
+	name := filepath.Base(path)
+	dst := filepath.Join(dir, name)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca berkas: %v", err)
+	}
+	if err := os.WriteFile(dst, data, 0644); err != nil {
+		return nil, fmt.Errorf("gagal menyimpan berkas: %v", err)
+	}
+	database.DB.Model(&models.Arsip{}).Where("id = ?", arsipId).Update("file_path", dst)
+	a.invalidateMasterCache()
+	a.writeActivity("upload_digital", "Upload berkas digital: "+name, "arsip", arsipId)
+	return map[string]interface{}{
+		"path":     dst,
+		"filename": name,
+		"size":     info.Size(),
+	}, nil
+}
+
+// OpenArsipDigital membuka berkas digital arsip dengan aplikasi default OS.
+func (a *App) OpenArsipDigital(arsipId string) (map[string]interface{}, error) {
+	if database.DB == nil {
+		return nil, fmt.Errorf("database belum siap")
+	}
+	arsipId = strings.TrimSpace(arsipId)
+	var ar models.Arsip
+	if err := database.DB.First(&ar, "id = ?", arsipId).Error; err != nil {
+		return nil, fmt.Errorf("arsip tidak ditemukan")
+	}
+	if strings.TrimSpace(ar.FilePath) == "" {
+		return nil, fmt.Errorf("arsip belum memiliki berkas digital")
+	}
+	if _, err := os.Stat(ar.FilePath); err != nil {
+		return nil, fmt.Errorf("berkas digital tidak ditemukan di disk")
+	}
+	_ = exec.Command("xdg-open", ar.FilePath).Start()
+	return map[string]interface{}{"path": ar.FilePath, "filename": filepath.Base(ar.FilePath)}, nil
+}
+
+// DeleteArsipDigital menghapus berkas digital arsip dari disk dan database.
+func (a *App) DeleteArsipDigital(arsipId string) (map[string]interface{}, error) {
+	if database.DB == nil {
+		return nil, fmt.Errorf("database belum siap")
+	}
+	arsipId = strings.TrimSpace(arsipId)
+	var ar models.Arsip
+	if err := database.DB.First(&ar, "id = ?", arsipId).Error; err != nil {
+		return nil, fmt.Errorf("arsip tidak ditemukan")
+	}
+	if strings.TrimSpace(ar.FilePath) != "" {
+		_ = os.Remove(ar.FilePath)
+	}
+	database.DB.Model(&models.Arsip{}).Where("id = ?", arsipId).Update("file_path", "")
+	a.invalidateMasterCache()
+	a.writeActivity("delete_digital", "Hapus berkas digital arsip", "arsip", arsipId)
+	return map[string]interface{}{"success": true}, nil
 }
 
 // pastikan import gorm tetap dipakai walau build tag berubah.
