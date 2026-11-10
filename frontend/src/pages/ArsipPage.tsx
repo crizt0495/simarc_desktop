@@ -27,7 +27,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const [opts, setOpts] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<'card' | 'table'>('card');
+
   const [filterOpen, setFilterOpen] = useState(true);
   const [applied, setApplied] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -533,14 +533,6 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
       {/* TOOLS BAR: View Toggle + Export */}
       <div className="d-flex justify-content-between align-items-center mt-3 mb-1 flex-wrap gap-3 fade-up-d2">
         <div className="d-flex align-items-center gap-3">
-          <div className="view-toggle-group">
-            <button type="button" className={`view-toggle-btn${view === 'card' ? ' active' : ''}`} onClick={() => setView('card')}>
-              <i className="bi bi-grid-3x3-gap-fill"></i> <span>Card</span>
-            </button>
-            <button type="button" className={`view-toggle-btn${view === 'table' ? ' active' : ''}`} onClick={() => setView('table')}>
-              <i className="bi bi-table"></i> <span>Tabel</span>
-            </button>
-          </div>
           <button type="button" className="btn btn-sm btn-outline-primary rounded-pill fw-700 px-3" style={{ fontSize: '0.7rem' }} onClick={async () => {
             try { await navigator.clipboard.writeText(`${location.origin}/#public-search`); push('success', 'Tautan berhasil disalin ke clipboard'); }
             catch { push('warning', 'Browser menolak akses clipboard'); }
@@ -562,71 +554,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
 
       {/* ZONE 5: CONTENT VIEW (CARD + TABLE) */}
       <div className="card fade-up-d2">
-        {view === 'card' ? (
-          <div id="viewCard" className="view-container active" style={{ padding: '1rem', maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', overflowX: 'hidden', paddingRight: '0.35rem' }}>
-            <div className="arsip-card-grid" id="arsipCardGrid">
-              {pageRows.map((a, idx) => (
-                <div key={a.id} className="arsip-card" data-arsip-id={a.id}>
-                  <div className="arsip-card-header">
-                    <div className="arsip-card-checkbox">
-                      <input type="checkbox" className="form-check-input arsip-checkbox" checked={selected.has(a.id)} onChange={() => toggleRow(a.id)} data-arsip-nomor={a.nomor} />
-                    </div>
-                    <div className="arsip-card-title">
-                      <span className="arsip-card-nomor">{a.nomor || '—'}</span>
-                      <a className="arsip-card-name" href="#" onClick={(e) => { e.preventDefault(); setDetail(a); }}>{a.nama}</a>
-                      <div className="arsip-card-badges">
-                        <span className={`status-badge status-${a.status}`}>{statusLabel(a.status)}</span>
-                        {a.berkas && <span className="status-badge" style={{ background: 'var(--neu-bg)', color: 'var(--ink-2)' }}><i className="bi bi-paperclip me-1"></i>Berkas</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="arsip-card-body">
-                    <div className="arsip-card-field">
-                      <span className="arsip-card-field-label">Unit Kerja</span>
-                      <span className="arsip-card-field-value"><i className="bi bi-building"></i>{a.unit || '-'}</span>
-                    </div>
-                    <div className="arsip-card-field">
-                      <span className="arsip-card-field-label">Lokasi Arsip</span>
-                      <span className="arsip-card-field-value">{a.lokasi || '-'}</span>
-                    </div>
-                    <div className="arsip-card-field">
-                      <span className="arsip-card-field-value"><i className="bi bi-calendar3"></i>{a.tanggal || '-'}</span>
-                    </div>
-                    <div className="arsip-card-field">
-                      <span className="arsip-card-field-label">Kategori</span>
-                      <span className="arsip-card-field-value">{a.kategori || 'Umum'}</span>
-                    </div>
-                    <div className="arsip-card-field">
-                      <span className="arsip-card-field-label">Jumlah</span>
-                      <span className="arsip-card-field-value">{a.jumlah} {a.satuan}</span>
-                    </div>
-                    {a.nilai != null && Number(a.nilai) !== 0 && (
-                      <div className="arsip-card-field" style={{ gridColumn: 'span 2' }}>
-                        <span className="arsip-card-field-label">Nilai Anggaran</span>
-                        <span className="arsip-card-field-value text-money">Rp {nf.format(Number(a.nilai))}</span>
-                      </div>
-                    )}
-                  </div>
-                  {a.uraian && <div className="arsip-card-uraian">{String(a.uraian).slice(0, 150)}</div>}
-                  <div className="arsip-card-footer">
-                    <div className="arsip-card-actions">{crudActions(a)}</div>
-                    <div className="arsip-card-meta">
-                      <i className="bi bi-hash"></i>{startIdx + idx + 1}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!loading && !rowsError && filtered.length === 0 && (
-                <div className="arsip-card-empty">
-                  <i className="bi bi-inbox"></i>
-                  <h6 className="fw-700 mb-1">Belum Ada Arsip</h6>
-                  <small className="text-muted">Tidak ada data arsip yang sesuai dengan kriteria pencarian</small>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div id="viewTable" className="view-container">
+        <div id="viewTable" className="view-container">
             <div className="table-responsive">
               <table className="table table-hover table-premium datatable">
                 <thead className="sticky-top">
@@ -672,7 +600,6 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
               )}
             </div>
           </div>
-        )}
       </div>
 
       {/* PAGINATION (di luar kartu — sama seperti referensi) */}
