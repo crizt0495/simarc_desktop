@@ -372,6 +372,32 @@ func (a *App) ListArsipDetail() []map[string]interface{} {
 				}
 				return ""
 			}(),
+			// Relasi arsip → kode_klasifikasi: dipakai halaman Pemusnahan untuk
+			// mendeteksi arsip berkategori penyusutan "musnah" secara otomatis.
+			"kodeKlasifikasiNama": func() string {
+				if ar.KodeKlasifikasi != nil {
+					return ar.KodeKlasifikasi.NamaKlasifikasi
+				}
+				return ""
+			}(),
+			"penyusutanArsip": func() string {
+				if ar.KodeKlasifikasi != nil {
+					return strings.ToLower(strings.TrimSpace(ar.KodeKlasifikasi.PenyusutanArsip))
+				}
+				return ""
+			}(),
+			"retensiAktif": func() int {
+				if ar.KodeKlasifikasi != nil {
+					return ar.KodeKlasifikasi.RetensiAktif
+				}
+				return 0
+			}(),
+			"retensiInaktif": func() int {
+				if ar.KodeKlasifikasi != nil {
+					return ar.KodeKlasifikasi.RetensiInaktif
+				}
+				return 0
+			}(),
 			"lokasi": func() string {
 				if ar.LokasiArsip != nil && ar.LokasiArsip.NamaLokasi != "" {
 					return ar.LokasiArsip.NamaLokasi
