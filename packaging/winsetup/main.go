@@ -33,7 +33,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-//go:embed payload/*
+//go:embed all:payload
 var payload embed.FS
 
 const (
@@ -73,6 +73,11 @@ func writePayload(dir string, logf func(string)) error {
 			return nil
 		}
 		rel := strings.TrimPrefix(path, "payload/")
+		// .env pengguna tidak pernah ditimpa saat update; file ini ditangani
+		// terpisah (hanya dibuat bila belum ada).
+		if rel == ".env" {
+			return nil
+		}
 		data, err := payload.ReadFile(path)
 		if err != nil {
 			return err
@@ -162,6 +167,19 @@ func main() {
 		os.Exit(1)
 	}
 	exe := filepath.Join(dir, "SIMARC.exe")
+
+	// 1b) .env bawaan — hanya dibuat bila belum ada, sehingga konfigurasi
+	// pengguna (termasuk kredensial) tidak pernah tertimpa saat update.
+	envDest := filepath.Join(dir, ".env")
+	if _, statErr := os.Stat(envDest); os.IsNotExist(statErr) {
+		if data, readErr := payload.ReadFile("payload/.env"); readErr == nil {
+			if writeErr := os.WriteFile(envDest, data, 0o600); writeErr != nil {
+				logf("gagal menulis .env bawaan: " + writeErr.Error())
+			} else {
+				logf("ditulis: " + envDest)
+			}
+		}
+	}
 
 	// 2) Shortcut (Start Menu + Desktop)
 	startMenu := filepath.Join(localAppData(), "Microsoft", "Windows", "Start Menu", "Programs")
