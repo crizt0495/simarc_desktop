@@ -17,9 +17,10 @@ mariadb-data/
 packaging/cache/
 # Installer desktop Windows dilacak agar bisa diunduh langsung dari repo
 # (pengecualian harus ditulis setelah "*.exe" agar menang).
+# Hanya installer SATU FILE yang disimpan; biner mentah ada di build/bin/.
 !dist/SIMARC-Setup.exe
 !dist/SIMARC-Android.apk
-# Payload build-time untuk packaging/winsetup (hasil cp dist/SIMARC.exe)
+# Payload build-time untuk packaging/winsetup (hasil cp build/bin/SIMARC.exe)
 packaging/winsetup/payload/
 
 # ── Node / frontend tooling ──
@@ -73,5 +74,4 @@ simarc-install.txt
 # Installer di root repo (dilacak lewat LFS)
 !/*.exe
 !/*.deb
-!dist/SIMARC.exe
 !dist/simarc_*.deb

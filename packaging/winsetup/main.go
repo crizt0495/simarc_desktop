@@ -12,8 +12,11 @@
 //  5. Jalankan aplikasi di akhir (opsional: -norun untuk silent install)
 //
 // Build (dari Linux):
-//   cp dist/SIMARC.exe packaging/winsetup/payload/SIMARC.exe
+//   cp build/bin/SIMARC.exe packaging/winsetup/payload/SIMARC.exe
+//   cp .env packaging/winsetup/payload/.env
 //   GOOS=windows CGO_ENABLED=0 go build -ldflags "-s -w -H windowsgui" -o dist/SIMARC-Setup.exe ./packaging/winsetup
+//
+// Atau cukup jalankan: bash scripts/build-windows-setup.sh
 package main
 
 import (
