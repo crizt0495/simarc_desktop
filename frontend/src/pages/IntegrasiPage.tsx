@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { getSettings, saveSettings, getSyncStatus, runSyncNow } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { type PageKey } from '../components/AppSidebar';
+import SearchableSelect from '../components/SearchableSelect';
 
 const nf = new Intl.NumberFormat('id-ID');
 
@@ -52,6 +53,7 @@ export const IntegrasiPage: React.FC<{ page?: PageKey }> = ({ page }) => {
         OFFSITE_ENABLED: form.offsiteEnabled ? 'true' : 'false',
         OFFSITE_HOUR: form.offsiteHour ?? '2',
         OFFSITE_MINUTE: form.offsiteMinute ?? '0',
+        DIGITAL_STORAGE: form.digitalStorage ?? 'auto',
       };
       const secretFields: Array<[string, string]> = [
         ['syncHubToken', 'SYNC_HUB_TOKEN'], ['syncHubDbPass', 'SYNC_HUB_DB_PASS'],
@@ -233,6 +235,34 @@ export const IntegrasiPage: React.FC<{ page?: PageKey }> = ({ page }) => {
                 <div className="col-md-4"><label className="form-label">Access Key</label><input className="form-control form-control-sm" value={form.offsiteS3AccessKey ?? ''} onChange={(e) => set('offsiteS3AccessKey', e.target.value)} style={{ fontSize: '0.85rem' }} /></div>
                 <div className="col-md-4"><label className="form-label">Secret Key</label><input className="form-control form-control-sm" type="password" value={form.offsiteS3SecretKey ?? ''} onChange={(e) => set('offsiteS3SecretKey', e.target.value)} placeholder="•••••••• (tidak diubah)" style={{ fontSize: '0.85rem' }} /></div>
                 <div className="col-md-4"><label className="form-label">Prefix / Folder</label><input className="form-control form-control-sm" value={form.offsiteS3Prefix ?? ''} onChange={(e) => set('offsiteS3Prefix', e.target.value)} placeholder="simarc/backup" style={{ fontSize: '0.85rem' }} /></div>
+                <div className="col-12"><hr className="my-1" /><div className="fw-800 small text-muted">Penyimpanan Berkas Digital</div></div>
+                <div className="col-md-6">
+                  <label className="form-label">Lokasi Penyimpanan Berkas Digital</label>
+                  <SearchableSelect
+                    options={[
+                      { value: 'auto', label: 'Otomatis — cloud bila S3 terisi, selain itu lokal' },
+                      { value: 's3', label: 'Cloud (S3 / R2 / B2 / MinIO)' },
+                      { value: 'local', label: 'Lokal (disk perangkat ini)' },
+                    ]}
+                    value={String(form.digitalStorage ?? 'auto')}
+                    onChange={(v) => set('digitalStorage', v)}
+                  />
+                  <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+                    Memakai kredensial Object Storage di atas (atau variabel <code>DIGITAL_S3_*</code> pada <code>.env</code>).
+                    Berkas cloud dapat dibuka dari komputer mana pun yang memakai konfigurasi sama.
+                  </small>
+                </div>
+                <div className="col-md-6 d-flex flex-column justify-content-center gap-1">
+                  <div>
+                    <span className={`status-badge ${form.digitalCloudReady ? 'status-aktif' : form.digitalStorage === 'local' ? 'status-inaktif' : 'status-inaktif'}`}>
+                      {form.digitalCloudReady ? 'Cloud aktif' : form.digitalStorage === 'local' ? 'Lokal' : 'Cloud belum siap'}
+                    </span>
+                  </div>
+                  <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+                    {form.digitalS3Configured ? 'Kredensial Object Storage terdeteksi.' : 'Isi Endpoint, Bucket, Access Key, dan Secret Key untuk mengaktifkan cloud.'}
+                    {' '}Mulai ulang aplikasi setelah menyimpan.
+                  </small>
+                </div>
               </div>
             )}
           </div>

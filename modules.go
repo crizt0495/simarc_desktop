@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -1008,6 +1009,8 @@ func (a *App) ProsesJadwalRetensi(id string) (map[string]interface{}, error) {
 // ── PENGATURAN ───────────────────────────────────────────────────────────────
 
 func (a *App) GetSettings() map[string]interface{} {
+	off := config.LoadOffsite()
+	ds := config.LoadDigitalStorage()
 	return map[string]interface{}{
 		"appName":             config.App.AppName,
 		"timezone":            config.App.AppTimezone,
@@ -1037,6 +1040,26 @@ func (a *App) GetSettings() map[string]interface{} {
 		"syncInterval":        os.Getenv("SYNC_INTERVAL_MINUTES"),
 		"syncHubUrl":          os.Getenv("SYNC_HUB_URL"),
 		"syncHubTokenSet":     os.Getenv("SYNC_HUB_TOKEN") != "",
+		"offsiteEnabled":      off.Enabled,
+		"offsiteHour":         off.Hour,
+		"offsiteMinute":       off.Minute,
+		"offsiteDbHost":       off.DBHost,
+		"offsiteDbPort":       off.DBPort,
+		"offsiteDbName":       off.DBName,
+		"offsiteDbUser":       off.DBUser,
+		"offsiteDbTls":        off.DBTLS,
+		"offsiteDbPassSet":    off.DBPass != "",
+		"offsiteS3Endpoint":   off.S3Endpoint,
+		"offsiteS3Region":     off.S3Region,
+		"offsiteS3Bucket":     off.S3Bucket,
+		"offsiteS3AccessKey":  off.S3AccessKey,
+		"offsiteS3SecretSet":  off.S3SecretKey != "",
+		"offsiteS3Prefix":     off.S3Prefix,
+		"offsiteS3PathStyle":  off.S3PathStyle,
+		"offsiteS3Ready":      off.S3Ready(),
+		"digitalStorage":      ds.Mode,
+		"digitalCloudReady":   ds.DigitalCloudReady(),
+		"digitalS3Configured": ds.S3.S3Ready(),
 		"envFile":             absEnvPath(),
 	}
 }
@@ -1069,6 +1092,11 @@ func (a *App) SaveSettings(updates map[string]interface{}) (map[string]interface
 		"OFFSITE_DB_USER": true, "OFFSITE_DB_PASS": true, "OFFSITE_DB_TLS": true,
 		"OFFSITE_S3_ENDPOINT": true, "OFFSITE_S3_REGION": true, "OFFSITE_S3_BUCKET": true,
 		"OFFSITE_S3_ACCESS_KEY": true, "OFFSITE_S3_SECRET_KEY": true, "OFFSITE_S3_PREFIX": true,
+		"OFFSITE_S3_PATH_STYLE": true,
+		"DIGITAL_STORAGE": true,
+		"DIGITAL_S3_ENDPOINT": true, "DIGITAL_S3_REGION": true, "DIGITAL_S3_BUCKET": true,
+		"DIGITAL_S3_ACCESS_KEY": true, "DIGITAL_S3_SECRET_KEY": true, "DIGITAL_S3_PREFIX": true,
+		"DIGITAL_S3_PATH_STYLE": true,
 	}
 	env := map[string]string{}
 	for k, v := range updates {
@@ -1573,6 +1601,79 @@ func digitalArsipDir() string {
 	return filepath.Join(home, ".local", "share", "simarc", "digital")
 }
 
+// storeDigitalFile menyimpan berkas digital arsip. Bila DIGITAL_STORAGE
+// mengaktifkan object storage S3-compatible (Cloudflare R2 / B2 / MinIO),
+// berkas diunggah ke cloud dan referensinya berbentuk s3://bucket/key.
+// Jika tidak, berkas disimpan di disk perangkat seperti sebelumnya.
+func storeDigitalFile(arsipID, filename string, data []byte) (string, error) {
+	filename = filepath.Base(filename)
+	if filename == "" || filename == "." {
+		filename = "berkas-digital"
+	}
+	ds := config.LoadDigitalStorage()
+	if ds.CloudRequested() && !ds.DigitalCloudReady() {
+		return "", fmt.Errorf("penyimpanan cloud dipilih (DIGITAL_STORAGE=%s) tetapi kredensial S3 belum lengkap — isi Object Storage pada menu Integrasi", ds.Mode)
+	}
+	if ds.DigitalCloudReady() {
+		return services.SaveDigitalCloud(arsipID, filename, data, services.DigitalContentType(filename))
+	}
+	dir := filepath.Join(digitalArsipDir(), arsipID)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", fmt.Errorf("gagal membuat folder digital: %v", err)
+	}
+	dst := filepath.Join(dir, filename)
+	if err := os.WriteFile(dst, data, 0644); err != nil {
+		return "", fmt.Errorf("gagal menyimpan berkas: %v", err)
+	}
+	return dst, nil
+}
+
+// removeDigitalFile menghapus berkas digital, baik di disk maupun di cloud.
+func removeDigitalFile(ref string) {
+	if strings.TrimSpace(ref) == "" {
+		return
+	}
+	if services.IsCloudDigitalRef(ref) {
+		if err := services.DeleteDigitalCloud(ref); err != nil {
+			fmt.Fprintf(os.Stderr, "[simarc] gagal menghapus berkas cloud: %v\n", err)
+		}
+		return
+	}
+	_ = os.Remove(ref)
+}
+
+// openDigitalFile membuka berkas digital. Untuk berkas cloud, objek diunduh
+// dulu ke folder sementara lalu dibuka dengan aplikasi default OS.
+func openDigitalFile(ref string) (string, error) {
+	local := ref
+	if services.IsCloudDigitalRef(ref) {
+		p, err := services.FetchDigitalCloud(ref)
+		if err != nil {
+			return "", err
+		}
+		local = p
+	}
+	if _, err := os.Stat(local); err != nil {
+		return "", fmt.Errorf("berkas digital tidak ditemukan")
+	}
+	if err := openLocalPath(local); err != nil {
+		return "", err
+	}
+	return local, nil
+}
+
+// openLocalPath membuka path dengan aplikasi default sesuai sistem operasi.
+func openLocalPath(p string) error {
+	switch runtime.GOOS {
+	case "windows":
+		return exec.Command("rundll32", "url.dll,FileProtocolHandler", p).Start()
+	case "darwin":
+		return exec.Command("open", p).Start()
+	default:
+		return exec.Command("xdg-open", p).Start()
+	}
+}
+
 // UploadArsipDigital membuka dialog pilih berkas, menyalinnya ke folder digital,
 // dan menyimpan path-nya pada arsip terkait.
 func (a *App) UploadArsipDigital(arsipId string) (map[string]interface{}, error) {
@@ -1605,18 +1706,14 @@ func (a *App) UploadArsipDigital(arsipId string) (map[string]interface{}, error)
 	if err != nil {
 		return nil, fmt.Errorf("berkas tidak dapat dibaca: %v", err)
 	}
-	dir := filepath.Join(digitalArsipDir(), arsipId)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("gagal membuat folder digital: %v", err)
-	}
 	name := filepath.Base(path)
-	dst := filepath.Join(dir, name)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("gagal membaca berkas: %v", err)
 	}
-	if err := os.WriteFile(dst, data, 0644); err != nil {
-		return nil, fmt.Errorf("gagal menyimpan berkas: %v", err)
+	dst, err := storeDigitalFile(arsipId, name, data)
+	if err != nil {
+		return nil, err
 	}
 	database.DB.Model(&models.Arsip{}).Where("id = ?", arsipId).Update("file_path", dst)
 	a.invalidateMasterCache()
@@ -1658,13 +1755,9 @@ func (a *App) UploadArsipDigitalData(arsipId, filename, dataBase64 string) (map[
 		filename = "berkas-digital"
 	}
 	filename = filepath.Base(filename)
-	dir := filepath.Join(digitalArsipDir(), arsipId)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("gagal membuat folder digital: %v", err)
-	}
-	dst := filepath.Join(dir, filename)
-	if err := os.WriteFile(dst, raw, 0644); err != nil {
-		return nil, fmt.Errorf("gagal menyimpan berkas: %v", err)
+	dst, err := storeDigitalFile(arsipId, filename, raw)
+	if err != nil {
+		return nil, err
 	}
 	database.DB.Model(&models.Arsip{}).Where("id = ?", arsipId).Update("file_path", dst)
 	a.invalidateMasterCache()
@@ -1685,11 +1778,11 @@ func (a *App) OpenArsipDigital(arsipId string) (map[string]interface{}, error) {
 	if strings.TrimSpace(ar.FilePath) == "" {
 		return nil, fmt.Errorf("arsip belum memiliki berkas digital")
 	}
-	if _, err := os.Stat(ar.FilePath); err != nil {
-		return nil, fmt.Errorf("berkas digital tidak ditemukan di disk")
+	local, err := openDigitalFile(ar.FilePath)
+	if err != nil {
+		return nil, err
 	}
-	_ = exec.Command("xdg-open", ar.FilePath).Start()
-	return map[string]interface{}{"path": ar.FilePath, "filename": filepath.Base(ar.FilePath)}, nil
+	return map[string]interface{}{"path": local, "filename": filepath.Base(local)}, nil
 }
 
 // DeleteArsipDigital menghapus berkas digital arsip dari disk dan database.
@@ -1703,7 +1796,7 @@ func (a *App) DeleteArsipDigital(arsipId string) (map[string]interface{}, error)
 		return nil, fmt.Errorf("arsip tidak ditemukan")
 	}
 	if strings.TrimSpace(ar.FilePath) != "" {
-		_ = os.Remove(ar.FilePath)
+		removeDigitalFile(ar.FilePath)
 	}
 	database.DB.Model(&models.Arsip{}).Where("id = ?", arsipId).Update("file_path", "")
 	a.invalidateMasterCache()

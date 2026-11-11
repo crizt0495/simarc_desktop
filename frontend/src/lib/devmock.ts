@@ -75,6 +75,16 @@ export function installDevMock(): boolean {
         GetDashboardStats: async () => stats,
         GetDashboardExtras: async () => extras,
         GetMasterOptions: async () => opts,
+        GetSettings: async () => ({
+          appName: 'SIMARC', window: 'maximized',
+          digitalStorage: 'auto', digitalCloudReady: false, digitalS3Configured: false,
+          offsiteEnabled: false, offsiteHour: 2, offsiteMinute: 0,
+          offsiteS3Endpoint: '', offsiteS3Region: 'auto', offsiteS3Bucket: '',
+          offsiteS3AccessKey: '', offsiteS3Prefix: 'simarc', envFile: '~/.env',
+        }),
+        GetSyncStatus: async () => ({ enabled: false, ready: false, nodeId: '', intervalMinutes: 5, pendingChanges: 0 }),
+        SaveSettings: async () => ({ saved: 1 }),
+        RunSyncNow: async () => ({ pushed: 0, pulled: 0 }),
       },
     },
   };
