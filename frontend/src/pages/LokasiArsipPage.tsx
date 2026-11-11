@@ -353,13 +353,13 @@ export const LokasiArsipPage: React.FC = () => {
       />
 
       <ArsipFormModal
+        key={`tambah-arsip-${arsipFormKey}`}
         open={arsipFormOpen}
-        initial={arsipLokasi ? { lokasiArsipId: arsipLokasi.id, _k: arsipFormKey } : null}
+        initial={arsipLokasi ? { lokasiArsipId: arsipLokasi.id } : null}
         opts={opts}
         onClose={() => { setArsipFormOpen(false); setArsipLokasi(null); }}
         onSaved={() => { void load(); setArsipFormKey((k) => k + 1); }}
         keepOpenOnSave
-        showSuccessToast={false}
       />
 
       <ArsipFormModal
