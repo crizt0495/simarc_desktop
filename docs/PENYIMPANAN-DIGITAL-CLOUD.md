@@ -11,6 +11,34 @@ berkas digitalnya.
 
 ---
 
+## 0. Konfigurasi aktif saat ini — Backblaze B2
+
+Rilis ini memakai **Backblaze B2** sebagai penyimpanan berkas digital.
+Kredensial **dibatasi pada satu bucket** (`simarc-digital`) dengan izin
+`listFiles`, `readFiles`, `writeFiles`, `deleteFiles` — bukan master key
+akun. Nilainya sudah tertanam di `.env` dan di dalam `dist/SIMARC-Setup.exe`.
+
+```env
+DIGITAL_STORAGE=s3
+DIGITAL_S3_ENDPOINT=https://s3.us-east-005.backblazeb2.com
+DIGITAL_S3_REGION=us-east-005
+DIGITAL_S3_BUCKET=simarc-digital
+DIGITAL_S3_PREFIX=simarc
+DIGITAL_S3_PATH_STYLE=true
+# DIGITAL_S3_ACCESS_KEY / DIGITAL_S3_SECRET_KEY diisi di .env (tidak ditulis di dokumen)
+```
+
+Karena ketiga komputer memakai `.env` yang sama, **berkas digital dapat
+dibuka dari komputer mana pun** hanya dengan memasang `SIMARC-Setup.exe` —
+tanpa rclone dan tanpa setup tambahan.
+
+> Catatan keamanan: repo ini publik dan `.env` ikut di-commit sesuai
+> keputusan pemilik. Kunci B2 di atas hanya berizin pada bucket
+> `simarc-digital`. Jika kunci bocor, hapus kunci tersebut di Backblaze
+> (**Application Keys** → *Delete*) lalu buat kunci baru dan perbarui `.env`.
+
+---
+
 ## 1. Mode penyimpanan
 
 Variabel `DIGITAL_STORAGE` pada `.env`:
