@@ -106,6 +106,10 @@ export function GetBlockchainVerify() {
   return window['go']['main']['App']['GetBlockchainVerify']();
 }
 
+export function GetDBError() {
+  return window['go']['main']['App']['GetDBError']();
+}
+
 export function GetDashboardExtras() {
   return window['go']['main']['App']['GetDashboardExtras']();
 }
@@ -224,6 +228,10 @@ export function QueryArsipLaporan(arg1, arg2, arg3, arg4) {
 
 export function QuitApp() {
   return window['go']['main']['App']['QuitApp']();
+}
+
+export function ReconnectDB() {
+  return window['go']['main']['App']['ReconnectDB']();
 }
 
 export function RestoreBackup() {

@@ -34,8 +34,9 @@ import { QrCodePage } from './pages/QrCodePage';
 import { ImportExportPage } from './pages/ImportExportPage';
 import { ProfilPage } from './pages/ProfilPage';
 import { ITEM_BY_KEY, type PageKey } from './components/AppSidebar';
-import { getProfile, getStatus, pingBackend, type Status, type Profile } from './lib/bindings';
+import { getProfile, getStatus, pingBackend, reconnectDb, type Status, type Profile } from './lib/bindings';
 import ErrorBoundary from './components/ErrorBoundary';
+import { DatabaseBanner } from './components/DatabaseBanner';
 
 type AppPage = PageKey | 'login';
 
@@ -46,6 +47,7 @@ const App: React.FC = () => {
   const [page, setPage] = useState<AppPage>(validHash ?? 'public-search');
   const [status, setStatus] = useState<Status | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [retryingDb, setRetryingDb] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -67,6 +69,24 @@ const App: React.FC = () => {
   useEffect(() => {
     document.title = `${ITEM_BY_KEY[page as PageKey]?.label ?? 'SIMARC'} — SIMARC-Arsip Record Center`;
   }, [page]);
+
+  const retryDb = useCallback(async () => {
+    if (retryingDb) return;
+    setRetryingDb(true);
+    try {
+      const res = await reconnectDb();
+      if (res?.ok) {
+        // Muat ulang tampilan agar seluruh halaman mengambil data terbaru.
+        window.location.reload();
+        return;
+      }
+      await refresh();
+    } catch {
+      await refresh();
+    } finally {
+      setRetryingDb(false);
+    }
+  }, [refresh, retryingDb]);
 
   const renderBody = () => {
     switch (page) {
@@ -172,22 +192,28 @@ const App: React.FC = () => {
 
   if (isPublic) {
     return (
-      <ErrorBoundary>
-        {renderBody()}
-      </ErrorBoundary>
+      <>
+        <ErrorBoundary>
+          {renderBody()}
+        </ErrorBoundary>
+        <DatabaseBanner dbError={status?.db_error} onRetry={retryDb} retrying={retryingDb} />
+      </>
     );
   }
 
   return (
-    <AppLayout
-      page={page as PageKey}
-      onNavigate={(p) => setPage(p)}
-      user={profile}
-    >
-      <ErrorBoundary>
-        {renderBody()}
-      </ErrorBoundary>
-    </AppLayout>
+    <>
+      <AppLayout
+        page={page as PageKey}
+        onNavigate={(p) => setPage(p)}
+        user={profile}
+      >
+        <ErrorBoundary>
+          {renderBody()}
+        </ErrorBoundary>
+      </AppLayout>
+      <DatabaseBanner dbError={status?.db_error} onRetry={retryDb} retrying={retryingDb} />
+    </>
   );
 };
 

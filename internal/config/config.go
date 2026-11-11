@@ -93,9 +93,37 @@ func loadDotEnv() {
 	log.Println("No .env file found, using environment variables")
 }
 
-func Load() {
-	loadDotEnv()
+func Load() { LoadWithDefaults("") }
 
+// LoadWithDefaults seperti Load, tetapi mengisi variabel yang masih kosong
+// dari teks .env bawaan yang ditanam di biner (embedded). Ini membuat aplikasi
+// desktop tetap bisa terhubung ke TiDB Cloud walau berkas .env tidak ditemukan
+// atau masih versi lama — penyebab umum "data tidak muncul" di komputer lain.
+func LoadWithDefaults(defaults string) {
+	loadDotEnv()
+	applyDefaults(defaults)
+	load()
+}
+
+// applyDefaults memasang nilai dari teks .env bawaan hanya untuk variabel yang
+// belum terisi. Berkas .env pengguna dan environment eksplisit tetap menang.
+func applyDefaults(text string) {
+	if strings.TrimSpace(text) == "" {
+		return
+	}
+	m, err := godotenv.Unmarshal(text)
+	if err != nil {
+		log.Printf("Nilai bawaan .env tidak dapat diurai: %v", err)
+		return
+	}
+	for k, v := range m {
+		if strings.TrimSpace(os.Getenv(k)) == "" {
+			_ = os.Setenv(k, v)
+		}
+	}
+}
+
+func load() {
 	// MySQL-compatible defaults — MariaDB/MySQL lokal atau TiDB Cloud.
 	// getEnvFirst menerima nama varian yang sering tertukar di dashboard
 	// (DB_USER vs DB_USERNAME, DB_NAME vs DB_DATABASE) supaya salah menulis

@@ -53,6 +53,8 @@ export function GetArsipWindowStats():Promise<Record<string, any>>;
 
 export function GetBlockchainVerify():Promise<Record<string, any>>;
 
+export function GetDBError():Promise<string>;
+
 export function GetDashboardExtras():Promise<Record<string, any>>;
 
 export function GetDashboardStats():Promise<Record<string, any>>;
@@ -112,6 +114,8 @@ export function ProsesJadwalRetensi(arg1:string):Promise<Record<string, any>>;
 export function QueryArsipLaporan(arg1:string,arg2:string,arg3:string,arg4:string):Promise<Array<Record<string, any>>>;
 
 export function QuitApp():Promise<void>;
+
+export function ReconnectDB():Promise<Record<string, any>>;
 
 export function RestoreBackup():Promise<Record<string, any>>;
 

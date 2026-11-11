@@ -3,9 +3,12 @@ package main
 import (
 	"bufio"
 	"embed"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -21,7 +24,33 @@ var assets embed.FS
 //go:embed .env
 var embeddedDotEnv string
 
+// setupLogFile mengalihkan log ke berkas agar masalah di komputer pengguna
+// (mis. database tidak tersambung) bisa diperiksa tanpa membuka konsol.
+// Lokasi: %AppData%\SIMARC\simarc.log (Windows) / ~/.config/SIMARC/simarc.log.
+func setupLogFile() {
+	base, err := os.UserConfigDir()
+	if err != nil || base == "" {
+		return
+	}
+	dir := filepath.Join(base, "SIMARC")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return
+	}
+	f, err := os.OpenFile(filepath.Join(dir, "simarc.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	log.SetOutput(io.MultiWriter(os.Stderr, f))
+	log.SetFlags(log.LstdFlags)
+	exe, _ := os.Executable()
+	wd, _ := os.Getwd()
+	log.Printf("=== SIMARC mulai %s ===", time.Now().Format(time.RFC3339))
+	log.Printf("exe=%s", exe)
+	log.Printf("cwd=%s", wd)
+}
+
 func main() {
+	setupLogFile()
 	app := NewApp()
 
 	// Mode jendela: "maximized" (default, judul + tombol OS tetap ada),
@@ -30,10 +59,10 @@ func main() {
 
 	opts := &options.App{
 		Title:     "SIMARC — Arsip Record Center",
-		Width:     1280,
-		Height:    800,
-		MinWidth:  1180,
-		MinHeight: 700,
+		Width:     1200,
+		Height:    760,
+		MinWidth:  900,
+		MinHeight: 600,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -48,6 +77,10 @@ func main() {
 		},
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
+			// Render perangkat lunak (tanpa GPU) menghindari layar kosong /
+			// tidak responsif pada sebagian driver Intel, VM, dan Remote
+			// Desktop. Dapat diaktifkan lagi dengan SIMARC_DISABLE_GPU=false.
+			WebviewGpuIsDisabled: readBool("SIMARC_DISABLE_GPU", true),
 		},
 		Mac: &mac.Options{},
 		WindowStartState: windowOpts(window).startState,
@@ -80,6 +113,21 @@ func windowOpts(mode string) windowFlags {
 		return windowFlags{startState: options.Fullscreen}
 	}
 	return windowFlags{startState: options.Maximised}
+}
+
+// readBool membaca nilai boolean dari .env/env dengan fallback.
+func readBool(key string, fallback bool) bool {
+	v := strings.ToLower(strings.TrimSpace(readDotEnv(key, "")))
+	if v == "" {
+		return fallback
+	}
+	switch v {
+	case "1", "true", "yes", "on", "ya":
+		return true
+	case "0", "false", "no", "off", "tidak":
+		return false
+	}
+	return fallback
 }
 
 func readDotEnv(key, fb string) string {

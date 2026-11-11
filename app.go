@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -43,6 +44,25 @@ type App struct {
 	arsipCacheAt time.Time
 	optsCache    map[string][]map[string]interface{}
 	optsCacheAt  time.Time
+
+	// dbErr menyimpan pesan terakhir saat koneksi/migrasi database gagal.
+	// Ditampilkan di antarmuka agar "data tidak muncul" punya penjelasan yang
+	// bisa ditindaklanjuti alih-alih layar kosong tanpa pesan.
+	dbErrMu sync.RWMutex
+	dbErr   string
+}
+
+func (a *App) setDBErr(msg string) {
+	a.dbErrMu.Lock()
+	a.dbErr = msg
+	a.dbErrMu.Unlock()
+}
+
+// GetDBError mengembalikan pesan galat database terakhir (kosong bila normal).
+func (a *App) GetDBError() string {
+	a.dbErrMu.RLock()
+	defer a.dbErrMu.RUnlock()
+	return a.dbErr
 }
 
 func NewApp() *App {
@@ -53,19 +73,26 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
-	// Load .env (godotenv)
-	config.Load()
+	// Load .env (godotenv). Nilai bawaan yang ditanam di biner dipakai sebagai
+	// cadangan bila berkas .env tidak ditemukan atau tidak lengkap.
+	config.LoadWithDefaults(embeddedDotEnv)
 
 	// Connect to database (GORM)
 	if err := database.Connect(); err != nil {
+		a.setDBErr(err.Error())
 		fmt.Fprintf(os.Stderr, "[simarc] DB gagal: %v\n", err)
+		log.Printf("[simarc] DB gagal: %v", err)
 		return
 	}
-	fmt.Fprintf(os.Stderr, "[simarc] DB ok\n")
+	a.setDBErr("")
+	fmt.Fprintf(os.Stderr, "[simarc] Database tersambung\n")
+	log.Printf("[simarc] Database tersambung (host=%s db=%s)", config.App.DBHost, config.App.DBName)
 
 	// Run migration (AutoMigrate all models + schema repairs)
 	if err := database.Migrate(); err != nil {
+		a.setDBErr("migrasi database gagal: " + err.Error())
 		fmt.Fprintf(os.Stderr, "[simarc] Migrasi gagal: %v\n", err)
+		log.Printf("[simarc] Migrasi gagal: %v", err)
 		return
 	}
 	fmt.Fprintf(os.Stderr, "[simarc] Migrasi selesai\n")
@@ -93,11 +120,34 @@ func (a *App) shutdown(ctx context.Context) {
 func (a *App) GetStatus() map[string]interface{} {
 	dbOK := database.Connected()
 	return map[string]interface{}{
-		"app":   "SIMARC",
-		"db_ok": dbOK,
-		"os":    runtime.GOOS,
-		"arch":  runtime.GOARCH,
+		"app":      "SIMARC",
+		"db_ok":    dbOK,
+		"db_error": a.GetDBError(),
+		"os":       runtime.GOOS,
+		"arch":     runtime.GOARCH,
 	}
+}
+
+// ReconnectDB mencoba menyambung ulang ke TiDB Cloud tanpa menutup aplikasi.
+// Dipakai tombol "Coba lagi" pada pemberitahuan database di antarmuka.
+func (a *App) ReconnectDB() map[string]interface{} {
+	config.LoadWithDefaults(embeddedDotEnv)
+	if err := database.Connect(); err != nil {
+		a.setDBErr(err.Error())
+		log.Printf("[simarc] Sambung ulang DB gagal: %v", err)
+		return map[string]interface{}{"ok": false, "db_error": err.Error()}
+	}
+	if err := database.Migrate(); err != nil {
+		a.setDBErr("migrasi database gagal: " + err.Error())
+		log.Printf("[simarc] Migrasi setelah sambung ulang gagal: %v", err)
+		return map[string]interface{}{"ok": false, "db_error": a.GetDBError()}
+	}
+	a.setDBErr("")
+	a.invalidateMasterCache()
+	go a.ListArsipDetail()
+	go a.GetMasterOptions()
+	log.Printf("[simarc] Database tersambung ulang (host=%s db=%s)", config.App.DBHost, config.App.DBName)
+	return map[string]interface{}{"ok": true, "db_error": ""}
 }
 
 // PingBackend confirms bindings work.

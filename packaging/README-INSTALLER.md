@@ -36,6 +36,22 @@ in-place; `.env` dan `storage\` **tidak pernah disentuh**.
 Butuh admin? **Tidak.** Butuh Inno Setup? **Tidak** (dibangun dengan Go).
 Install per-user ke `%LocalAppData%\SIMARC`.
 
+### Pemecahan masalah (Windows)
+
+**Data tidak muncul / daftar kosong**
+1. Pastikan komputer terhubung internet (database ada di TiDB Cloud, butuh port 4000).
+2. Aplikasi menampilkan pemberitahuan merah di bagian bawah bila koneksi gagal;
+   klik **Coba lagi**.
+3. Bila tetap gagal, kirim berkas log `%AppData%\SIMARC\simarc.log` — di dalamnya
+   tercatat pesan galat koneksi yang sebenarnya.
+
+**Tombol Minimalkan / Maksimalkan / Tutup tidak berfungsi**
+- Jalankan ulang `SIMARC-Setup.exe` versi terbaru. Installer sekarang
+  menyelaraskan `.env` (database, penyimpanan S3, dan `SIMARC_WINDOW=maximized`)
+  sehingga aplikasi tidak lagi terbuka dalam mode layar penuh tanpa title bar.
+- Pastikan WebView2 (Microsoft Edge WebView2 Runtime) terpasang. Windows 10/11
+  biasanya sudah memilikinya; bila belum, aplikasi akan menawarkan pemasangan.
+
 ## 2a) Windows — ZIP Standalone Installer/Updater (alternatif folder)
 
 File: `dist/SIMARC-Windows-<versi>.zip`

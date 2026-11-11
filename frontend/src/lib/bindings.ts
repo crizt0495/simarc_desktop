@@ -27,6 +27,8 @@ import {
 
 export type Status = {
   app: string; db_ok: boolean; os: string; arch: string;
+  /** Pesan galat koneksi database terakhir (kosong bila normal). */
+  db_error?: string;
 };
 
 export type Profile = {
@@ -40,6 +42,9 @@ export async function getStatus(): Promise<Status> {
 export async function pingBackend(): Promise<string> {
   return (await PingBackend()) as unknown as string;
 }
+
+/** Menyambung ulang ke TiDB Cloud tanpa menutup aplikasi. */
+export const reconnectDb = () => call<{ ok: boolean; db_error?: string }>('ReconnectDB');
 
 export async function listArsip(): Promise<any[]> {
   return (await ListArsip()) as unknown as any[];

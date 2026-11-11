@@ -66,6 +66,81 @@ func installDir() string {
 	return filepath.Join(localAppData(), appName)
 }
 
+// managedEnvKey menandai kunci .env yang harus selalu mengikuti nilai bawaan
+// installer agar semua komputer menunjuk database & penyimpanan yang sama.
+func managedEnvKey(k string) bool {
+	switch {
+	case k == "DATABASE_URL", k == "SIMARC_WINDOW":
+		return true
+	case strings.HasPrefix(k, "DB_"),
+		strings.HasPrefix(k, "DIGITAL_"),
+		strings.HasPrefix(k, "OFFSITE_S3_"):
+		return true
+	}
+	return false
+}
+
+// mergeManagedEnv menggabungkan .env pengguna dengan nilai bawaan: kunci inti
+// ditimpa nilai bawaan, urutan/komentar lain dipertahankan, dan kunci inti
+// yang belum ada ditambahkan di akhir. Berkas tidak ada = pakai bawaan penuh.
+func mergeManagedEnv(path string, defaults []byte) ([]byte, error) {
+	type kv struct{ K, V string }
+	var defs []kv
+	defMap := map[string]string{}
+	for _, line := range strings.Split(string(defaults), "\n") {
+		line = strings.TrimRight(line, "\r")
+		eq := strings.Index(line, "=")
+		if eq <= 0 || strings.HasPrefix(strings.TrimSpace(line), "#") {
+			continue
+		}
+		k := strings.TrimSpace(line[:eq])
+		v := strings.TrimSpace(line[eq+1:])
+		if !managedEnvKey(k) {
+			continue
+		}
+		if _, ok := defMap[k]; !ok {
+			defs = append(defs, kv{k, v})
+		}
+		defMap[k] = v
+	}
+
+	existing, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return defaults, nil
+		}
+		return nil, err
+	}
+
+	seen := map[string]bool{}
+	var out []string
+	for _, raw := range strings.Split(string(existing), "\n") {
+		line := strings.TrimRight(raw, "\r")
+		eq := strings.Index(line, "=")
+		if eq > 0 && !strings.HasPrefix(strings.TrimSpace(line), "#") {
+			k := strings.TrimSpace(line[:eq])
+			if v, ok := defMap[k]; ok {
+				out = append(out, k+"="+v)
+				seen[k] = true
+				continue
+			}
+		}
+		out = append(out, line)
+	}
+
+	var missing []string
+	for _, d := range defs {
+		if !seen[d.K] {
+			missing = append(missing, d.K+"="+d.V)
+		}
+	}
+	if len(missing) > 0 {
+		out = append(out, "", "# ── Diselaraskan otomatis oleh installer SIMARC ──")
+		out = append(out, missing...)
+	}
+	return []byte(strings.Join(out, "\n") + "\n"), nil
+}
+
 // writePayload menyalin seluruh isi embed payload ke dir.
 func writePayload(dir string, logf func(string)) error {
 	return fs.WalkDir(payload, "payload", func(path string, d fs.DirEntry, err error) error {
@@ -171,17 +246,23 @@ func main() {
 	}
 	exe := filepath.Join(dir, "SIMARC.exe")
 
-	// 1b) .env bawaan — hanya dibuat bila belum ada, sehingga konfigurasi
-	// pengguna (termasuk kredensial) tidak pernah tertimpa saat update.
+	// 1b) .env — konfigurasi inti (database TiDB, penyimpanan S3, mode jendela)
+	// SELALU diselaraskan dengan nilai bawaan installer. Ini mencegah masalah
+	// "data tidak muncul" akibat .env lama dari versi sebelumnya (mis. masih
+	// menunjuk SQLite/MySQL lokal atau tanpa kredensial S3). Kunci lain milik
+	// pengguna (nama instansi, dsb.) tetap dipertahankan.
 	envDest := filepath.Join(dir, ".env")
-	if _, statErr := os.Stat(envDest); os.IsNotExist(statErr) {
-		if data, readErr := payload.ReadFile("payload/.env"); readErr == nil {
-			if writeErr := os.WriteFile(envDest, data, 0o600); writeErr != nil {
-				logf("gagal menulis .env bawaan: " + writeErr.Error())
-			} else {
-				logf("ditulis: " + envDest)
-			}
+	if defaults, readErr := payload.ReadFile("payload/.env"); readErr == nil {
+		merged, mergeErr := mergeManagedEnv(envDest, defaults)
+		if mergeErr != nil {
+			logf("gagal menyiapkan .env: " + mergeErr.Error())
+		} else if writeErr := os.WriteFile(envDest, merged, 0o600); writeErr != nil {
+			logf("gagal menulis .env: " + writeErr.Error())
+		} else {
+			logf("diselaraskan: " + envDest)
 		}
+	} else {
+		logf("nilai bawaan .env tidak ditemukan di installer: " + readErr.Error())
 	}
 
 	// 2) Shortcut (Start Menu + Desktop)
