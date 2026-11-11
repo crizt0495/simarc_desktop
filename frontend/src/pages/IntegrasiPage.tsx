@@ -54,6 +54,8 @@ export const IntegrasiPage: React.FC<{ page?: PageKey }> = ({ page }) => {
         OFFSITE_HOUR: form.offsiteHour ?? '2',
         OFFSITE_MINUTE: form.offsiteMinute ?? '0',
         DIGITAL_STORAGE: form.digitalStorage ?? 'auto',
+        DIGITAL_RCLONE_REMOTE: form.digitalRcloneRemote ?? '',
+        DIGITAL_RCLONE_PATH: form.digitalRclonePath ?? '',
       };
       const secretFields: Array<[string, string]> = [
         ['syncHubToken', 'SYNC_HUB_TOKEN'], ['syncHubDbPass', 'SYNC_HUB_DB_PASS'],
@@ -240,7 +242,8 @@ export const IntegrasiPage: React.FC<{ page?: PageKey }> = ({ page }) => {
                   <label className="form-label">Lokasi Penyimpanan Berkas Digital</label>
                   <SearchableSelect
                     options={[
-                      { value: 'auto', label: 'Otomatis — cloud bila S3 terisi, selain itu lokal' },
+                      { value: 'auto', label: 'Otomatis — S3, lalu rclone, selain itu lokal' },
+                      { value: 'rclone', label: 'Cloud via rclone (Google Drive / OneDrive)' },
                       { value: 's3', label: 'Cloud (S3 / R2 / B2 / MinIO)' },
                       { value: 'local', label: 'Lokal (disk perangkat ini)' },
                     ]}
@@ -248,18 +251,31 @@ export const IntegrasiPage: React.FC<{ page?: PageKey }> = ({ page }) => {
                     onChange={(v) => set('digitalStorage', v)}
                   />
                   <small className="text-muted" style={{ fontSize: '0.7rem' }}>
-                    Memakai kredensial Object Storage di atas (atau variabel <code>DIGITAL_S3_*</code> pada <code>.env</code>).
+                    Memakai kredensial Object Storage di atas, atau remote rclone di bawah.
                     Berkas cloud dapat dibuka dari komputer mana pun yang memakai konfigurasi sama.
                   </small>
                 </div>
+                <div className="col-md-3">
+                  <label className="form-label">Remote rclone</label>
+                  <input className="form-control form-control-sm" value={form.digitalRcloneRemote ?? ''} onChange={(e) => set('digitalRcloneRemote', e.target.value)} placeholder="gdrive" style={{ fontSize: '0.85rem' }} />
+                  <small className="text-muted" style={{ fontSize: '0.7rem' }}>Nama remote pada <code>rclone config</code>.</small>
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label">Folder rclone</label>
+                  <input className="form-control form-control-sm" value={form.digitalRclonePath ?? ''} onChange={(e) => set('digitalRclonePath', e.target.value)} placeholder="simarc-digital" style={{ fontSize: '0.85rem' }} />
+                </div>
                 <div className="col-md-6 d-flex flex-column justify-content-center gap-1">
                   <div>
-                    <span className={`status-badge ${form.digitalCloudReady ? 'status-aktif' : form.digitalStorage === 'local' ? 'status-inaktif' : 'status-inaktif'}`}>
-                      {form.digitalCloudReady ? 'Cloud aktif' : form.digitalStorage === 'local' ? 'Lokal' : 'Cloud belum siap'}
+                    <span className={`status-badge ${form.digitalBackend && form.digitalBackend !== 'lokal' && form.digitalBackend !== 'belum siap' ? 'status-aktif' : 'status-inaktif'}`}>
+                      {form.digitalBackend === 'lokal' ? 'Lokal' : form.digitalBackend === 'belum siap' ? 'Cloud belum siap' : `Cloud aktif — ${form.digitalBackend}`}
                     </span>
                   </div>
                   <small className="text-muted" style={{ fontSize: '0.7rem' }}>
-                    {form.digitalS3Configured ? 'Kredensial Object Storage terdeteksi.' : 'Isi Endpoint, Bucket, Access Key, dan Secret Key untuk mengaktifkan cloud.'}
+                    {form.digitalS3Configured
+                      ? 'Kredensial Object Storage terdeteksi.'
+                      : form.digitalRcloneReady
+                        ? `Remote rclone "${form.digitalRcloneRemote}" siap dipakai.`
+                        : 'Isi kredensial Object Storage atau nama remote rclone untuk mengaktifkan cloud.'}
                     {' '}Mulai ulang aplikasi setelah menyimpan.
                   </small>
                 </div>

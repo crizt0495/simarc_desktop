@@ -78,6 +78,8 @@ export function installDevMock(): boolean {
         GetSettings: async () => ({
           appName: 'SIMARC', window: 'maximized',
           digitalStorage: 'auto', digitalCloudReady: false, digitalS3Configured: false,
+          digitalRcloneRemote: '', digitalRclonePath: 'simarc-digital', digitalRcloneReady: false,
+          digitalBackend: 'lokal',
           offsiteEnabled: false, offsiteHour: 2, offsiteMinute: 0,
           offsiteS3Endpoint: '', offsiteS3Region: 'auto', offsiteS3Bucket: '',
           offsiteS3AccessKey: '', offsiteS3Prefix: 'simarc', envFile: '~/.env',

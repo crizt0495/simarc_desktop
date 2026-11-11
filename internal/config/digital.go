@@ -7,31 +7,32 @@ import (
 
 // DigitalStorage menentukan di mana berkas digital arsip disimpan.
 //
-//	S3 == true  → object storage S3-compatible (Cloudflare R2/B2/MinIO/S3)
-//	S3 == false → disk lokal perangkat (perilaku lama)
-//
-// Konfigurasi dibaca ulang setiap kali dipakai, sehingga perubahan .env
-// langsung berlaku tanpa restart.
+//	Backend dipilih dari DIGITAL_STORAGE:
+//	  - "auto" (default): S3 bila kredensial lengkap, lalu rclone bila remote
+//	    tersedia, selain itu lokal.
+//	  - "local"          : selalu disk perangkat.
+//	  - "s3"/"cloud"     : wajib object storage S3-compatible.
+//	  - "rclone"         : wajib remote rclone (mis. Google Drive).
 type DigitalStorage struct {
-	// Mode adalah nilai mentah DIGITAL_STORAGE: auto | local | s3.
+	// Mode adalah nilai mentah DIGITAL_STORAGE: auto | local | s3 | rclone.
 	Mode string
-	// UseS3 bernilai true bila berkas digital harus disimpan di cloud.
+	// UseS3 bernilai true bila kredensial S3 lengkap.
 	UseS3 bool
 	// S3 berisi kredensial endpoint/bucket yang dipakai.
 	S3 OffsiteConfig
 	// Prefix adalah folder dasar objek digital di dalam bucket.
 	Prefix string
+	// RcloneRemote adalah nama remote rclone (mis. "gdrive").
+	RcloneRemote string
+	// RclonePath adalah folder dasar di dalam remote.
+	RclonePath string
 }
 
 // LoadDigitalStorage memetakan pengaturan penyimpanan berkas digital.
 //
-//	Kredensial diambil dari DIGITAL_S3_* bila diisi; jika kosong, memakai
-//	OFFSITE_S3_* (konfigurasi Object Storage pada menu Integrasi).
-//
-//	DIGITAL_STORAGE:
-//	  - "auto" (default): cloud bila kredensial S3 lengkap, selain itu lokal.
-//	  - "local"          : selalu simpan di disk perangkat.
-//	  - "s3"/"cloud"     : wajib cloud (gagal bila kredensial belum lengkap).
+//	Kredensial S3 diambil dari DIGITAL_S3_* bila diisi; jika kosong memakai
+//	OFFSITE_S3_*. Remote rclone diambil dari DIGITAL_RCLONE_REMOTE, lalu
+//	OFFSITE_RCLONE_REMOTE.
 func LoadDigitalStorage() DigitalStorage {
 	off := LoadOffsite()
 
@@ -63,38 +64,64 @@ func LoadDigitalStorage() DigitalStorage {
 		mode = "auto"
 	}
 
-	useS3 := off.S3Ready()
-	switch mode {
-	case "local", "lokal", "disk", "off":
-		useS3 = false
-	case "s3", "cloud", "r2", "aws", "minio", "b2":
-		// Tetap useS3 = S3Ready(); pemanggil akan menampilkan pesan bila kosong.
-	}
-
 	prefix := strings.Trim(off.S3Prefix, "/")
 	if prefix == "" {
 		prefix = "simarc"
 	}
 
+	rcloneRemote := strings.TrimSpace(os.Getenv("DIGITAL_RCLONE_REMOTE"))
+	if rcloneRemote == "" {
+		rcloneRemote = strings.TrimRight(strings.TrimSpace(off.RcloneRemote), ":")
+	}
+	rclonePath := strings.Trim(strings.TrimSpace(os.Getenv("DIGITAL_RCLONE_PATH")), "/")
+	if rclonePath == "" {
+		rclonePath = "simarc-digital"
+	}
+
 	return DigitalStorage{
-		Mode:   mode,
-		UseS3:  useS3,
-		S3:     off,
-		Prefix: prefix + "/digital",
+		Mode:         mode,
+		UseS3:        off.S3Ready(),
+		S3:           off,
+		Prefix:       prefix + "/digital",
+		RcloneRemote: rcloneRemote,
+		RclonePath:   rclonePath,
 	}
 }
 
-// DigitalCloudReady melaporkan apakah mode cloud dipilih DAN kredensial lengkap.
+// DigitalCloudReady melaporkan apakah kredensial S3 lengkap.
 func (d DigitalStorage) DigitalCloudReady() bool {
 	return d.UseS3 && d.S3.S3Ready()
 }
 
-// CloudRequested melaporkan apakah pengguna secara eksplisit memilih cloud,
-// sehingga kredensial yang belum lengkap harus dilaporkan sebagai kesalahan
-// (bukan diam-diam disimpan ke disk).
+// RcloneConfigured melaporkan apakah nama remote rclone sudah diisi.
+func (d DigitalStorage) RcloneConfigured() bool {
+	return strings.TrimSpace(d.RcloneRemote) != ""
+}
+
+// CloudRequested melaporkan apakah pengguna secara eksplisit memilih backend
+// cloud, sehingga konfigurasi yang belum lengkap harus dilaporkan sebagai
+// kesalahan (bukan diam-diam disimpan ke disk).
 func (d DigitalStorage) CloudRequested() bool {
 	switch d.Mode {
+	case "s3", "cloud", "r2", "aws", "minio", "b2", "rclone", "gdrive", "drive":
+		return true
+	}
+	return false
+}
+
+// S3Requested melaporkan apakah mode meminta backend S3.
+func (d DigitalStorage) S3Requested() bool {
+	switch d.Mode {
 	case "s3", "cloud", "r2", "aws", "minio", "b2":
+		return true
+	}
+	return false
+}
+
+// RcloneRequested melaporkan apakah mode meminta backend rclone.
+func (d DigitalStorage) RcloneRequested() bool {
+	switch d.Mode {
+	case "rclone", "gdrive", "drive":
 		return true
 	}
 	return false

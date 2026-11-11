@@ -1060,6 +1060,10 @@ func (a *App) GetSettings() map[string]interface{} {
 		"digitalStorage":      ds.Mode,
 		"digitalCloudReady":   ds.DigitalCloudReady(),
 		"digitalS3Configured": ds.S3.S3Ready(),
+		"digitalRcloneRemote": ds.RcloneRemote,
+		"digitalRclonePath":   ds.RclonePath,
+		"digitalRcloneReady":  ds.RcloneConfigured() && services.RcloneAvailable(),
+		"digitalBackend":      digitalBackendLabel(),
 		"envFile":             absEnvPath(),
 	}
 }
@@ -1070,6 +1074,24 @@ func absEnvPath() string {
 		return abs
 	}
 	return path
+}
+
+// digitalBackendLabel mengembalikan backend penyimpanan digital yang aktif
+// dalam bentuk yang mudah dibaca pada antarmuka.
+func digitalBackendLabel() string {
+	b, err := services.DigitalBackendName()
+	if err != nil {
+		return "belum siap"
+	}
+	switch b {
+	case "s3":
+		return "cloud S3"
+	case "rclone":
+		ds := config.LoadDigitalStorage()
+		return "rclone (" + ds.RcloneRemote + ")"
+	default:
+		return "lokal"
+	}
 }
 
 // SaveSettings menulis pengaturan yang diizinkan ke .env dan memperbarui
@@ -1097,6 +1119,7 @@ func (a *App) SaveSettings(updates map[string]interface{}) (map[string]interface
 		"DIGITAL_S3_ENDPOINT": true, "DIGITAL_S3_REGION": true, "DIGITAL_S3_BUCKET": true,
 		"DIGITAL_S3_ACCESS_KEY": true, "DIGITAL_S3_SECRET_KEY": true, "DIGITAL_S3_PREFIX": true,
 		"DIGITAL_S3_PATH_STYLE": true,
+		"DIGITAL_RCLONE_REMOTE": true, "DIGITAL_RCLONE_PATH": true,
 	}
 	env := map[string]string{}
 	for k, v := range updates {
@@ -1601,21 +1624,21 @@ func digitalArsipDir() string {
 	return filepath.Join(home, ".local", "share", "simarc", "digital")
 }
 
-// storeDigitalFile menyimpan berkas digital arsip. Bila DIGITAL_STORAGE
-// mengaktifkan object storage S3-compatible (Cloudflare R2 / B2 / MinIO),
-// berkas diunggah ke cloud dan referensinya berbentuk s3://bucket/key.
-// Jika tidak, berkas disimpan di disk perangkat seperti sebelumnya.
+// storeDigitalFile menyimpan berkas digital arsip pada backend aktif:
+// object storage S3-compatible, remote rclone (mis. Google Drive), atau disk
+// perangkat. Referensi cloud yang dicatat pada file_path berbentuk
+// s3://bucket/key atau rclone://remote/path.
 func storeDigitalFile(arsipID, filename string, data []byte) (string, error) {
 	filename = filepath.Base(filename)
 	if filename == "" || filename == "." {
 		filename = "berkas-digital"
 	}
-	ds := config.LoadDigitalStorage()
-	if ds.CloudRequested() && !ds.DigitalCloudReady() {
-		return "", fmt.Errorf("penyimpanan cloud dipilih (DIGITAL_STORAGE=%s) tetapi kredensial S3 belum lengkap — isi Object Storage pada menu Integrasi", ds.Mode)
+	backend, err := services.DigitalBackendName()
+	if err != nil {
+		return "", err
 	}
-	if ds.DigitalCloudReady() {
-		return services.SaveDigitalCloud(arsipID, filename, data, services.DigitalContentType(filename))
+	if backend != "local" {
+		return services.SaveDigitalToCloud(arsipID, filename, data)
 	}
 	dir := filepath.Join(digitalArsipDir(), arsipID)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -1634,7 +1657,7 @@ func removeDigitalFile(ref string) {
 		return
 	}
 	if services.IsCloudDigitalRef(ref) {
-		if err := services.DeleteDigitalCloud(ref); err != nil {
+		if err := services.DeleteDigitalCloudAny(ref); err != nil {
 			fmt.Fprintf(os.Stderr, "[simarc] gagal menghapus berkas cloud: %v\n", err)
 		}
 		return
@@ -1647,7 +1670,7 @@ func removeDigitalFile(ref string) {
 func openDigitalFile(ref string) (string, error) {
 	local := ref
 	if services.IsCloudDigitalRef(ref) {
-		p, err := services.FetchDigitalCloud(ref)
+		p, err := services.FetchDigitalCloudAny(ref)
 		if err != nil {
 			return "", err
 		}

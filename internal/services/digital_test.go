@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 // fakeS3 adalah server S3-compatible minimal untuk pengujian offline:
@@ -189,6 +191,50 @@ func TestDigitalCloudRoundTrip(t *testing.T) {
 	}
 }
 
+// TestDigitalRcloneGDriveLive menguji backend rclone terhadap remote
+// Google Drive yang sudah terkonfigurasi. Hanya berjalan bila
+// SIMARC_TEST_GDRIVE=1 agar tidak menyentuh cloud saat `go test` biasa.
+func TestDigitalRcloneGDriveLive(t *testing.T) {
+	if os.Getenv("SIMARC_TEST_GDRIVE") != "1" {
+		t.Skip("set SIMARC_TEST_GDRIVE=1 untuk menguji remote Google Drive")
+	}
+	t.Setenv("DIGITAL_STORAGE", "rclone")
+	t.Setenv("DIGITAL_RCLONE_REMOTE", "gdrive")
+	folder := fmt.Sprintf("simarc-uji-%d", time.Now().UnixNano())
+	t.Setenv("DIGITAL_RCLONE_PATH", folder)
+	t.Setenv("OFFSITE_S3_ENDPOINT", "")
+	t.Setenv("OFFSITE_S3_BUCKET", "")
+	t.Setenv("OFFSITE_S3_ACCESS_KEY", "")
+	t.Setenv("OFFSITE_S3_SECRET_KEY", "")
+
+	payload := []byte("uji unggah berkas digital SIMARC ke Google Drive")
+	ref, err := SaveDigitalToCloud("arsip-uji", "uji.txt", payload)
+	if err != nil {
+		t.Fatalf("SaveDigitalToCloud: %v", err)
+	}
+	t.Logf("referensi cloud: %s", ref)
+
+	local, err := FetchDigitalCloudAny(ref)
+	if err != nil {
+		t.Fatalf("FetchDigitalCloudAny: %v", err)
+	}
+	got, err := os.ReadFile(local)
+	os.Remove(local)
+	if err != nil {
+		t.Fatalf("baca hasil unduhan: %v", err)
+	}
+	if string(got) != string(payload) {
+		t.Fatalf("isi unduhan = %q, ingin %q", got, payload)
+	}
+
+	if err := DeleteDigitalCloudAny(ref); err != nil {
+		t.Fatalf("DeleteDigitalCloudAny: %v", err)
+	}
+	if err := runRclone("purge", "gdrive:"+folder); err != nil {
+		t.Logf("purge folder uji: %v", err)
+	}
+}
+
 func TestDigitalLocalByDefault(t *testing.T) {
 	t.Setenv("DIGITAL_STORAGE", "local")
 	t.Setenv("OFFSITE_S3_ENDPOINT", "")
@@ -199,7 +245,92 @@ func TestDigitalLocalByDefault(t *testing.T) {
 	t.Setenv("DIGITAL_S3_BUCKET", "")
 	t.Setenv("DIGITAL_S3_ACCESS_KEY", "")
 	t.Setenv("DIGITAL_S3_SECRET_KEY", "")
+	t.Setenv("DIGITAL_RCLONE_REMOTE", "")
+	t.Setenv("OFFSITE_RCLONE_REMOTE", "")
 	if DigitalCloudEnabled() {
 		t.Fatal("DigitalCloudEnabled() = true padahal mode local / tanpa kredensial")
+	}
+	backend, err := DigitalBackendName()
+	if err != nil {
+		t.Fatalf("DigitalBackendName: %v", err)
+	}
+	if backend != backendLocal {
+		t.Fatalf("backend = %q, ingin %q", backend, backendLocal)
+	}
+}
+
+// TestDigitalRcloneRoundTrip memakai remote rclone bertipe "local" dengan
+// konfigurasi sementara, sehingga tidak membutuhkan jaringan maupun akun cloud.
+func TestDigitalRcloneRoundTrip(t *testing.T) {
+	if !RcloneAvailable() {
+		t.Skip("rclone tidak terpasang — lewati uji backend rclone")
+	}
+
+	dir := t.TempDir()
+	conf := filepath.Join(dir, "rclone.conf")
+	if err := os.WriteFile(conf, []byte("[test]\ntype = local\n"), 0600); err != nil {
+		t.Fatalf("tulis konfigurasi rclone: %v", err)
+	}
+
+	t.Setenv("RCLONE_CONFIG", conf)
+	t.Setenv("DIGITAL_STORAGE", "rclone")
+	t.Setenv("DIGITAL_RCLONE_REMOTE", "test")
+	t.Setenv("DIGITAL_RCLONE_PATH", "simarc-digital")
+	t.Setenv("OFFSITE_S3_ENDPOINT", "")
+	t.Setenv("OFFSITE_S3_BUCKET", "")
+	t.Setenv("OFFSITE_S3_ACCESS_KEY", "")
+	t.Setenv("OFFSITE_S3_SECRET_KEY", "")
+	t.Setenv("DIGITAL_S3_ENDPOINT", "")
+	t.Setenv("DIGITAL_S3_BUCKET", "")
+	t.Setenv("DIGITAL_S3_ACCESS_KEY", "")
+	t.Setenv("DIGITAL_S3_SECRET_KEY", "")
+
+	// Remote local memakai path relatif terhadap direktori kerja.
+	t.Chdir(dir)
+
+	backend, err := DigitalBackendName()
+	if err != nil {
+		t.Fatalf("DigitalBackendName: %v", err)
+	}
+	if backend != backendRclone {
+		t.Fatalf("backend = %q, ingin %q", backend, backendRclone)
+	}
+
+	payload := []byte("berkas digital via rclone")
+	ref, err := SaveDigitalToCloud("arsip-9", "berkas.txt", payload)
+	if err != nil {
+		t.Fatalf("SaveDigitalToCloud: %v", err)
+	}
+	wantRef := "rclone://test/simarc-digital/arsip-9/berkas.txt"
+	if ref != wantRef {
+		t.Fatalf("ref = %q, ingin %q", ref, wantRef)
+	}
+	stored := filepath.Join(dir, "simarc-digital", "arsip-9", "berkas.txt")
+	got, err := os.ReadFile(stored)
+	if err != nil {
+		t.Fatalf("baca berkas terunggah: %v", err)
+	}
+	if string(got) != string(payload) {
+		t.Fatalf("isi berkas = %q, ingin %q", got, payload)
+	}
+
+	local, err := FetchDigitalCloudAny(ref)
+	if err != nil {
+		t.Fatalf("FetchDigitalCloudAny: %v", err)
+	}
+	defer os.Remove(local)
+	got, err = os.ReadFile(local)
+	if err != nil {
+		t.Fatalf("baca hasil unduhan: %v", err)
+	}
+	if string(got) != string(payload) {
+		t.Fatalf("isi unduhan = %q, ingin %q", got, payload)
+	}
+
+	if err := DeleteDigitalCloudAny(ref); err != nil {
+		t.Fatalf("DeleteDigitalCloudAny: %v", err)
+	}
+	if _, err := os.Stat(stored); !os.IsNotExist(err) {
+		t.Fatalf("berkas masih ada setelah dihapus (err=%v)", err)
 	}
 }

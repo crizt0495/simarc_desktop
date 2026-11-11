@@ -17,18 +17,40 @@ Variabel `DIGITAL_STORAGE` pada `.env`:
 
 | Nilai | Arti |
 |-------|------|
-| `auto` (default) | Cloud bila kredensial S3 lengkap; jika tidak, lokal. |
+| `auto` (default) | Cloud bila kredensial S3 lengkap, lalu rclone, jika tidak lokal. |
 | `local` | Selalu di disk perangkat (`~/.local/share/simarc/digital`). |
-| `s3` | Wajib cloud. Jika kredensial belum lengkap, upload ditolak dengan pesan jelas. |
+| `s3` | Wajib object storage S3-compatible. Jika kredensial belum lengkap, upload ditolak dengan pesan jelas. |
+| `rclone` | Wajib remote rclone (Google Drive, OneDrive, Dropbox, dsb.). |
 
 Saat cloud aktif, kolom `arsip.file_path` berisi referensi
-`s3://<bucket>/<prefix>/digital/<id-arsip>/<nama-berkas>`.
+`s3://<bucket>/<prefix>/digital/<id-arsip>/<nama-berkas>` (S3) atau
+`rclone://<remote>/<folder>/<id-arsip>/<nama-berkas>` (rclone).
 
 ---
 
 ## 2. Opsi gratis yang didukung
 
-### Cloudflare R2 (disarankan — gratis 10 GB, tanpa biaya egress)
+### Google Drive via rclone (sudah dikonfigurasi di perangkat ini)
+
+Komputer ini sudah memiliki rclone dengan remote `gdrive` yang aktif
+(kuota Drive Anda). SIMARC memakai remote tersebut, sehingga **tidak perlu
+akun atau biaya baru**.
+
+`.env` / `~/.env`:
+
+```env
+DIGITAL_STORAGE=rclone
+DIGITAL_RCLONE_REMOTE=gdrive
+DIGITAL_RCLONE_PATH=simarc-digital
+```
+
+Berkas akan tersimpan di `gdrive:simarc-digital/<id-arsip>/<nama-berkas>`.
+
+Prasyarat di komputer lain: pasang `rclone`, lalu `rclone config` dan buat
+remote dengan nama yang sama (`gdrive`) yang menunjuk ke akun Google Drive
+yang sama. Tanpa itu, berkas cloud tidak bisa dibuka dari komputer tersebut.
+
+### Cloudflare R2 (disarankan bila ingin tanpa rclone — gratis 10 GB, tanpa biaya egress)
 
 1. Buat akun Cloudflare → **R2 Object Storage** → **Create bucket**
    (mis. `simarc-digital`).
