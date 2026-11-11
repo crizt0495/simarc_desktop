@@ -3563,7 +3563,9 @@ input.auth-input::placeholder { color: var(--nb-ink-5); }
 .public-page-heading .h3 { font-size: 1.35rem; }
 
 /* ── Branding landing page ──────────────────────────────────────────────── */
-.brand-lockup { min-width: 0; }
+.brand-lockup { min-width: 0; flex: 1 1 auto; }
+.public-brand-header { gap: 0.75rem; }
+.public-brand-header .brand-lockup { max-width: 60%; }
 .brand-name {
   font-size: 1.05rem;
   font-weight: 800;
