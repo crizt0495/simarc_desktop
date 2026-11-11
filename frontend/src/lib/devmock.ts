@@ -41,6 +41,7 @@ export function installDevMock(): boolean {
     status: i % 3 === 0 ? 'aktif' : i % 3 === 1 ? 'inaktif' : 'diberkaskan',
     unit: 'Bagian Pemerintahan',
     unitId: 'unit-1',
+    lokasiArsipId: 'lok-1',
     kategori: 'Kawalan Digital SPJ',
     tanggal: `2026-0${(i % 8) + 1}-1${i % 9}`,
     jumlah: i + 2,

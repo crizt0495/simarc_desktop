@@ -2,7 +2,7 @@
  * LokasiArsipPage — modul master data Lokasi Arsip (CRUD lengkap).
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { getMasterOptions, saveLokasiArsip, deleteLokasiArsip, listArsipDetail } from '../lib/bindings';
+import { getMasterOptions, saveLokasiArsip, deleteLokasiArsip, listArsipDetail, deleteArsip } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { FormModal } from '../components/FormModal';
 import { ArsipFormModal } from '../components/ArsipFormModal';
@@ -32,6 +32,7 @@ export const LokasiArsipPage: React.FC = () => {
   const [viewQ, setViewQ] = useState('');
   const [viewPage, setViewPage] = useState(1);
   const [viewDetail, setViewDetail] = useState<any | null>(null);
+  const [editArsip, setEditArsip] = useState<any | null>(null);
   const viewPerPage = 10;
 
   const load = useCallback(async () => {
@@ -112,6 +113,18 @@ export const LokasiArsipPage: React.FC = () => {
     try {
       await deleteLokasiArsip(row.id);
       push('success', 'Lokasi berhasil dihapus');
+      await load();
+    } catch (e) {
+      push('danger', `Gagal menghapus: ${e}`);
+    }
+  };
+
+  const removeArsip = async (a: any) => {
+    if (!window.confirm(`Hapus arsip "${a.nomor || a.nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      await deleteArsip(String(a.id));
+      push('success', `Arsip ${a.nomor || a.nama} berhasil dihapus`);
+      if (viewDetail && String(viewDetail.id) === String(a.id)) setViewDetail(null);
       await load();
     } catch (e) {
       push('danger', `Gagal menghapus: ${e}`);
@@ -254,7 +267,7 @@ export const LokasiArsipPage: React.FC = () => {
                           <th>Arsip</th>
                           <th style={{ width: 180 }}>Kode Klasifikasi</th>
                           <th style={{ width: 110 }}>Status</th>
-                          <th style={{ width: 60 }} className="text-center">Aksi</th>
+                          <th style={{ width: 120 }} className="text-center">Aksi</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -281,6 +294,8 @@ export const LokasiArsipPage: React.FC = () => {
                             <td className="text-center">
                               <div className="btn-crud-group">
                                 <button type="button" className="btn-crud btn-crud-view" title="Detail arsip" onClick={() => setViewDetail(a)}><i className="bi bi-eye"></i></button>
+                                <button type="button" className="btn-crud btn-crud-edit" title="Ubah arsip" onClick={() => setEditArsip(a)}><i className="bi bi-pencil"></i></button>
+                                <button type="button" className="btn-crud btn-crud-del" title="Hapus arsip" onClick={() => void removeArsip(a)}><i className="bi bi-trash"></i></button>
                               </div>
                             </td>
                           </tr>
@@ -345,6 +360,14 @@ export const LokasiArsipPage: React.FC = () => {
         onSaved={() => { void load(); setArsipFormKey((k) => k + 1); }}
         keepOpenOnSave
         showSuccessToast={false}
+      />
+
+      <ArsipFormModal
+        open={Boolean(editArsip)}
+        initial={editArsip}
+        opts={opts}
+        onClose={() => setEditArsip(null)}
+        onSaved={() => { void load(); setEditArsip(null); }}
       />
     </div>
   );
