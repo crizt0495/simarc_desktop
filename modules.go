@@ -354,11 +354,27 @@ func (a *App) DeleteArsip(id string) error {
 	if database.DB == nil {
 		return fmt.Errorf("database belum siap")
 	}
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return fmt.Errorf("id arsip kosong")
+	}
 	var ar models.Arsip
 	if err := database.DB.First(&ar, "id = ?", id).Error; err != nil {
+		// Baris bisa saja sudah dihapus di perangkat lain, oleh proses
+		// sinkronisasi, atau karena klik ganda. Bila arsip memang sudah
+		// tidak aktif, anggap berhasil (idempoten) supaya daftar dapat
+		// disegarkan tanpa pesan galat yang membingungkan.
+		var ada int64
+		database.DB.Unscoped().Model(&models.Arsip{}).Where("id = ?", id).Count(&ada)
+		a.invalidateMasterCache()
+		if ada > 0 {
+			return nil
+		}
 		return fmt.Errorf("arsip tidak ditemukan")
 	}
 	if err := database.DB.Delete(&models.Arsip{}, "id = ?", id).Error; err != nil {
+		// Pastikan tampilan tidak menyimpan baris lama bila penghapusan gagal.
+		a.invalidateMasterCache()
 		return err
 	}
 	a.writeActivity("hapus_arsip", "Menghapus arsip "+ar.NomorArsip, "arsip", id)

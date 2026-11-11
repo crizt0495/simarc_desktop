@@ -26,6 +26,7 @@ export const LokasiArsipPage: React.FC = () => {
   const [arsipFormKey, setArsipFormKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [arsipList, setArsipList] = useState<any[]>([]);
+  const [deletingArsipId, setDeletingArsipId] = useState<string | null>(null);
 
   /* ── Modal lihat daftar arsip per lokasi ── */
   const [viewLokasi, setViewLokasi] = useState<any | null>(null);
@@ -120,7 +121,9 @@ export const LokasiArsipPage: React.FC = () => {
   };
 
   const removeArsip = async (a: any) => {
+    if (deletingArsipId) return;
     if (!window.confirm(`Hapus arsip "${a.nomor || a.nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    setDeletingArsipId(String(a.id));
     try {
       await deleteArsip(String(a.id));
       push('success', `Arsip ${a.nomor || a.nama} berhasil dihapus`);
@@ -128,6 +131,9 @@ export const LokasiArsipPage: React.FC = () => {
       await load();
     } catch (e) {
       push('danger', `Gagal menghapus: ${e}`);
+      await load();
+    } finally {
+      setDeletingArsipId(null);
     }
   };
 
@@ -295,7 +301,7 @@ export const LokasiArsipPage: React.FC = () => {
                               <div className="btn-crud-group">
                                 <button type="button" className="btn-crud btn-crud-view" title="Detail arsip" onClick={() => setViewDetail(a)}><i className="bi bi-eye"></i></button>
                                 <button type="button" className="btn-crud btn-crud-edit" title="Ubah arsip" onClick={() => setEditArsip(a)}><i className="bi bi-pencil"></i></button>
-                                <button type="button" className="btn-crud btn-crud-del" title="Hapus arsip" onClick={() => void removeArsip(a)}><i className="bi bi-trash"></i></button>
+                                <button type="button" className="btn-crud btn-crud-del" title="Hapus arsip" disabled={deletingArsipId === String(a.id)} onClick={() => void removeArsip(a)}><i className={`bi ${deletingArsipId === String(a.id) ? 'bi-hourglass-split' : 'bi-trash'}`}></i></button>
                               </div>
                             </td>
                           </tr>

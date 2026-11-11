@@ -45,6 +45,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const [moveLokasiId, setMoveLokasiId] = useState('');
   const [busy, setBusy] = useState(false);
   const [busyDigital, setBusyDigital] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [ocrOpen, setOcrOpen] = useState(false);
   const [ocrText, setOcrText] = useState('');
   const [ocrFile, setOcrFile] = useState('');
@@ -185,7 +186,9 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   const openEdit = (a: any) => { setEditTarget(a); setFormOpen(true); };
 
   const removeRow = async (a: any) => {
+    if (deletingId) return;
     if (!window.confirm(`Hapus arsip "${a.nomor || a.nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    setDeletingId(String(a.id));
     try {
       await deleteArsip(String(a.id));
       push('success', `Arsip ${a.nomor || a.nama} berhasil dihapus`);
@@ -193,6 +196,9 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
       await load();
     } catch (e) {
       push('danger', `Gagal menghapus: ${e}`);
+      await load();
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -299,7 +305,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
       <button type="button" className="btn-crud btn-crud-view" title="Lihat Detail" onClick={() => setDetail(a)}><i className="bi bi-eye"></i></button>
       <button type="button" className="btn-crud btn-crud-primary" title="Berkaskan" onClick={() => openAssign([a.id])}><i className="bi bi-folder-plus"></i></button>
       <button type="button" className="btn-crud btn-crud-edit" title="Ubah Arsip" onClick={() => openEdit(a)}><i className="bi bi-pencil"></i></button>
-      <button type="button" className="btn-crud btn-crud-del" title="Hapus Arsip" onClick={() => void removeRow(a)}><i className="bi bi-trash"></i></button>
+      <button type="button" className="btn-crud btn-crud-del" title="Hapus Arsip" disabled={deletingId === String(a.id)} onClick={() => void removeRow(a)}><i className={`bi ${deletingId === String(a.id) ? 'bi-hourglass-split' : 'bi-trash'}`}></i></button>
     </React.Fragment>
   );
 
