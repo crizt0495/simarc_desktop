@@ -75,3 +75,6 @@ simarc-install.txt
 !/*.exe
 !/*.deb
 !dist/simarc_*.deb
+
+# Python
+__pycache__/

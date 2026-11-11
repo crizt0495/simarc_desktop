@@ -1,96 +1,149 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <!-- Premium Gold Gradient -->
-    <linearGradient id="iconGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#D4AF37;stop-opacity:1" />
-      <stop offset="35%" style="stop-color:#F5E6A8;stop-opacity:1" />
-      <stop offset="70%" style="stop-color:#C9A961;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#B8860B;stop-opacity:1" />
+    <!-- Latar navy premium -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12283D"/>
+      <stop offset="0.45" stop-color="#0B1C2D"/>
+      <stop offset="1" stop-color="#050D15"/>
     </linearGradient>
-    
-    <!-- Metallic Gold Gradient -->
-    <linearGradient id="iconMetallicGold" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#9A7B0A;stop-opacity:1" />
-      <stop offset="25%" style="stop-color:#D4AF37;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#F5E6A8;stop-opacity:1" />
-      <stop offset="75%" style="stop-color:#D4AF37;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#9A7B0A;stop-opacity:1" />
+    <radialGradient id="bgGlow" cx="0.28" cy="0.18" r="0.72">
+      <stop offset="0" stop-color="#2A5578" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#2A5578" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Emas metalik (sisi depan kotak) -->
+    <linearGradient id="goldFront" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9A7B0A"/>
+      <stop offset="0.18" stop-color="#D4AF37"/>
+      <stop offset="0.42" stop-color="#F7E9AE"/>
+      <stop offset="0.62" stop-color="#D9B44A"/>
+      <stop offset="0.84" stop-color="#B08A1E"/>
+      <stop offset="1" stop-color="#8A6A10"/>
     </linearGradient>
-    
-    <!-- Deep Navy Background -->
-    <linearGradient id="iconNavyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0B1C2D;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#061018;stop-opacity:1" />
+
+    <!-- Emas metalik (tutup kotak) -->
+    <linearGradient id="goldLid" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8A6A10"/>
+      <stop offset="0.15" stop-color="#C9A03A"/>
+      <stop offset="0.38" stop-color="#F5E6A8"/>
+      <stop offset="0.55" stop-color="#E3C46B"/>
+      <stop offset="0.78" stop-color="#B08A1E"/>
+      <stop offset="1" stop-color="#7A5E0C"/>
     </linearGradient>
-    
-    <!-- Premium Shadow -->
-    <filter id="iconShadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-      <feOffset dx="0" dy="4" result="offsetblur"/>
-      <feComponentTransfer>
-        <feFuncA type="linear" slope="0.5"/>
+
+    <!-- Kertas berkas -->
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFDF2"/>
+      <stop offset="1" stop-color="#F1E3B4"/>
+    </linearGradient>
+    <linearGradient id="paperBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7EAC0"/>
+      <stop offset="1" stop-color="#DCC488"/>
+    </linearGradient>
+
+    <!-- Bingkai emas -->
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F5E6A8"/>
+      <stop offset="0.35" stop-color="#C9A961"/>
+      <stop offset="0.65" stop-color="#8A6A10"/>
+      <stop offset="1" stop-color="#E3C46B"/>
+    </linearGradient>
+
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="16"/>
+      <feOffset dy="14" result="off"/>
+      <feComponentTransfer in="off" result="sh">
+        <feFuncA type="linear" slope="0.42"/>
       </feComponentTransfer>
       <feMerge>
-        <feMergeNode/>
+        <feMergeNode in="sh"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    
-    <!-- Inner Glow -->
-    <filter id="innerGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
-      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.6 0" result="glow"/>
-      <feMerge>
-        <feMergeNode in="glow"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+
+    <filter id="ground" x="-40%" y="-120%" width="180%" height="340%">
+      <feGaussianBlur stdDeviation="16"/>
     </filter>
   </defs>
-  
-  <!-- Background Rounded Square -->
-  <rect x="10" y="10" width="180" height="180" rx="36" fill="url(#iconNavyGradient)" filter="url(#iconShadow)"/>
-  
-  <!-- Premium Border -->
-  <rect x="12" y="12" width="176" height="176" rx="34" fill="none" stroke="url(#iconMetallicGold)" stroke-width="2.5" opacity="0.9"/>
-  
-  <!-- Inner Border -->
-  <rect x="18" y="18" width="164" height="164" rx="28" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-  
-  <!-- Stylized Letter A (Premium) -->
-  <path d="M 100 45 L 65 135 L 77 135 L 85 115 L 115 115 L 123 135 L 135 135 Z" 
-        fill="url(#iconMetallicGold)" 
-        filter="url(#iconShadow)"/>
-  
-  <!-- Horizontal Bar of A -->
-  <line x1="88" y1="102" x2="112" y2="102" 
-        stroke="#0B1C2D" 
-        stroke-width="5" 
-        stroke-linecap="round"
-        opacity="0.9"/>
-  
-  <!-- Top Accent Star -->
-  <path d="M 100 28 L 102 34 L 108 34 L 103 38 L 105 44 L 100 40 L 95 44 L 97 38 L 92 34 L 98 34 Z" 
-        fill="url(#iconMetallicGold)" 
-        opacity="0.85"/>
-  
-  <!-- Side Decorative Dots -->
-  <circle cx="55" cy="100" r="3" fill="url(#iconMetallicGold)" opacity="0.7"/>
-  <circle cx="145" cy="100" r="3" fill="url(#iconMetallicGold)" opacity="0.7"/>
-  
-  <!-- Bottom Arc -->
-  <path d="M 70 155 Q 100 165 130 155" 
-        fill="none" 
-        stroke="url(#iconMetallicGold)" 
-        stroke-width="2.5" 
-        stroke-linecap="round"
-        opacity="0.7"/>
-  
-  <!-- Corner Embellishments -->
-  <circle cx="30" cy="30" r="2.5" fill="url(#iconMetallicGold)" opacity="0.7"/>
-  <circle cx="170" cy="30" r="2.5" fill="url(#iconMetallicGold)" opacity="0.7"/>
-  <circle cx="30" cy="170" r="2.5" fill="url(#iconMetallicGold)" opacity="0.7"/>
-  <circle cx="170" cy="170" r="2.5" fill="url(#iconMetallicGold)" opacity="0.7"/>
-  
-  <!-- Glossy Overlay -->
-  <ellipse cx="100" cy="100" rx="70" ry="70" fill="url(#iconGoldGradient)" opacity="0.08" style="mix-blend-mode: overlay;"/>
+
+  <!-- ═══ Latar ═══ -->
+  <rect x="0" y="0" width="1024" height="1024" rx="184" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1024" height="1024" rx="184" fill="url(#bgGlow)"/>
+  <rect x="16" y="16" width="992" height="992" rx="170" fill="none"
+        stroke="url(#rim)" stroke-width="7" opacity="0.85"/>
+  <rect x="32" y="32" width="960" height="960" rx="156" fill="none"
+        stroke="#FFFFFF" stroke-width="2" opacity="0.06"/>
+
+  <!-- ═══ Berkas di belakang kotak ═══ -->
+  <g filter="url(#softShadow)">
+    <!-- berkas belakang (kanan) -->
+    <g transform="rotate(9 588 386)">
+      <rect x="470" y="240" width="236" height="284" rx="24" fill="url(#paperBack)"/>
+      <rect x="470" y="240" width="236" height="284" rx="24" fill="none"
+            stroke="#8A6A10" stroke-width="3" opacity="0.35"/>
+    </g>
+
+    <!-- berkas tengah (kiri) -->
+    <g transform="rotate(-7 462 404)">
+      <rect x="336" y="264" width="252" height="272" rx="24" fill="url(#paper)"/>
+      <rect x="336" y="264" width="252" height="272" rx="24" fill="none"
+            stroke="#8A6A10" stroke-width="3" opacity="0.3"/>
+    </g>
+
+    <!-- berkas depan -->
+    <g transform="rotate(-1.5 486 396)">
+      <rect x="368" y="248" width="236" height="292" rx="22" fill="url(#paper)"/>
+      <rect x="368" y="248" width="236" height="292" rx="22" fill="none"
+            stroke="#8A6A10" stroke-width="3" opacity="0.3"/>
+      <g fill="#B08A1E" opacity="0.6">
+        <rect x="404" y="300" width="164" height="14" rx="7"/>
+        <rect x="404" y="340" width="132" height="14" rx="7"/>
+        <rect x="404" y="380" width="152" height="14" rx="7"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══ Kotak arsip ═══ -->
+  <g filter="url(#softShadow)">
+    <!-- bayangan alas -->
+    <ellipse cx="512" cy="814" rx="252" ry="20" fill="#000000" opacity="0.45" filter="url(#ground)"/>
+
+    <!-- badan kotak -->
+    <rect x="272" y="520" width="480" height="280" rx="26" fill="url(#goldFront)"/>
+    <rect x="272" y="520" width="480" height="280" rx="26" fill="none"
+          stroke="#5E4806" stroke-width="4" opacity="0.55"/>
+
+    <!-- panel depan (lebih gelap untuk kedalaman) -->
+    <rect x="296" y="546" width="432" height="230" rx="18" fill="#000000" opacity="0.16"/>
+    <rect x="296" y="546" width="432" height="230" rx="18" fill="none"
+          stroke="#F7E9AE" stroke-width="2" opacity="0.25"/>
+
+    <!-- pelat label navy dengan motif sirkuit -->
+    <rect x="356" y="588" width="312" height="132" rx="20" fill="#0A1A2B"/>
+    <rect x="356" y="588" width="312" height="132" rx="20" fill="none"
+          stroke="url(#goldLid)" stroke-width="5"/>
+    <rect x="368" y="600" width="288" height="108" rx="14" fill="none"
+          stroke="#FFFFFF" stroke-width="1.5" opacity="0.08"/>
+
+    <!-- garis pulsa digital -->
+    <polyline points="390,654 442,654 464,626 492,684 516,646 538,654 604,654 628,632 648,654"
+              fill="none" stroke="#F5E6A8" stroke-width="9"
+              stroke-linecap="round" stroke-linejoin="round"/>
+    <g fill="#F5E6A8">
+      <circle cx="390" cy="654" r="12"/>
+      <circle cx="648" cy="654" r="12"/>
+    </g>
+
+    <!-- slot pegangan -->
+    <rect x="462" y="748" width="100" height="18" rx="9" fill="#6E5410" opacity="0.55"/>
+
+    <!-- tutup kotak -->
+    <rect x="246" y="446" width="532" height="104" rx="30" fill="url(#goldLid)"/>
+    <rect x="246" y="446" width="532" height="104" rx="30" fill="none"
+          stroke="#5E4806" stroke-width="4" opacity="0.45"/>
+    <!-- kilau tutup -->
+    <rect x="270" y="458" width="484" height="20" rx="10" fill="#FFFDF2" opacity="0.35"/>
+    <!-- garis pemisah tutup -->
+    <rect x="270" y="524" width="484" height="6" rx="3" fill="#5E4806" opacity="0.35"/>
+  </g>
 </svg>

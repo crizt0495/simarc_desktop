@@ -24,12 +24,16 @@ rm -rf "$STAGE"
 mkdir -p "$STAGE"/DEBIAN \
          "$STAGE"/usr/bin \
          "$STAGE"/usr/share/applications \
-         "$STAGE"/usr/share/icons/hicolor/512x512/apps \
+         "$STAGE"/usr/share/icons/hicolor \
          "$STAGE"/usr/share/doc/simarc
 
 install -m 0755 "$BINARY" "$STAGE/usr/bin/SIMARC"
 install -m 0644 packaging/linux/simarc.desktop "$STAGE/usr/share/applications/simarc.desktop"
-install -m 0644 build/appicon.png "$STAGE/usr/share/icons/hicolor/512x512/apps/simarc.png"
+for png in packaging/linux/icons/*.png; do
+  size="$(basename "$png" .png)"
+  install -d "$STAGE/usr/share/icons/hicolor/$size/apps"
+  install -m 0644 "$png" "$STAGE/usr/share/icons/hicolor/$size/apps/simarc.png"
+done
 {
   echo "SIMARC — Arsip Record Center (desktop, offline-first)"
   echo
