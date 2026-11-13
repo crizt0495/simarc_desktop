@@ -226,7 +226,7 @@ func Download(ctx context.Context, downloadURL, wantSHA string) (Package, error)
 // Urutan preferensi:
 //
 //	windows : setup .exe → .exe → .zip
-//	linux   : .deb → .AppImage → arsip linux
+//	linux   : .deb → .AppImage
 //	darwin  : .dmg → .zip
 func PickAsset(assets []Asset, goos, goarch string) (Asset, bool) {
 	type candidate struct {
@@ -260,8 +260,6 @@ func PickAsset(assets []Asset, goos, goarch string) (Asset, bool) {
 				score = 100
 			case strings.Contains(name, "appimage"):
 				score = 90
-			case strings.HasSuffix(name, ".tar.gz") && strings.Contains(name, "linux"):
-				score = 50
 			}
 		case "darwin":
 			switch {
