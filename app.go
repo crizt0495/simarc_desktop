@@ -2,14 +2,11 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -24,6 +21,7 @@ import (
 	"arsippro/internal/database"
 	"arsippro/internal/models"
 	"arsippro/internal/services"
+	"arsippro/internal/updater"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -161,86 +159,73 @@ func (a *App) QuitApp() {
 }
 
 // AppVersion mengembalikan versi aplikasi yang sedang berjalan.
+// Nilai diisi saat build: -ldflags "-X main.appVersion=v1.2.3".
 func (a *App) AppVersion() string {
 	if v := strings.TrimSpace(os.Getenv("SIMARC_VERSION")); v != "" {
-		return v
+		return strings.TrimPrefix(v, "v")
 	}
-	return "1.0.0"
+	if v := strings.TrimSpace(appVersion); v != "" {
+		return strings.TrimPrefix(v, "v")
+	}
+	return "0.0.0"
 }
 
-// GetUpdateInfo memeriksa apakah tersedia rilis terbaru dari GitHub Releases.
+// GetUpdateInfo memeriksa apakah tersedia rilis terbaru di GitHub Releases
+// (atau SIMARC_UPDATE_URL bila diarahkan ke server sendiri).
+//
+// Kegagalan jaringan tidak dikembalikan sebagai error agar UI tetap bisa
+// dibuka; pesannya disertakan pada field "error".
 func (a *App) GetUpdateInfo() (map[string]interface{}, error) {
-	var latest struct {
-		TagName string `json:"tag_name"`
-		URL     string `json:"browser_download_url"`
-		Draft   bool   `json:"draft"`
-		Pre     bool   `json:"prerelease"`
+	feed := strings.TrimSpace(os.Getenv("SIMARC_UPDATE_URL"))
+	if feed == "" {
+		feed = updater.DefaultFeedURL
 	}
-	client := &http.Client{Timeout: 20 * time.Second}
-	resp, err := client.Get("https://api.github.com/repos/crizt0495/simarc_desktop/releases/latest")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	info, err := updater.Check(ctx, a.AppVersion(), feed)
 	if err != nil {
-		return map[string]interface{}{"hasUpdate": false}, err
+		return map[string]interface{}{
+			"hasUpdate": false,
+			"current":   a.AppVersion(),
+			"error":     err.Error(),
+		}, nil
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return map[string]interface{}{"hasUpdate": false}, err
-	}
-	if err := json.Unmarshal(body, &latest); err != nil {
-		return map[string]interface{}{"hasUpdate": false}, err
-	}
-	tag := strings.TrimPrefix(strings.TrimSpace(latest.TagName), "v")
-	cur := a.AppVersion()
-	hasUpdate := tag != "" && tag != cur && !latest.Draft && !latest.Pre
-	return map[string]interface{}{
-		"hasUpdate":   hasUpdate,
-		"current":     cur,
-		"latest":      latest.TagName,
-		"downloadURL": latest.URL,
-	}, nil
+	return info.Map(), nil
 }
 
-// DownloadUpdate mengunduh paket .deb dari URL ke direktori temp lokal.
-func (a *App) DownloadUpdate(url string) (string, error) {
-	client := &http.Client{Timeout: 10 * time.Minute}
-	req, err := http.NewRequest("GET", url, nil)
+// ApplyUpdate mengunduh paket, memverifikasi checksum, lalu memasangnya.
+// Setelah berhasil aplikasi akan dibuka ulang (otomatis di Windows; lewat
+// RestartApp di Linux).
+func (a *App) ApplyUpdate(downloadURL, sha256 string) (map[string]interface{}, error) {
+	if strings.TrimSpace(downloadURL) == "" {
+		return nil, errors.New("URL pembaruan kosong")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
+	defer cancel()
+
+	dl, err := updater.Download(ctx, downloadURL, sha256)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	req.Header.Set("User-Agent", "SIMARC-Updater")
-	resp, err := client.Do(req)
+	res, err := updater.Apply(dl.Path, dl.AssetName)
 	if err != nil {
-		return "", err
+		_ = os.RemoveAll(filepath.Dir(dl.Path))
+		return nil, err
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("gagal mengunduh update: status HTTP %d", resp.StatusCode)
+	if res.RestartedByUpdater {
+		wailsruntime.Quit(a.ctx)
+		return map[string]interface{}{"ok": true, "restarting": true}, nil
 	}
-	f, err := os.CreateTemp("", "simarc-update-*.deb")
-	if err != nil {
-		return "", err
-	}
-	tmp := f.Name()
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
-		os.Remove(tmp)
-		return "", err
-	}
-	if err := f.Close(); err != nil {
-		os.Remove(tmp)
-		return "", err
-	}
-	return tmp, nil
+	return map[string]interface{}{"ok": true, "restarting": false}, nil
 }
 
-// InstallUpdate memasang paket .deb yang sudah diunduh (membutuhkan privilege).
-func (a *App) InstallUpdate(path string) error {
-	cmd := exec.Command("pkexec", "dpkg", "-i", path)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("instalasi gagal: %s", strings.TrimSpace(string(out)))
+// RestartApp membuka ulang aplikasi setelah pembaruan dipasang.
+func (a *App) RestartApp() {
+	if err := updater.Relaunch(); err != nil {
+		log.Printf("[simarc] gagal membuka ulang aplikasi: %v", err)
 	}
-	return nil
+	wailsruntime.Quit(a.ctx)
 }
 
 // ListArsip returns recent arsip records.

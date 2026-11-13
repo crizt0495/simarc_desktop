@@ -37,6 +37,7 @@ import { ITEM_BY_KEY, type PageKey } from './components/AppSidebar';
 import { getProfile, getStatus, pingBackend, reconnectDb, type Status, type Profile } from './lib/bindings';
 import ErrorBoundary from './components/ErrorBoundary';
 import { DatabaseBanner } from './components/DatabaseBanner';
+import { UpdateBanner } from './components/UpdateBanner';
 
 type AppPage = PageKey | 'login';
 
@@ -197,6 +198,7 @@ const App: React.FC = () => {
           {renderBody()}
         </ErrorBoundary>
         <DatabaseBanner dbError={status?.db_error} onRetry={retryDb} retrying={retryingDb} />
+        <UpdateBanner />
       </>
     );
   }
@@ -213,6 +215,7 @@ const App: React.FC = () => {
         </ErrorBoundary>
       </AppLayout>
       <DatabaseBanner dbError={status?.db_error} onRetry={retryDb} retrying={retryingDb} />
+      <UpdateBanner />
     </>
   );
 };

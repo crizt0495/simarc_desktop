@@ -24,6 +24,14 @@ var assets embed.FS
 //go:embed .env
 var embeddedDotEnv string
 
+// appVersion diisi saat build:
+//
+//	go build -ldflags "-X main.appVersion=v1.2.3"
+//
+// Nilai ini dipakai auto-update untuk membandingkan versi lokal dengan rilis
+// terbaru di GitHub.
+var appVersion = "1.0.0"
+
 // setupLogFile mengalihkan log ke berkas agar masalah di komputer pengguna
 // (mis. database tidak tersambung) bisa diperiksa tanpa membuka konsol.
 // Lokasi: %AppData%\SIMARC\simarc.log (Windows) / ~/.config/SIMARC/simarc.log.
@@ -82,7 +90,7 @@ func main() {
 			// Desktop. Dapat diaktifkan lagi dengan SIMARC_DISABLE_GPU=false.
 			WebviewGpuIsDisabled: readBool("SIMARC_DISABLE_GPU", true),
 		},
-		Mac: &mac.Options{},
+		Mac:              &mac.Options{},
 		WindowStartState: windowOpts(window).startState,
 		Frameless:        windowOpts(window).frameless,
 		DisableResize:    windowOpts(window).disallowResize,

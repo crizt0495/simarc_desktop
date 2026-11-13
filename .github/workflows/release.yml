@@ -1,0 +1,138 @@
+name: Release
+
+# Membuat rilis GitHub berisi paket Linux (.deb) dan Windows (SIMARC-Setup.exe).
+# Aplikasi yang sudah terpasang memeriksa rilis terbaru dari endpoint
+# /releases/latest lalu mengunduh aset sesuai OS/arsitektur.
+#
+# Cara memicu:
+#   git tag v1.2.3 && git push origin v1.2.3
+# atau lewat Actions → Release → Run workflow (isi versi, mis. v1.2.3).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versi rilis (mis. v1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Build .deb (Linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Pasang dependensi build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Pasang Wails
+        run: |
+          go install "github.com/wailsapp/wails/v2/cmd/wails@$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v2)"
+
+      - name: Pasang dependensi frontend
+        run: cd frontend && npm ci
+
+      - name: Build .deb
+        env:
+          SIMARC_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          bash packaging/linux/build-deb.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb
+          path: dist/*.deb
+          if-no-files-found: error
+
+  windows:
+    name: Build installer (Windows)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Pasang dependensi build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev gcc-mingw-w64-x86-64
+
+      - name: Pasang Wails
+        run: |
+          go install "github.com/wailsapp/wails/v2/cmd/wails@$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v2)"
+
+      - name: Pasang dependensi frontend
+        run: cd frontend && npm ci
+
+      - name: Build SIMARC-Setup.exe
+        env:
+          SIMARC_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          export CC=x86_64-w64-mingw32-gcc
+          export CXX=x86_64-w64-mingw32-g++
+          bash scripts/build-windows-setup.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-setup
+          path: dist/SIMARC-Setup.exe
+          if-no-files-found: error
+
+  release:
+    name: Publikasikan rilis
+    needs: [linux, windows]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+
+      - name: Buat daftar checksum
+        run: |
+          cd dist
+          sha256sum *.deb *.exe > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Buat GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          name: SIMARC ${{ github.event.inputs.version || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/*.deb
+            dist/SIMARC-Setup.exe
+            dist/SHA256SUMS
+          fail_on_unmatched_files: true

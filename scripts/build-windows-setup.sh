@@ -14,8 +14,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$PATH:$HOME/go/bin"
 
-echo "▸ Build frontend + aplikasi Windows (wails)…"
-wails build -platform windows/amd64 -clean
+# Cross-compile dari Linux membutuhkan toolchain mingw.
+if command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
+  export CC="${CC:-x86_64-w64-mingw32-gcc}"
+  export CXX="${CXX:-x86_64-w64-mingw32-g++}"
+fi
+
+VERSION="$(bash scripts/version.sh)"
+echo "▸ Build frontend + aplikasi Windows (wails) — versi ${VERSION}…"
+wails build -platform windows/amd64 -clean -ldflags "-X main.appVersion=${VERSION}"
 
 echo "▸ Siapkan payload installer…"
 mkdir -p packaging/winsetup/payload

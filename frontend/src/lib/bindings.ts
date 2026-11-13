@@ -145,9 +145,26 @@ async function call<T>(name: string, ...args: any[]): Promise<T> {
 export const quitApp = () => call<void>('QuitApp');
 
 /* ── Pembaruan aplikasi (auto-update via GitHub Releases) ── */
-export const getUpdateInfo = () => call<Record<string, any>>('GetUpdateInfo');
-export const downloadUpdate = (url: string) => call<string>('DownloadUpdate', url);
-export const installUpdate = (path: string) => call<boolean>('InstallUpdate', path);
+export interface UpdateInfo {
+  hasUpdate: boolean;
+  current?: string;
+  latest?: string;
+  rawTag?: string;
+  notes?: string;
+  htmlURL?: string;
+  assetName?: string;
+  downloadURL?: string;
+  sha256?: string;
+  size?: number;
+  publishedAt?: string;
+  error?: string;
+}
+
+export const getUpdateInfo = () => call<UpdateInfo>('GetUpdateInfo');
+export const applyUpdate = (downloadURL: string, sha256: string) =>
+  call<{ ok: boolean; restarting: boolean }>('ApplyUpdate', downloadURL, sha256);
+export const restartApp = () => call<void>('RestartApp');
+export const appVersion = () => call<string>('AppVersion');
 
 export const createArsipFull = (input: Record<string, any>) => call<Record<string, any>>('CreateArsipFull', input);
 export const updateArsip = (id: string, input: Record<string, any>) => call<Record<string, any>>('UpdateArsip', id, input);

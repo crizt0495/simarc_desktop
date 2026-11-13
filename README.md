@@ -27,6 +27,14 @@ Build (Windows — cross-compile dari Linux):
   wails build -platform windows/amd64 -clean
   # Installer Windows: ikuti instruksi di packaging/simarc.iss (ISCC di Windows).
 
+Pembaruan otomatis:
+  Aplikasi memeriksa GitHub Releases saat dibuka (lalu tiap 6 jam) dan
+  menampilkan banner bila ada versi baru. Paket diverifikasi SHA-256, dipasang
+  setelah konfirmasi, lalu aplikasi dibuka ulang otomatis.
+  Detail: docs/AUTO-UPDATE.md
+    scripts/release.sh v1.2.3        # build + publikasikan rilis
+    git tag v1.2.3 && git push origin v1.2.3   # lewat GitHub Actions
+
 Konfigurasi (file `.env` di samping aplikasi):
   SIMARC_WINDOW=fullscreen|maximized|normal|kiosk
   DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD, DB_TLS

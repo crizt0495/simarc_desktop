@@ -3,6 +3,8 @@
 
 export function AppVersion():Promise<string>;
 
+export function ApplyUpdate(arg1:string,arg2:string):Promise<Record<string, any>>;
+
 export function AssignArsipToPemberkasan(arg1:Array<string>,arg2:string):Promise<Record<string, any>>;
 
 export function ChangePassword(arg1:string,arg2:string):Promise<void>;
@@ -39,8 +41,6 @@ export function DeleteUnitKerja(arg1:string):Promise<void>;
 
 export function DeleteUser(arg1:string):Promise<void>;
 
-export function DownloadUpdate(arg1:string):Promise<string>;
-
 export function ExportArsipCSV():Promise<Record<string, any>>;
 
 export function ExtractOcrFromFile():Promise<Record<string, any>>;
@@ -72,8 +72,6 @@ export function GetSyncStatus():Promise<Record<string, any>>;
 export function GetUpdateInfo():Promise<Record<string, any>>;
 
 export function ImportArsipCSV():Promise<Record<string, any>>;
-
-export function InstallUpdate(arg1:string):Promise<void>;
 
 export function ListActivityLogs():Promise<Array<Record<string, any>>>;
 
@@ -116,6 +114,8 @@ export function QueryArsipLaporan(arg1:string,arg2:string,arg3:string,arg4:strin
 export function QuitApp():Promise<void>;
 
 export function ReconnectDB():Promise<Record<string, any>>;
+
+export function RestartApp():Promise<void>;
 
 export function RestoreBackup():Promise<Record<string, any>>;
 

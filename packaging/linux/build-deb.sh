@@ -10,12 +10,13 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 export PATH="$PATH:$HOME/go/bin"
 
-VERSION=1.0.0-1
-DEB=dist/simarc_${VERSION}_amd64
+VERSION="$(bash scripts/version.sh)"
+DEB_VERSION="${VERSION}-1"
+DEB=dist/simarc_${DEB_VERSION}_amd64
 STAGE="${DEB}"
 
-echo "▸ Wails build (production)…"
-wails build -tags webkit2_41 -clean
+echo "▸ Wails build (production) — versi ${VERSION}…"
+wails build -tags webkit2_41 -clean -ldflags "-X main.appVersion=${VERSION}"
 BINARY=build/bin/SIMARC
 [ -x "$BINARY" ] || { echo "✗ binary tidak ditemukan"; exit 1; }
 
@@ -52,7 +53,7 @@ N=$(du -sk "$STAGE" | cut -f1)
 cat > "$STAGE/DEBIAN/control" <<EOF
 Package: simarc
 Source: simarc
-Version: ${VERSION}
+Version: ${DEB_VERSION}
 Section: Office
 Priority: optional
 Architecture: amd64
@@ -65,6 +66,6 @@ Description: SIMARC — Arsip Record Center (desktop)
 EOF
 
 echo "▸ Menulis .deb…"
-dpkg-deb --build "$STAGE" dist/simarc_${VERSION}_amd64.deb
+dpkg-deb --build "$STAGE" "dist/simarc_${DEB_VERSION}_amd64.deb"
 rm -rf "$STAGE"
-echo "✓ dist/simarc_${VERSION}_amd64.deb siap."
+echo "✓ dist/simarc_${DEB_VERSION}_amd64.deb siap."

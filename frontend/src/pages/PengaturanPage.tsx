@@ -4,7 +4,7 @@
  * setelah aplikasi dimulai ulang.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { getSettings, saveSettings } from '../lib/bindings';
+import { appVersion, applyUpdate, getSettings, getUpdateInfo, restartApp, saveSettings, type UpdateInfo } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import SearchableSelect from '../components/SearchableSelect';
 
@@ -43,7 +43,55 @@ export const PengaturanPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'app' | 'institution' | 'database' | 'security'>('app');
+  const [tab, setTab] = useState<'app' | 'institution' | 'database' | 'security' | 'update'>('app');
+
+  const [version, setVersion] = useState('');
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    appVersion().then(setVersion).catch(() => setVersion(''));
+  }, []);
+
+  const checkUpdate = useCallback(async () => {
+    setChecking(true);
+    setUpdateMsg(null);
+    try {
+      const u = await getUpdateInfo();
+      setUpdate(u);
+      if (u?.error) setUpdateMsg(`Pemeriksaan gagal: ${u.error}`);
+      else if (!u?.hasUpdate) setUpdateMsg(`Aplikasi sudah memakai versi terbaru (v${u?.current ?? version}).`);
+    } catch (e) {
+      setUpdateMsg(`Pemeriksaan gagal: ${String(e)}`);
+    } finally {
+      setChecking(false);
+    }
+  }, [version]);
+
+  const doUpdate = useCallback(async () => {
+    if (!update?.downloadURL) return;
+    setApplying(true);
+    setUpdateMsg(null);
+    try {
+      const res = await applyUpdate(update.downloadURL, update.sha256 ?? '');
+      if (res?.restarting) {
+        setUpdateMsg('Pembaruan dipasang. Aplikasi akan dibuka ulang otomatis…');
+        return;
+      }
+      setUpdateMsg('Pembaruan terpasang. Membuka ulang aplikasi…');
+      window.setTimeout(() => {
+        void restartApp().catch(() => {
+          setApplying(false);
+          setUpdateMsg('Pembaruan terpasang. Silakan tutup lalu buka lagi aplikasi.');
+        });
+      }, 900);
+    } catch (e) {
+      setApplying(false);
+      setUpdateMsg(`Gagal memperbarui: ${String(e)}`);
+    }
+  }, [update]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -149,6 +197,7 @@ export const PengaturanPage: React.FC = () => {
               ['institution', 'Institusi', 'building'],
               ['database', 'Database', 'database'],
               ['security', 'Keamanan', 'shield-lock'],
+              ['update', 'Pembaruan', 'arrow-up-circle'],
             ] as const).map(([key, label, icon]) => (
               <button key={key} type="button" className={`btn btn-sm rounded-pill fw-700 px-3 ${tab === key ? 'btn-primary' : 'btn-outline-primary'}`} style={{ fontSize: '0.72rem' }} onClick={() => setTab(key)}>
                 <i className={`bi bi-${icon} me-1`}></i>{label}
@@ -226,6 +275,76 @@ export const PengaturanPage: React.FC = () => {
                     <div className="col-12">
                       <div className="alert alert-info py-2 px-3 mb-0" style={{ fontSize: '0.78rem' }}>
                         <i className="bi bi-shield-lock me-1"></i>Gunakan minimal 32 karakter acak untuk kunci sesi. Perubahan berlaku setelah mulai ulang.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {tab === 'update' && (
+                  <div className="row g-3">
+                    <div className="col-12">
+                      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div>
+                          <div className="fw-800">Versi terpasang: v{version || '…'}</div>
+                          <div className="text-muted small">
+                            Pembaruan diambil dari GitHub Releases. Data di TiDB Cloud dan berkas arsip tidak terpengaruh.
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary btn-sm rounded-pill fw-700 px-3"
+                          onClick={() => void checkUpdate()}
+                          disabled={checking || applying}
+                        >
+                          <i className={`bi ${checking ? 'bi-arrow-repeat' : 'bi-cloud-arrow-down'} me-1`}></i>
+                          {checking ? 'Memeriksa…' : 'Cek pembaruan'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {update?.hasUpdate ? (
+                      <div className="col-12">
+                        <div className="alert alert-success py-3 px-3 mb-0" style={{ fontSize: '0.82rem' }}>
+                          <div className="fw-800"><i className="bi bi-arrow-up-circle me-1"></i>Pembaruan v{update.latest} tersedia</div>
+                          {update.notes && (
+                            <div className="mt-2" style={{ whiteSpace: 'pre-wrap', maxHeight: 160, overflow: 'auto' }}>
+                              {update.notes}
+                            </div>
+                          )}
+                          <div className="text-muted small mt-2">
+                            {update.assetName ? `Paket: ${update.assetName}` : 'Paket pembaruan siap diunduh.'}
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-success btn-sm rounded-pill fw-800 px-4 mt-3"
+                            onClick={() => void doUpdate()}
+                            disabled={applying || !update.downloadURL}
+                          >
+                            <i className={`bi ${applying ? 'bi-arrow-repeat' : 'bi-download'} me-1`}></i>
+                            {applying ? 'Memperbarui…' : 'Unduh & pasang'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="col-12">
+                        <div className="alert alert-info py-2 px-3 mb-0" style={{ fontSize: '0.8rem' }}>
+                          <i className="bi bi-info-circle me-1"></i>
+                          {updateMsg ?? 'Klik "Cek pembaruan" untuk memeriksa rilis terbaru.'}
+                        </div>
+                      </div>
+                    )}
+
+                    {update?.hasUpdate && updateMsg && (
+                      <div className="col-12">
+                        <div className="alert alert-warning py-2 px-3 mb-0" style={{ fontSize: '0.8rem' }}>{updateMsg}</div>
+                      </div>
+                    )}
+
+                    <div className="col-12">
+                      <div className="alert alert-secondary py-2 px-3 mb-0" style={{ fontSize: '0.78rem' }}>
+                        <i className="bi bi-shield-check me-1"></i>
+                        Paket diverifikasi dengan SHA-256 sebelum dipasang. Di Linux pemasangan <code>.deb</code> meminta
+                        kata sandi administrator; di Windows installer berjalan otomatis tanpa menimpa <code>.env</code> dan <code>storage/</code>.
                       </div>
                     </div>
                   </div>

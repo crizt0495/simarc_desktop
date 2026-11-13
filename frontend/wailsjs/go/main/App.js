@@ -6,6 +6,10 @@ export function AppVersion() {
   return window['go']['main']['App']['AppVersion']();
 }
 
+export function ApplyUpdate(arg1, arg2) {
+  return window['go']['main']['App']['ApplyUpdate'](arg1, arg2);
+}
+
 export function AssignArsipToPemberkasan(arg1, arg2) {
   return window['go']['main']['App']['AssignArsipToPemberkasan'](arg1, arg2);
 }
@@ -78,10 +82,6 @@ export function DeleteUser(arg1) {
   return window['go']['main']['App']['DeleteUser'](arg1);
 }
 
-export function DownloadUpdate(arg1) {
-  return window['go']['main']['App']['DownloadUpdate'](arg1);
-}
-
 export function ExportArsipCSV() {
   return window['go']['main']['App']['ExportArsipCSV']();
 }
@@ -144,10 +144,6 @@ export function GetUpdateInfo() {
 
 export function ImportArsipCSV() {
   return window['go']['main']['App']['ImportArsipCSV']();
-}
-
-export function InstallUpdate(arg1) {
-  return window['go']['main']['App']['InstallUpdate'](arg1);
 }
 
 export function ListActivityLogs() {
@@ -232,6 +228,10 @@ export function QuitApp() {
 
 export function ReconnectDB() {
   return window['go']['main']['App']['ReconnectDB']();
+}
+
+export function RestartApp() {
+  return window['go']['main']['App']['RestartApp']();
 }
 
 export function RestoreBackup() {
