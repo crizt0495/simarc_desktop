@@ -35,17 +35,26 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
 fi
 
 echo "▸ [1/3] Build .deb Linux…"
+mkdir -p dist
+rm -f dist/*.deb
 bash packaging/linux/build-deb.sh
 
 echo "▸ [2/3] Build installer Windows…"
 bash scripts/build-windows-setup.sh
 
+DEB="simarc_${VERSION#v}-1_amd64.deb"
+for f in "dist/${DEB}" dist/SIMARC-Setup.exe; do
+  [ -s "$f" ] || { echo "✗ paket tidak dihasilkan: $f" >&2; exit 1; }
+  size=$(stat -c %s "$f")
+  [ "$size" -gt 1000000 ] || { echo "✗ paket terlalu kecil (bukan biner): $f ($size byte)" >&2; exit 1; }
+done
+
 echo "▸ [3/3] Checksum & publikasi…"
 cd dist
 rm -f SHA256SUMS
-sha256sum ./*.deb ./SIMARC-Setup.exe > SHA256SUMS
+sha256sum "./${DEB}" ./SIMARC-Setup.exe > SHA256SUMS
 
-ASSETS=(./*.deb ./SIMARC-Setup.exe ./SHA256SUMS)
+ASSETS=("./${DEB}" ./SIMARC-Setup.exe ./SHA256SUMS)
 
 if ! command -v gh >/dev/null 2>&1; then
   echo
@@ -57,6 +66,12 @@ fi
 
 if gh release view "$VERSION" >/dev/null 2>&1; then
   echo "▸ Memperbarui rilis ${VERSION} yang sudah ada…"
+  # Hapus paket .deb versi lain agar tidak tertinggal di halaman rilis.
+  gh release view "$VERSION" --json assets --jq '.assets[].name' | while read -r name; do
+    case "$name" in
+      *.deb) [ "$name" = "$DEB" ] || gh release delete-asset "$VERSION" "$name" -y ;;
+    esac
+  done
   gh release upload "$VERSION" "${ASSETS[@]}" --clobber
 else
   echo "▸ Membuat rilis ${VERSION}…"

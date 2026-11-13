@@ -143,7 +143,7 @@ func Check(ctx context.Context, current, feedURL string) (Info, error) {
 		return info, nil
 	}
 
-	asset, ok := PickAsset(rel.Assets, runtime.GOOS, runtime.GOARCH)
+	asset, ok := pickAssetForVersion(rel.Assets, runtime.GOOS, runtime.GOARCH, info.Latest)
 	if !ok {
 		return info, fmt.Errorf("rilis %s tidak menyediakan paket untuk %s/%s", info.Latest, runtime.GOOS, runtime.GOARCH)
 	}
@@ -220,6 +220,25 @@ func Download(ctx context.Context, downloadURL, wantSHA string) (Package, error)
 		return Package{}, fmt.Errorf("checksum paket tidak cocok (diharapkan %s, didapat %s)", want, got)
 	}
 	return Package{Path: dst, AssetName: name, SHA256: got, Size: n}, nil
+}
+
+// pickAssetForVersion memilih aset platform yang cocok. Bila ada beberapa
+// paket (mis. sisa paket versi lama pada rilis yang sama), utamakan paket
+// yang namanya memuat versi rilis agar aplikasi tidak mengambil berkas lama.
+func pickAssetForVersion(assets []Asset, goos, goarch, version string) (Asset, bool) {
+	version = strings.TrimPrefix(strings.TrimSpace(version), "v")
+	if version != "" {
+		var matching []Asset
+		for _, a := range assets {
+			if strings.Contains(a.Name, version) {
+				matching = append(matching, a)
+			}
+		}
+		if a, ok := PickAsset(matching, goos, goarch); ok {
+			return a, true
+		}
+	}
+	return PickAsset(assets, goos, goarch)
 }
 
 // PickAsset memilih aset rilis yang paling sesuai untuk OS/arsitektur.

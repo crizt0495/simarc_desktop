@@ -51,6 +51,21 @@ func TestPickAsset(t *testing.T) {
 	}
 }
 
+func TestPickAssetPrefersReleaseVersion(t *testing.T) {
+	assets := []Asset{
+		{Name: "simarc_1.0.0-1_amd64.deb", URL: "https://x/old"},
+		{Name: "simarc_1.1.0-1_amd64.deb", URL: "https://x/new"},
+		{Name: "SIMARC-Setup.exe", URL: "https://x/setup"},
+	}
+	if a, ok := pickAssetForVersion(assets, "linux", "amd64", "1.1.0"); !ok || a.URL != "https://x/new" {
+		t.Fatalf("linux/amd64 memilih %+v, ok=%v", a, ok)
+	}
+	// Windows tidak memuat versi pada nama aset → tetap memakai installer.
+	if a, ok := pickAssetForVersion(assets, "windows", "amd64", "1.1.0"); !ok || a.URL != "https://x/setup" {
+		t.Fatalf("windows/amd64 memilih %+v, ok=%v", a, ok)
+	}
+}
+
 func TestCheckUsesAssets(t *testing.T) {
 	sum := sha256.Sum256([]byte("deb-bytes"))
 	digest := "sha256:" + hex.EncodeToString(sum[:])
@@ -62,6 +77,7 @@ func TestCheckUsesAssets(t *testing.T) {
 		"draft":false,
 		"prerelease":false,
 		"assets":[
+			{"name":"simarc_9.9.8-1_amd64.deb","browser_download_url":"https://example.test/old.deb","size":1,"digest":"sha256:0000000000000000000000000000000000000000000000000000000000000000"},
 			{"name":"simarc_9.9.9_amd64.deb","browser_download_url":"https://example.test/a.deb","size":9,"digest":"` + digest + `"}
 		]
 	}`

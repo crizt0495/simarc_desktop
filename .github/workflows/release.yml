@@ -52,6 +52,11 @@ jobs:
       - name: Pasang dependensi frontend
         run: cd frontend && npm ci
 
+      - name: Bersihkan artefak lama
+        # dist/ dapat berisi berkas terlacak (pointer Git LFS) dari checkout;
+        # tanpa ini artefak lama bisa ikut terunggah ke rilis.
+        run: rm -rf dist && mkdir -p dist
+
       - name: Build .deb
         env:
           SIMARC_VERSION: ${{ github.event.inputs.version || github.ref_name }}
@@ -93,6 +98,9 @@ jobs:
 
       - name: Pasang dependensi frontend
         run: cd frontend && npm ci
+
+      - name: Bersihkan artefak lama
+        run: rm -rf dist && mkdir -p dist
 
       - name: Build SIMARC-Setup.exe
         env:
@@ -136,3 +144,32 @@ jobs:
             dist/SIMARC-Setup.exe
             dist/SHA256SUMS
           fail_on_unmatched_files: true
+
+      - name: Verifikasi aset rilis
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.version || github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          DEB="simarc_${VERSION}-1_amd64.deb"
+
+          echo "Aset rilis ${TAG}:"
+          gh release view "$TAG" --json assets --jq '.assets[] | "  \(.name) (\(.size) byte)"'
+
+          # Hapus .deb versi lain yang mungkin tertinggal pada rilis ini.
+          gh release view "$TAG" --json assets --jq '.assets[].name' | while read -r name; do
+            case "$name" in
+              *.deb) [ "$name" = "$DEB" ] || gh release delete-asset "$TAG" "$name" -y ;;
+            esac
+          done
+
+          for f in "$DEB" SIMARC-Setup.exe SHA256SUMS; do
+            gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx "$f" \
+              || { echo "✗ aset hilang: $f" >&2; exit 1; }
+          done
+
+          # Tolak berkas yang bukan paket sebenarnya (mis. pointer Git LFS).
+          for f in "$DEB" SIMARC-Setup.exe; do
+            size=$(gh release view "$TAG" --json assets --jq ".assets[] | select(.name == \"$f\") | .size")
+            [ "${size:-0}" -gt 1000000 ] || { echo "✗ aset terlalu kecil: $f ($size byte)" >&2; exit 1; }
+          done
