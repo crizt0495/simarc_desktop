@@ -148,6 +148,7 @@ jobs:
       - name: Verifikasi aset rilis
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: |
           VERSION="${TAG#v}"
