@@ -18,14 +18,14 @@ Catatan importante:
 Build (Linux):
   export PATH=$PATH:$HOME/go/bin
   wails build -tags webkit2_41      # binary: build/bin/SIMARC
-  # Atau pakai packaging script:
-  packaging/linux/build-deb.sh      # menghasilkan dist/simarc_1.0.0-1_amd64.deb
+  # Atau pakai packaging script (versi diambil dari scripts/version.sh):
+  packaging/linux/build-deb.sh      # menghasilkan dist/simarc_<versi>-1_amd64.deb
 
 Build (Windows — cross-compile dari Linux):
   export PATH=$PATH:$HOME/go/bin:$HOME/toolchain/llvm-mingw*/bin
   export CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++
-  wails build -platform windows/amd64 -clean
-  # Installer Windows: ikuti instruksi di packaging/simarc.iss (ISCC di Windows).
+  # Installer satu file (SIMARC.exe + .env di-embed):
+  scripts/build-windows-setup.sh    # menghasilkan dist/SIMARC-Setup.exe
 
 Pembaruan otomatis:
   Aplikasi memeriksa GitHub Releases saat dibuka (lalu tiap 6 jam) dan
