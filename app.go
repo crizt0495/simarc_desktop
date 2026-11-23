@@ -185,12 +185,15 @@ func (a *App) GetUpdateInfo() (map[string]interface{}, error) {
 
 	info, err := updater.Check(ctx, a.AppVersion(), feed)
 	if err != nil {
+		log.Printf("[simarc] pemeriksaan pembaruan gagal: %v", err)
 		return map[string]interface{}{
 			"hasUpdate": false,
 			"current":   a.AppVersion(),
 			"error":     err.Error(),
 		}, nil
 	}
+	log.Printf("[simarc] cek pembaruan: saat ini=%s, rilis terbaru=%s, tersedia=%v",
+		info.Current, info.Latest, info.HasUpdate)
 	return info.Map(), nil
 }
 
@@ -201,20 +204,28 @@ func (a *App) ApplyUpdate(downloadURL, sha256 string) (map[string]interface{}, e
 	if strings.TrimSpace(downloadURL) == "" {
 		return nil, errors.New("URL pembaruan kosong")
 	}
+	log.Printf("[simarc] permintaan pembaruan diterima")
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
 
 	dl, err := updater.Download(ctx, downloadURL, sha256)
 	if err != nil {
+		log.Printf("[simarc] unduh pembaruan gagal: %v", err)
 		return nil, err
 	}
+	log.Printf("[simarc] paket terunduh: %s (%d byte, sha256=%s)", dl.AssetName, dl.Size, dl.SHA256)
+
 	res, err := updater.Apply(dl.Path, dl.AssetName)
 	if err != nil {
 		_ = os.RemoveAll(filepath.Dir(dl.Path))
+		log.Printf("[simarc] pemasangan pembaruan gagal: %v", err)
 		return nil, err
 	}
+	log.Printf("[simarc] pemasangan dipicu (dikelola pembaru=%v)", res.RestartedByUpdater)
 	if res.RestartedByUpdater {
-		wailsruntime.Quit(a.ctx)
+		// Beri waktu frontend merender pesan "Memperbarui…" sebelum aplikasi
+		// ditutup oleh skrip pembaru. Skrip tetap menunggu PID ini keluar.
+		time.AfterFunc(1500*time.Millisecond, func() { wailsruntime.Quit(a.ctx) })
 		return map[string]interface{}{"ok": true, "restarting": true}, nil
 	}
 	return map[string]interface{}{"ok": true, "restarting": false}, nil

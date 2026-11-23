@@ -314,6 +314,13 @@ export const PengaturanPage: React.FC = () => {
                           <div className="text-muted small mt-2">
                             {update.assetName ? `Paket: ${update.assetName}` : 'Paket pembaruan siap diunduh.'}
                           </div>
+                          {update.htmlURL && (
+                            <div className="mt-1">
+                              <a className="small fw-700" href={update.htmlURL} target="_blank" rel="noreferrer">
+                                Buka halaman rilis (unduh manual)
+                              </a>
+                            </div>
+                          )}
                           <button
                             type="button"
                             className="btn btn-success btn-sm rounded-pill fw-800 px-4 mt-3"

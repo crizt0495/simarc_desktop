@@ -102,6 +102,34 @@ func TestCheckUsesAssets(t *testing.T) {
 	}
 }
 
+func TestPowerShellUpdaterScript(t *testing.T) {
+	script := powershellUpdaterScript(
+		`C:\Temp\simarc update\SIMARC-Setup.exe`,
+		`C:\Users\O'Brien\AppData\Local\SIMARC\SIMARC.exe`,
+		`C:\Users\O'Brien\AppData\Local\SIMARC`,
+		`C:\Users\O'Brien\AppData\Roaming\SIMARC\simarc-updater.log`,
+		`C:\Temp\simarc update\simarc-apply-update.ps1`,
+		4242,
+	)
+	want := []string{
+		`$installer = 'C:\Temp\simarc update\SIMARC-Setup.exe'`,
+		`$app = 'C:\Users\O''Brien\AppData\Local\SIMARC\SIMARC.exe'`,
+		`$log = 'C:\Users\O''Brien\AppData\Roaming\SIMARC\simarc-updater.log'`,
+		`$oldPid = 4242`,
+		`-ArgumentList '-norun' -Wait -PassThru`,
+		`WaitForExit`,
+		`Start-Process -FilePath $app -WorkingDirectory $appDir`,
+	}
+	for _, s := range want {
+		if !strings.Contains(script, s) {
+			t.Errorf("skrip tidak memuat %q\n---\n%s", s, script)
+		}
+	}
+	if strings.Contains(script, "\n") && !strings.Contains(script, "\r\n") {
+		t.Error("skrip PowerShell seharusnya memakai CRLF")
+	}
+}
+
 func TestDownloadVerifiesChecksum(t *testing.T) {
 	payload := []byte("simarc-update-payload")
 	sum := sha256.Sum256(payload)

@@ -108,6 +108,18 @@ export const UpdateBanner: React.FC = () => {
             Versi {info.latest} (sekarang {info.current}).
           </div>
           {msg && <div style={{ marginTop: '.3rem', wordBreak: 'break-word' }}>{msg}</div>}
+          {info.htmlURL && (
+            <div style={{ marginTop: '.35rem' }}>
+              <a
+                href={info.htmlURL}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: '#047857', fontWeight: 700 }}
+              >
+                Buka halaman rilis
+              </a>
+            </div>
+          )}
           {!msg && info.notes && (
             <div
               style={{
