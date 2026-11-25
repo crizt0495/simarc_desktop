@@ -37,9 +37,12 @@ export const ArsipFormModal: React.FC<{
   onSaved: () => void;
   keepOpenOnSave?: boolean;
   showSuccessToast?: boolean;
-}> = ({ open, initial, opts, onClose, onSaved, keepOpenOnSave = false, showSuccessToast = true }) => {
+  /** Dipanggil tombol "Muat ulang data" saat master data kosong. */
+  onReloadOpts?: () => Promise<void>;
+}> = ({ open, initial, opts, onClose, onSaved, keepOpenOnSave = false, showSuccessToast = true, onReloadOpts }) => {
   const { push } = useToast();
   const [busy, setBusy] = useState(false);
+  const [reloadingOpts, setReloadingOpts] = useState(false);
   const editing = Boolean(initial?.id);
   const [jenisId, setJenisId] = useState<string>('');
 
@@ -59,6 +62,42 @@ export const ArsipFormModal: React.FC<{
     if (s.startsWith('NON')) return false;
     return s.includes('SPJ');
   })();
+
+  // Dua master ini wajib untuk form arsip. Bila kosong, tampilkan alasan dan
+  // tombol muat ulang daripada dropdown yang terlihat "mati".
+  const masterReady = (opts.kodeKlasifikasi?.length ?? 0) > 0 && (opts.unitKerja?.length ?? 0) > 0;
+
+  const reloadOpts = async () => {
+    if (!onReloadOpts) return;
+    setReloadingOpts(true);
+    try {
+      await onReloadOpts();
+      push('success', 'Data master berhasil dimuat ulang');
+    } catch (e) {
+      push('danger', `Gagal memuat ulang data master: ${String(e)}`);
+    } finally {
+      setReloadingOpts(false);
+    }
+  };
+
+  const masterNotice = open && !masterReady ? (
+    <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <span>
+        Data master belum termuat. Periksa koneksi database, lalu klik <strong>Muat ulang data</strong> sebelum menyimpan.
+      </span>
+      {onReloadOpts && (
+        <button
+          type="button"
+          className="btn btn-outline-warning btn-sm rounded-pill fw-700 px-3"
+          disabled={reloadingOpts}
+          onClick={() => void reloadOpts()}
+        >
+          <i className={`bi ${reloadingOpts ? 'bi-arrow-repeat' : 'bi-cloud-arrow-down'} me-1`}></i>
+          {reloadingOpts ? 'Memuat…' : 'Muat ulang data'}
+        </button>
+      )}
+    </div>
+  ) : undefined;
 
   // PENTING: opts dimuat async oleh parent. baseFields WAJIB ikut dihitung
   // ulang saat opts berubah — jika tidak, dropdown tetap kosong karena memo
@@ -157,7 +196,8 @@ export const ArsipFormModal: React.FC<{
       size="xl"
       fields={fields}
       initial={init}
-      busy={busy}
+      busy={busy || reloadingOpts}
+      notice={masterNotice}
       submitLabel={editing ? 'Simpan Perubahan' : 'Simpan Arsip'}
       onClose={onClose}
       onSubmit={submit}

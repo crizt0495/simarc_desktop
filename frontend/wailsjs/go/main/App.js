@@ -230,6 +230,10 @@ export function ReconnectDB() {
   return window['go']['main']['App']['ReconnectDB']();
 }
 
+export function RefreshMasterOptions() {
+  return window['go']['main']['App']['RefreshMasterOptions']();
+}
+
 export function RestartApp() {
   return window['go']['main']['App']['RestartApp']();
 }

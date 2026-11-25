@@ -22,6 +22,7 @@ import {
   GetDashboardStats,
   GetDashboardExtras,
   GetMasterOptions,
+  RefreshMasterOptions,
   GetProfile,
 } from '../../wailsjs/go/main/App';
 
@@ -112,6 +113,11 @@ export async function getDashboardExtras(): Promise<Record<string, any>> {
 
 export async function getMasterOptions(): Promise<Record<string, any[]>> {
   return (await GetMasterOptions()) as unknown as Record<string, any[]>;
+}
+
+/** Memaksa backend mengambil ulang data master (tanpa menutup aplikasi). */
+export async function refreshMasterOptions(): Promise<Record<string, any[]>> {
+  return (await RefreshMasterOptions()) as unknown as Record<string, any[]>;
 }
 
 export async function getProfile(): Promise<Profile> {

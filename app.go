@@ -549,21 +549,34 @@ func derefStr(p *string) string {
 // di-cache, sehingga total waktu turun dari ~jumlah semua query menjadi
 // ~query terlama. Cache diinvalidasi setiap ada perubahan master data.
 func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
-	if database.DB == nil {
-		return map[string][]map[string]interface{}{}
-	}
+	// Cache diperiksa LEBIH DAHULU supaya dropdown tetap terisi bila koneksi
+	// database sempat putus sesaat setelah data berhasil dimuat.
 	if cached, ok := a.getOptsCache(); ok {
 		return cached
+	}
+	if database.DB == nil {
+		log.Printf("[simarc] master options kosong: database belum tersambung")
+		return map[string][]map[string]interface{}{}
 	}
 
 	out := map[string][]map[string]interface{}{}
 	var mu sync.Mutex
-	set := func(key string, rows []map[string]interface{}) {
+	var failed bool
+	// set menyimpan hasil sekaligus menandai query gagal. Query yang gagal
+	// TIDAK boleh mengisi cache dengan array kosong, karena hal itu membuat
+	// dropdown kosong selama TTL meski database sudah pulih.
+	set := func(key string, rows []map[string]interface{}, queryErr error) {
+		if queryErr != nil {
+			log.Printf("[simarc] gagal memuat master %s: %v", key, queryErr)
+		}
 		if rows == nil {
 			rows = []map[string]interface{}{}
 		}
 		mu.Lock()
 		out[key] = rows
+		if queryErr != nil {
+			failed = true
+		}
 		mu.Unlock()
 	}
 
@@ -573,18 +586,18 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 	go func() {
 		defer wg.Done()
 		var units []models.UnitKerja
-		database.DB.Order("nama_unit asc").Find(&units)
+		err := database.DB.Order("nama_unit asc").Find(&units).Error
 		u := make([]map[string]interface{}, len(units))
 		for i, r := range units {
 			u[i] = map[string]interface{}{"id": r.ID, "name": r.NamaUnit}
 		}
-		set("unitKerja", u)
+		set("unitKerja", u, err)
 	}()
 
 	go func() {
 		defer wg.Done()
 		var klas []models.KodeKlasifikasi
-		database.DB.Order("kode_klasifikasi asc").Find(&klas)
+		err := database.DB.Order("kode_klasifikasi asc").Find(&klas).Error
 		k := make([]map[string]interface{}, len(klas))
 		for i, r := range klas {
 			k[i] = map[string]interface{}{
@@ -595,13 +608,13 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 				"unitPengolah": r.UnitPengolah,
 			}
 		}
-		set("kodeKlasifikasi", k)
+		set("kodeKlasifikasi", k, err)
 	}()
 
 	go func() {
 		defer wg.Done()
 		var lokasi []models.LokasiArsip
-		database.DB.Order("nama_lokasi asc").Find(&lokasi)
+		err := database.DB.Order("nama_lokasi asc").Find(&lokasi).Error
 		l := make([]map[string]interface{}, len(lokasi))
 		for i, r := range lokasi {
 			l[i] = map[string]interface{}{
@@ -609,13 +622,13 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 				"deskripsi": r.Deskripsi, "kapasitas": derefStr(r.Kapasitas),
 			}
 		}
-		set("lokasiArsip", l)
+		set("lokasiArsip", l, err)
 	}()
 
 	go func() {
 		defer wg.Done()
 		var jenis []models.JenisArsip
-		database.DB.Order("nama_jenis asc").Find(&jenis)
+		err := database.DB.Order("nama_jenis asc").Find(&jenis).Error
 		j := make([]map[string]interface{}, len(jenis))
 		for i, r := range jenis {
 			j[i] = map[string]interface{}{
@@ -623,13 +636,13 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 				"kode": r.KodeJenis, "keterangan": r.Keterangan,
 			}
 		}
-		set("jenisArsip", j)
+		set("jenisArsip", j, err)
 	}()
 
 	go func() {
 		defer wg.Done()
 		var berkas []models.Pemberkasan
-		database.DB.Order("nama_pemberkasan asc").Find(&berkas)
+		err := database.DB.Order("nama_pemberkasan asc").Find(&berkas).Error
 		p := make([]map[string]interface{}, len(berkas))
 		for i, r := range berkas {
 			p[i] = map[string]interface{}{
@@ -638,23 +651,61 @@ func (a *App) GetMasterOptions() map[string][]map[string]interface{} {
 				"unitKerjaId": derefStr(r.UnitKerjaID), "kodeKlasifikasiId": derefStr(r.KodeKlasifikasiID),
 			}
 		}
-		set("pemberkasan", p)
+		set("pemberkasan", p, err)
 	}()
 
 	go func() {
 		defer wg.Done()
 		var roles []models.Role
-		database.DB.Order("name asc").Find(&roles)
+		err := database.DB.Order("name asc").Find(&roles).Error
 		r := make([]map[string]interface{}, len(roles))
 		for i, role := range roles {
 			r[i] = map[string]interface{}{"id": role.ID, "name": role.Name}
 		}
-		set("roles", r)
+		set("roles", r, err)
 	}()
 
 	wg.Wait()
+	log.Printf("[simarc] master options: unit=%d klasifikasi=%d lokasi=%d jenis=%d berkas=%d role=%d",
+		len(out["unitKerja"]), len(out["kodeKlasifikasi"]), len(out["lokasiArsip"]),
+		len(out["jenisArsip"]), len(out["pemberkasan"]), len(out["roles"]))
+
+	// Hasil kosong akibat gangguan jaringan TIDAK boleh di-cache. Tanpa ini,
+	// dropdown tetap kosong sampai TTL habis meskipun database sudah pulih.
+	if !shouldCacheOpts(out, failed) {
+		log.Printf("[simarc] master options tidak di-cache (query gagal=%v)", failed)
+		return out
+	}
 	a.setOptsCache(out)
 	return out
+}
+
+// shouldCacheOpts menolak cache bila ada query gagal atau dua master wajib
+// (unit kerja dan kode klasifikasi) kosong. Master lain boleh kosong pada
+// instalasi baru, tetapi dua daftar ini selalu dibutuhkan form arsip.
+func shouldCacheOpts(out map[string][]map[string]interface{}, failed bool) bool {
+	if failed {
+		return false
+	}
+	return len(out["unitKerja"]) > 0 && len(out["kodeKlasifikasi"]) > 0
+}
+
+// RefreshMasterOptions memaksa pengambilan ulang master data. Dipanggil UI
+// saat dropdown kosong sehingga pengguna tidak perlu menutup aplikasi.
+func (a *App) RefreshMasterOptions() map[string][]map[string]interface{} {
+	a.invalidateMasterCache()
+	// Gangguan jaringan sesaat kerap meninggalkan pool koneksi yang sudah
+	// mati. Bila ping gagal, buka sambungan baru sebelum mengambil data.
+	if !database.Connected() {
+		config.LoadWithDefaults(embeddedDotEnv)
+		if err := database.Connect(); err != nil {
+			a.setDBErr(err.Error())
+			log.Printf("[simarc] muat ulang master gagal: %v", err)
+			return map[string][]map[string]interface{}{}
+		}
+		a.setDBErr("")
+	}
+	return a.GetMasterOptions()
 }
 
 // ListPeminjaman returns archive borrowing (peminjaman) records joined with

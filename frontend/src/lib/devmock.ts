@@ -75,6 +75,7 @@ export function installDevMock(): boolean {
         GetDashboardStats: async () => stats,
         GetDashboardExtras: async () => extras,
         GetMasterOptions: async () => opts,
+        RefreshMasterOptions: async () => opts,
         GetSettings: async () => ({
           appName: 'SIMARC', window: 'maximized',
           digitalStorage: 'auto', digitalCloudReady: false, digitalS3Configured: false,

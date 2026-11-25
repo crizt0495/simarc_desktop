@@ -2,7 +2,7 @@
  * LokasiArsipPage — modul master data Lokasi Arsip (CRUD lengkap).
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { getMasterOptions, saveLokasiArsip, deleteLokasiArsip, listArsipDetail, deleteArsip } from '../lib/bindings';
+import { getMasterOptions, refreshMasterOptions, saveLokasiArsip, deleteLokasiArsip, listArsipDetail, deleteArsip } from '../lib/bindings';
 import { useToast } from '../lib/toast';
 import { FormModal } from '../components/FormModal';
 import { ArsipFormModal } from '../components/ArsipFormModal';
@@ -53,6 +53,11 @@ export const LokasiArsipPage: React.FC = () => {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const reloadOpts = useCallback(async () => {
+    const o = await refreshMasterOptions();
+    setOpts(o ?? {});
+  }, []);
 
   const filtered = useMemo(() => [...rows].sort((x, y) => String(x.name ?? '').localeCompare(String(y.name ?? ''))), [rows]);
   const arsipCountByLokasi = useMemo(() => {
@@ -365,6 +370,7 @@ export const LokasiArsipPage: React.FC = () => {
         opts={opts}
         onClose={() => { setArsipFormOpen(false); setArsipLokasi(null); }}
         onSaved={() => { void load(); setArsipFormKey((k) => k + 1); }}
+        onReloadOpts={reloadOpts}
         keepOpenOnSave
       />
 
@@ -374,6 +380,7 @@ export const LokasiArsipPage: React.FC = () => {
         opts={opts}
         onClose={() => setEditArsip(null)}
         onSaved={() => { void load(); setEditArsip(null); }}
+        onReloadOpts={reloadOpts}
       />
     </div>
   );

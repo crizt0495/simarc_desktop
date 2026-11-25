@@ -33,6 +33,8 @@ export interface FormModalProps {
   initial?: Record<string, any>;
   submitLabel?: string;
   busy?: boolean;
+  /** Pemberitahuan opsional (mis. data master belum termuat). */
+  notice?: React.ReactNode;
   onClose: () => void;
   onSubmit: (values: Record<string, any>) => void | Promise<void>;
   onValuesChange?: (values: Record<string, any>) => void;
@@ -46,7 +48,7 @@ const emptyFor = (fields: FieldDef[]): Record<string, any> => {
 
 export const FormModal: React.FC<FormModalProps> = ({
   open, title, subtitle, icon = 'pencil-square', size = 'lg',
-  fields, initial, submitLabel = 'Simpan', busy = false, onClose, onSubmit, onValuesChange,
+  fields, initial, submitLabel = 'Simpan', busy = false, notice, onClose, onSubmit, onValuesChange,
 }) => {
   const initialKey = useMemo(() => JSON.stringify(initial ?? {}), [initial]);
   const [values, setValues] = useState<Record<string, any>>(() => ({ ...emptyFor(fields), ...(initial ?? {}) }));
@@ -108,6 +110,7 @@ export const FormModal: React.FC<FormModalProps> = ({
           </div>
           <form onSubmit={submit} style={{ display: 'contents' }}>
             <div className="sm-body">
+              {notice && <div className="alert alert-warning py-2 px-3 mb-3" style={{ fontSize: '0.78rem' }}>{notice}</div>}
               {error && <div className="alert alert-danger py-2 px-3 mb-3" style={{ fontSize: '0.78rem' }}>{error}</div>}
               <div className="row g-2">
                 {fields.map((f) => (

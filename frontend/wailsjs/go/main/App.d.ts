@@ -115,6 +115,8 @@ export function QuitApp():Promise<void>;
 
 export function ReconnectDB():Promise<Record<string, any>>;
 
+export function RefreshMasterOptions():Promise<Record<string, Array<Record<string, any>>>>;
+
 export function RestartApp():Promise<void>;
 
 export function RestoreBackup():Promise<Record<string, any>>;

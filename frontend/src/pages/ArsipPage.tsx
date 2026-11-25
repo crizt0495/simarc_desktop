@@ -7,7 +7,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import './arsip.css';
 import {
-  getMasterOptions, listArsipDetail, type Status,
+  getMasterOptions, refreshMasterOptions, listArsipDetail, type Status,
   deleteArsip, moveArsip, assignArsipToPemberkasan,
   exportArsipCSV, importArsipCSV, extractOcrFromFile,
   uploadArsipDigital, openArsipDigital, deleteArsipDigital,
@@ -66,6 +66,13 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Paksa backend mengambil ulang master data (cache kosong akibat gangguan
+  // jaringan tidak boleh mengunci dropdown selama 10 menit).
+  const reloadOpts = useCallback(async () => {
+    const o = await refreshMasterOptions();
+    setOpts(o ?? {});
+  }, []);
 
   const rowsError = !ready ? error : null;
 
@@ -634,6 +641,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
       opts={opts}
       onClose={() => { setFormOpen(false); setEditTarget(null); }}
       onSaved={() => void load()}
+      onReloadOpts={reloadOpts}
     />
 
     {/* MODAL BERKASKAN */}
