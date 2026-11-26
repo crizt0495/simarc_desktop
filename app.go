@@ -1000,6 +1000,17 @@ func (a *App) CreatePeminjaman(arsipId, userId, keperluan, tanggalPinjam, tangga
 
 // CreateArsip creates a new arsip record.
 func (a *App) CreateArsip(nomor, nama, uraian, status, kelas, unit, lokasi string, nilai float64) (map[string]interface{}, error) {
+	nomor = strings.TrimSpace(nomor)
+	if nomor != "" {
+		dipakai, err := nomorArsipSudahDigunakan(nomor, "")
+		if err != nil {
+			return nil, fmt.Errorf("gagal memeriksa nomor arsip: %v", err)
+		}
+		if dipakai {
+			return nil, fmt.Errorf("nomor arsip %q sudah digunakan — gunakan nomor lain", nomor)
+		}
+	}
+
 	// Generate UUID for ID
 	id := uuid.New().String()
 

@@ -59,6 +59,12 @@ export const LokasiArsipPage: React.FC = () => {
     setOpts(o ?? {});
   }, []);
 
+  // Daftar nomor yang sudah dipakai untuk validasi form tambah/ubah arsip.
+  const nomorArsipTerpakai = useMemo(
+    () => arsipList.map((a: any) => String(a.nomor ?? '')).filter(Boolean),
+    [arsipList],
+  );
+
   const filtered = useMemo(() => [...rows].sort((x, y) => String(x.name ?? '').localeCompare(String(y.name ?? ''))), [rows]);
   const arsipCountByLokasi = useMemo(() => {
     const m = new Map<string, number>();
@@ -371,6 +377,7 @@ export const LokasiArsipPage: React.FC = () => {
         onClose={() => { setArsipFormOpen(false); setArsipLokasi(null); }}
         onSaved={() => { void load(); setArsipFormKey((k) => k + 1); }}
         onReloadOpts={reloadOpts}
+        existingNumbers={nomorArsipTerpakai}
         keepOpenOnSave
       />
 
@@ -381,6 +388,7 @@ export const LokasiArsipPage: React.FC = () => {
         onClose={() => setEditArsip(null)}
         onSaved={() => { void load(); setEditArsip(null); }}
         onReloadOpts={reloadOpts}
+        existingNumbers={nomorArsipTerpakai}
       />
     </div>
   );

@@ -39,10 +39,13 @@ export const ArsipFormModal: React.FC<{
   showSuccessToast?: boolean;
   /** Dipanggil tombol "Muat ulang data" saat master data kosong. */
   onReloadOpts?: () => Promise<void>;
-}> = ({ open, initial, opts, onClose, onSaved, keepOpenOnSave = false, showSuccessToast = true, onReloadOpts }) => {
+  /** Nomor arsip yang sudah dipakai (validasi cepat sebelum ke backend). */
+  existingNumbers?: string[];
+}> = ({ open, initial, opts, onClose, onSaved, keepOpenOnSave = false, showSuccessToast = true, onReloadOpts, existingNumbers }) => {
   const { push } = useToast();
   const [busy, setBusy] = useState(false);
   const [reloadingOpts, setReloadingOpts] = useState(false);
+  const [nomorInput, setNomorInput] = useState('');
   const editing = Boolean(initial?.id);
   const [jenisId, setJenisId] = useState<string>('');
 
@@ -99,11 +102,38 @@ export const ArsipFormModal: React.FC<{
     </div>
   ) : undefined;
 
+  // Nomor arsip tidak boleh dipakai dua kali. Pemeriksaan di sini membuat
+  // pengguna langsung melihat peringatan; backend tetap memeriksa ulang saat
+  // menyimpan (lihat nomorArsipSudahDigunakan di modules.go).
+  const usedNumbers = useMemo(() => {
+    const own = String(initial?.nomor ?? '').trim().toLowerCase();
+    const set = new Set<string>();
+    (existingNumbers ?? []).forEach((n) => {
+      const v = String(n ?? '').trim().toLowerCase();
+      if (v && !(editing && v === own)) set.add(v);
+    });
+    return set;
+  }, [existingNumbers, editing, initial?.nomor]);
+
+  const typedNomor = String(nomorInput ?? '').trim();
+  const duplicateNomor = Boolean(typedNomor && usedNumbers.has(typedNomor.toLowerCase()));
+  const duplicateNotice = open && duplicateNomor ? (
+    <span>
+      Nomor arsip <strong>{typedNomor}</strong> sudah digunakan. Gunakan nomor lain sebelum menyimpan.
+    </span>
+  ) : undefined;
+  const notice = masterNotice || duplicateNotice ? (
+    <>
+      {masterNotice}
+      {duplicateNotice && <div className={masterNotice ? 'mt-2' : ''}>{duplicateNotice}</div>}
+    </>
+  ) : undefined;
+
   // PENTING: opts dimuat async oleh parent. baseFields WAJIB ikut dihitung
   // ulang saat opts berubah — jika tidak, dropdown tetap kosong karena memo
   // menyimpan opsi dari render pertama (opts masih {}).
   const baseFields: FieldDef[] = useMemo(() => [
-    { key: 'nomor', label: 'Nomor Arsip', placeholder: 'Kosongkan untuk dibuat otomatis', help: 'Nomor unik arsip; boleh dikosongkan.' },
+    { key: 'nomor', label: 'Nomor Arsip', placeholder: 'Kosongkan untuk dibuat otomatis', help: 'Nomor unik arsip; nomor yang sudah dipakai ditolak.' },
     { key: 'nama', label: 'Nama / Identitas Arsip', required: true, placeholder: 'Contoh: SK Pembinaan Kearsipan 2026' },
     { key: 'uraian', label: 'Uraian / Deskripsi', type: 'textarea', rows: 3, placeholder: 'Ringkasan isi arsip…' },
     { key: 'kodeKlasifikasiId', label: 'Kode Klasifikasi', type: 'select', required: true, options: toOpts(opts.kodeKlasifikasi), placeholder: '— Pilih klasifikasi —' },
@@ -133,6 +163,10 @@ export const ArsipFormModal: React.FC<{
   }, [baseFields, isSpj]);
 
   const submit = async (v: Record<string, any>) => {
+    const nomorBaru = String(v.nomor ?? '').trim();
+    if (nomorBaru && usedNumbers.has(nomorBaru.toLowerCase())) {
+      throw new Error(`Nomor arsip "${nomorBaru}" sudah digunakan — gunakan nomor lain.`);
+    }
     setBusy(true);
     try {
       const digitalFile = v.berkasDigital instanceof File ? (v.berkasDigital as File) : null;
@@ -197,11 +231,14 @@ export const ArsipFormModal: React.FC<{
       fields={fields}
       initial={init}
       busy={busy || reloadingOpts}
-      notice={masterNotice}
+      notice={notice}
       submitLabel={editing ? 'Simpan Perubahan' : 'Simpan Arsip'}
       onClose={onClose}
       onSubmit={submit}
-      onValuesChange={(v) => setJenisId(String(v?.jenisArsipId ?? ''))}
+      onValuesChange={(v) => {
+        setJenisId(String(v?.jenisArsipId ?? ''));
+        setNomorInput(String(v?.nomor ?? ''));
+      }}
     />
   );
 };

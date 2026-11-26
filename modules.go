@@ -202,6 +202,27 @@ func (a *App) writeActivity(action, description, modelType, modelID string) {
 
 // ── ARSIP (Tambah / Ubah / Hapus / Pindah) ────────────────────────────────────
 
+// nomorArsipSudahDigunakan memeriksa apakah nomor arsip sudah dipakai arsip
+// lain. Spasi di tepi dan beda huruf besar/kecil tetap dianggap sama, sehingga
+// "SK/001" dan " sk/001 " tidak bisa disimpan dua kali. Arsip yang sudah
+// dihapus (soft delete) tidak ikut dihitung.
+func nomorArsipSudahDigunakan(nomor, excludeID string) (bool, error) {
+	nomor = strings.TrimSpace(nomor)
+	if nomor == "" {
+		return false, nil
+	}
+	q := database.DB.Model(&models.Arsip{}).
+		Where("LOWER(TRIM(nomor_arsip)) = LOWER(?)", nomor)
+	if excludeID != "" {
+		q = q.Where("id <> ?", excludeID)
+	}
+	var n int64
+	if err := q.Count(&n).Error; err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
 // CreateArsipFull membuat arsip baru dengan seluruh field form Tambah Arsip.
 func (a *App) CreateArsipFull(in map[string]interface{}) (map[string]interface{}, error) {
 	if database.DB == nil {
@@ -223,6 +244,15 @@ func (a *App) CreateArsipFull(in map[string]interface{}) (map[string]interface{}
 	nomor := mStr(in, "nomor")
 	if nomor == "" {
 		nomor = (&services.ArsipService{}).GenerateNomorArsip()
+	}
+	// Nomor arsip harus unik. Pemeriksaan ini juga melindungi nomor yang
+	// dibuat otomatis agar tidak menimpa nomor yang sudah ada.
+	dipakai, err := nomorArsipSudahDigunakan(nomor, "")
+	if err != nil {
+		return nil, fmt.Errorf("gagal memeriksa nomor arsip: %v", err)
+	}
+	if dipakai {
+		return nil, fmt.Errorf("nomor arsip %q sudah digunakan — gunakan nomor lain", nomor)
 	}
 	status := mStr(in, "status")
 	if status == "" {
@@ -288,7 +318,15 @@ func (a *App) UpdateArsip(id string, in map[string]interface{}) (map[string]inte
 
 	updates := map[string]interface{}{}
 	if hasKey(in, "nomor") {
-		updates["nomor_arsip"] = mStr(in, "nomor")
+		nomor := mStr(in, "nomor")
+		dipakai, err := nomorArsipSudahDigunakan(nomor, id)
+		if err != nil {
+			return nil, fmt.Errorf("gagal memeriksa nomor arsip: %v", err)
+		}
+		if dipakai {
+			return nil, fmt.Errorf("nomor arsip %q sudah digunakan — gunakan nomor lain", nomor)
+		}
+		updates["nomor_arsip"] = nomor
 	}
 	if hasKey(in, "nama") {
 		if mStr(in, "nama") == "" {
@@ -1131,8 +1169,8 @@ func (a *App) SaveSettings(updates map[string]interface{}) (map[string]interface
 		"OFFSITE_S3_ENDPOINT": true, "OFFSITE_S3_REGION": true, "OFFSITE_S3_BUCKET": true,
 		"OFFSITE_S3_ACCESS_KEY": true, "OFFSITE_S3_SECRET_KEY": true, "OFFSITE_S3_PREFIX": true,
 		"OFFSITE_S3_PATH_STYLE": true,
-		"DIGITAL_STORAGE": true,
-		"DIGITAL_S3_ENDPOINT": true, "DIGITAL_S3_REGION": true, "DIGITAL_S3_BUCKET": true,
+		"DIGITAL_STORAGE":       true,
+		"DIGITAL_S3_ENDPOINT":   true, "DIGITAL_S3_REGION": true, "DIGITAL_S3_BUCKET": true,
 		"DIGITAL_S3_ACCESS_KEY": true, "DIGITAL_S3_SECRET_KEY": true, "DIGITAL_S3_PREFIX": true,
 		"DIGITAL_S3_PATH_STYLE": true,
 		"DIGITAL_RCLONE_REMOTE": true, "DIGITAL_RCLONE_PATH": true,

@@ -74,6 +74,12 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
     setOpts(o ?? {});
   }, []);
 
+  // Daftar nomor yang sudah dipakai untuk validasi form tambah/ubah arsip.
+  const nomorArsipTerpakai = useMemo(
+    () => rows.map((r: any) => String(r.nomor ?? '')).filter(Boolean),
+    [rows],
+  );
+
   const rowsError = !ready ? error : null;
 
   /* ── Filter klien (data lokal penuh) — sama seperti query server ── */
@@ -642,6 +648,7 @@ export const ArsipPage: React.FC<{ status?: Status | null }> = () => {
       onClose={() => { setFormOpen(false); setEditTarget(null); }}
       onSaved={() => void load()}
       onReloadOpts={reloadOpts}
+      existingNumbers={nomorArsipTerpakai}
     />
 
     {/* MODAL BERKASKAN */}
