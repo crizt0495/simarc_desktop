@@ -142,7 +142,7 @@ export const ArsipFormModal: React.FC<{
     { key: 'lokasiArsipId', label: 'Lokasi Penyimpanan', type: 'select', options: toOpts(opts.lokasiArsip), placeholder: '— Belum ditentukan —' },
     { key: 'pemberkasanId', label: 'Berkas Pemberkasan', type: 'select', options: toOpts(opts.pemberkasan), placeholder: '— Tanpa berkas —' },
     { key: 'status', label: 'Status Arsip', type: 'select', options: STATUS_OPTIONS, placeholder: 'Aktif' },
-    { key: 'tanggalDibuat', label: 'Tanggal Arsip', type: 'date' },
+    { key: 'tanggalDibuat', label: 'Tanggal Arsip', type: 'date', placeholder: 'DD-MM-YYYY', help: 'Ketik tanggal atau klik ikon kalender.' },
     { key: 'jumlah', label: 'Jumlah', type: 'number', min: 1, placeholder: '1' },
     { key: 'satuan', label: 'Satuan', placeholder: 'Berkas' },
     { key: 'nilaiAnggaran', label: 'Nilai Anggaran (Rp)', type: 'currency', placeholder: '0' },

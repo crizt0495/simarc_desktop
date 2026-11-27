@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import SearchableSelect, { type SearchableSelectOption } from './SearchableSelect';
+import DatePicker from './DatePicker';
 import { formatCurrency, parseCurrencyInput } from '../lib/currency';
 
 export type FieldDef = {
@@ -170,6 +171,13 @@ export const FormModal: React.FC<FormModalProps> = ({
                             onChange={(e) => set(f.key, e.target.files?.[0] ?? null)}
                             disabled={f.disabled || busy}
                             style={{ fontSize: '0.85rem' }}
+                          />
+                        ) : f.type === 'date' ? (
+                          <DatePicker
+                            value={String(values[f.key] ?? '')}
+                            onChange={(v) => set(f.key, v)}
+                            disabled={f.disabled || busy}
+                            placeholder={f.placeholder || 'DD-MM-YYYY'}
                           />
                         ) : (
                           <input

@@ -1,0 +1,112 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   DATEPICKER — input tanggal cepat: ketik bebas + kalender pop-up.
+   Memakai token tema enterprise.css agar konsisten di mode terang/gelap.
+   Pop-up memakai position: fixed supaya tidak terpotong sm-body (overflow).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.dp { position: relative; }
+.dp-input { position: relative; }
+.dp-text { padding-right: 2.1rem !important; font-variant-numeric: tabular-nums; }
+.dp-invalid .dp-text { border-color: var(--nb-danger); }
+.dp-hint { display: block; margin-top: 0.3rem; font-size: 0.68rem; color: var(--nb-danger); }
+
+.dp-trigger {
+  position: absolute;
+  right: 1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: calc(100% - 2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0 7px 7px 0;
+  background: transparent;
+  color: var(--nb-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.dp-trigger:hover:not(:disabled) { background: var(--nb-primary-light); }
+.dp-trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.dp-pop {
+  position: fixed;
+  z-index: calc(var(--z-toast) + 10);
+  width: 296px;
+  padding: 0.6rem;
+  background: var(--nb-surface);
+  border: 1px solid var(--nb-border-strong);
+  border-radius: 12px;
+  box-shadow: var(--nb-shadow-xl);
+  font-size: 0.8rem;
+}
+
+.dp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+}
+.dp-title { font-weight: 700; color: var(--nb-ink); font-size: 0.8rem; }
+.dp-nav {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: var(--nb-surface-2);
+  color: var(--nb-ink-2);
+  cursor: pointer;
+}
+.dp-nav:hover { background: var(--nb-primary-light); color: var(--nb-primary); }
+
+.dp-week, .dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.dp-week span {
+  text-align: center;
+  padding: 0.3rem 0;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--nb-ink-4);
+}
+.dp-day {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--nb-ink-2);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.dp-day:hover { background: var(--nb-primary-light); color: var(--nb-primary); }
+.dp-day-out { color: var(--nb-ink-5); }
+.dp-day-today { box-shadow: inset 0 0 0 1px var(--nb-primary); }
+.dp-day-selected, .dp-day-selected:hover { background: var(--nb-primary); color: #fff; font-weight: 700; }
+
+.dp-quick {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--nb-border-light);
+}
+.dp-quick button {
+  flex: 1;
+  padding: 0.32rem 0;
+  border: 1px solid var(--nb-border);
+  border-radius: 7px;
+  background: var(--nb-surface-2);
+  color: var(--nb-ink-3);
+  font-size: 0.67rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dp-quick button:hover { border-color: var(--nb-primary); color: var(--nb-primary); }
+.dp-foot { margin-top: 0.45rem; text-align: center; font-size: 0.64rem; color: var(--nb-ink-4); }
