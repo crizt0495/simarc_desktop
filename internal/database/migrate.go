@@ -503,18 +503,39 @@ func ensureCommonIndexes() {
 	}
 }
 
+// SyncJenisArsipFromRelation menyelaraskan kolom teks jenis_arsip dengan
+// relasi jenis_arsip_id (sumber kebenaran dari form/import). Heuristik lama
+// (uraian mengandung "SPM") hanya dipakai bila relasinya kosong.
+// Fungsi ini ringan dan idempoten, dipanggil setiap startup tanpa menunggu
+// migrasi skema penuh.
+func SyncJenisArsipFromRelation() error {
+	if DB == nil {
+		return nil
+	}
+	return DB.Exec(`
+		UPDATE arsip a
+		LEFT JOIN jenis_arsip j ON j.id = a.jenis_arsip_id
+		SET a.jenis_arsip = CASE
+			WHEN j.kode_jenis = 'SPJ' THEN 'SPJ'
+			WHEN j.kode_jenis IN ('NON_SPJ','Non SPJ') THEN 'Non SPJ'
+			WHEN a.uraian LIKE '%SPM%' THEN 'SPJ'
+			ELSE 'Non SPJ'
+		END
+		WHERE a.deleted_at IS NULL`).Error
+}
+
 func fixSPJClassification() {
 	var total int64
 	DB.Table("arsip").Count(&total)
 
-	// Force-update ALL records: if uraian contains "SPM" → "SPJ", else "Non SPJ".
-	DB.Table("arsip").Where("uraian LIKE ?", "%SPM%").Update("jenis_arsip", "SPJ")
-	DB.Table("arsip").Where("(uraian NOT LIKE ? OR uraian IS NULL) AND uraian IS NOT NULL", "%SPM%").Update("jenis_arsip", "Non SPJ")
-	DB.Table("arsip").Where("uraian IS NULL").Update("jenis_arsip", "Non SPJ")
+	if err := SyncJenisArsipFromRelation(); err != nil {
+		log.Println("[MIGRASI] Gagal menyinkronkan jenis_arsip dari relasi:", err)
+		return
+	}
 
 	var updated int64
 	DB.Table("arsip").Where("jenis_arsip IN ('SPJ','Non SPJ')").Count(&updated)
-	log.Printf("[MIGRASI] Mengklasifikasi %d dari %d arsip sebagai SPJ/Non SPJ", updated, total)
+	log.Printf("[MIGRASI] Menyelaraskan klasifikasi %d dari %d arsip dengan jenis_arsip", updated, total)
 }
 
 func fixBlockchainHashes() {

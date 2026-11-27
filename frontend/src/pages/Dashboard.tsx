@@ -40,6 +40,10 @@ export const Dashboard: React.FC<{ status: Status | null; userName: string }> = 
     return Math.round((part / total) * 100);
   };
 
+  // Persentase kecil (mis. 1 berkas dari 4.000 arsip) tidak boleh tampil 0%.
+  const pctLabel = (value: number) => (value > 0 && value < 1 ? '<1' : String(Math.round(value)));
+  const pctWidth = (value: number) => (value > 0 && value < 2 ? 2 : Math.round(value));
+
   const digital = extras?.digitalFile;
 
   /* ── Chart identik dengan drawForecast() referensi ── */
@@ -217,11 +221,11 @@ export const Dashboard: React.FC<{ status: Status | null; userName: string }> = 
         <div className="stat-card dash-stat stat-accent-green">
           <div className="stat-card-top">
             <div className="stat-card-icon icon-green"><i className="bi bi-cloud-check"></i></div>
-            <span className="stat-card-chip stat-chip-pct">{Math.round(Number(digital?.percent ?? 0))}% dari total</span>
+            <span className="stat-card-chip stat-chip-pct">{pctLabel(Number(digital?.percent ?? 0))}% dari total</span>
           </div>
           <div className="stat-card-value">{digital?.with ?? 0}</div>
           <div className="stat-card-label">Sudah Digital</div>
-          <div className="stat-card-progress"><div className="progress-track"><div className="progress-fill progress-fill-green" style={{ width: Math.round(Number(digital?.percent ?? 0)) + '%' }}></div></div></div>
+          <div className="stat-card-progress"><div className="progress-track"><div className="progress-fill progress-fill-green" style={{ width: pctWidth(Number(digital?.percent ?? 0)) + '%' }}></div></div></div>
         </div>
         <div className="stat-card dash-stat stat-accent-red">
           <div className="stat-card-top">
@@ -285,7 +289,7 @@ export const Dashboard: React.FC<{ status: Status | null; userName: string }> = 
                 <div className="box-stat-item box-stat-digital">
                   <div className="box-stat-icon box-stat-icon-brand"><i className="bi bi-cloud-check"></i></div>
                   <div className="box-stat-data">
-                    <div className="box-stat-value text-brand">{Math.round(Number(boxStats?.rcDigitalPercent ?? 0))}%</div>
+                    <div className="box-stat-value text-brand">{pctLabel(Number(boxStats?.rcDigitalPercent ?? 0))}%</div>
                     <div className="box-stat-label">Digitalisasi</div>
                   </div>
                 </div>

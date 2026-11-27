@@ -95,6 +95,15 @@ func (a *App) startup(ctx context.Context) {
 	}
 	fmt.Fprintf(os.Stderr, "[simarc] Migrasi selesai\n")
 
+	// Selaraskan teks klasifikasi dengan relasi jenis_arsip_id. Dijalankan
+	// ringan tiap startup agar data lama yang pernah ditimpa heuristik
+	// "uraian mengandung SPM" kembali benar tanpa migrasi skema berat.
+	if err := database.SyncJenisArsipFromRelation(); err != nil {
+		log.Printf("[simarc] Gagal menyelaraskan klasifikasi arsip: %v", err)
+	} else {
+		log.Printf("[simarc] Klasifikasi SPJ/Non-SPJ terselaras dengan relasi")
+	}
+
 	// Seed default data
 	database.SeedIfNeeded()
 
@@ -140,6 +149,7 @@ func (a *App) ReconnectDB() map[string]interface{} {
 		log.Printf("[simarc] Migrasi setelah sambung ulang gagal: %v", err)
 		return map[string]interface{}{"ok": false, "db_error": a.GetDBError()}
 	}
+	_ = database.SyncJenisArsipFromRelation()
 	a.setDBErr("")
 	a.invalidateMasterCache()
 	go a.ListArsipDetail()
@@ -284,18 +294,19 @@ func (a *App) GetDashboardStats() map[string]interface{} {
 	db.Raw(`
 		SELECT
 			COUNT(*) as total,
-			COALESCE(SUM(jumlah), 0) as total_items,
-			SUM(CASE WHEN status_arsip IN ('aktif','diberkaskan') THEN 1 ELSE 0 END) as aktif,
-			SUM(CASE WHEN status_arsip = 'inaktif' THEN 1 ELSE 0 END) as inaktif,
-			SUM(CASE WHEN status_arsip = 'siap_penyusutan' THEN 1 ELSE 0 END) as siap_penyusutan,
-			SUM(CASE WHEN status_arsip = 'musnah' THEN 1 ELSE 0 END) as musnah,
-			SUM(CASE WHEN file_path IS NOT NULL AND file_path != '' THEN 1 ELSE 0 END) as with_file,
-			SUM(CASE WHEN file_path IS NULL OR file_path = '' THEN 1 ELSE 0 END) as without_file,
-			SUM(CASE WHEN jenis_arsip = 'SPJ' THEN 1 ELSE 0 END) as spj,
-			SUM(CASE WHEN jenis_arsip = 'Non SPJ' THEN 1 ELSE 0 END) as non_spj,
-			SUM(CASE WHEN jenis_arsip IS NULL OR jenis_arsip NOT IN ('SPJ','Non SPJ') THEN 1 ELSE 0 END) as unclassified
-		FROM arsip
-		WHERE deleted_at IS NULL
+			COALESCE(SUM(a.jumlah), 0) as total_items,
+			SUM(CASE WHEN a.status_arsip IN ('aktif','diberkaskan') THEN 1 ELSE 0 END) as aktif,
+			SUM(CASE WHEN a.status_arsip = 'inaktif' THEN 1 ELSE 0 END) as inaktif,
+			SUM(CASE WHEN a.status_arsip = 'siap_penyusutan' THEN 1 ELSE 0 END) as siap_penyusutan,
+			SUM(CASE WHEN a.status_arsip = 'musnah' THEN 1 ELSE 0 END) as musnah,
+			SUM(CASE WHEN a.file_path IS NOT NULL AND TRIM(a.file_path) != '' THEN 1 ELSE 0 END) as with_file,
+			SUM(CASE WHEN a.file_path IS NULL OR TRIM(a.file_path) = '' THEN 1 ELSE 0 END) as without_file,
+			SUM(CASE WHEN COALESCE(j.kode_jenis, a.jenis_arsip) = 'SPJ' THEN 1 ELSE 0 END) as spj,
+			SUM(CASE WHEN COALESCE(j.kode_jenis, a.jenis_arsip) IN ('NON_SPJ','Non SPJ') THEN 1 ELSE 0 END) as non_spj,
+			SUM(CASE WHEN j.id IS NULL AND (a.jenis_arsip IS NULL OR a.jenis_arsip NOT IN ('SPJ','Non SPJ')) THEN 1 ELSE 0 END) as unclassified
+		FROM arsip a
+		LEFT JOIN jenis_arsip j ON j.id = a.jenis_arsip_id
+		WHERE a.deleted_at IS NULL
 	`).Scan(&stats)
 
 	var pemberkasanCount int64
@@ -1216,6 +1227,26 @@ func (a *App) ListRoles() []map[string]interface{} {
 	return result
 }
 
+// klasifikasiBox menentukan kategori box RC dari isi arsipnya.
+// "Murni" hanya bila SELURUH arsip di box berkategori sama; box dengan SPJ
+// dan Non SPJ sekaligus masuk "campuran". Arsip belum terklasifikasi tidak
+// membuat box menjadi murni.
+func klasifikasiBox(total, spj, non int64) string {
+	if total == 0 {
+		return ""
+	}
+	if spj > 0 && non > 0 {
+		return "campuran"
+	}
+	if spj == total {
+		return "spj"
+	}
+	if non == total {
+		return "non"
+	}
+	return ""
+}
+
 // GetDashboardExtras returns the remaining dashboard data:
 // recent activities, digital-file stats, box inventory, and the 6-month
 // archive growth forecast (linear regression over last 6 months).
@@ -1251,7 +1282,7 @@ func (a *App) GetDashboardExtras() map[string]interface{} {
 		WithFile int64
 	}
 	db.Raw(`SELECT COUNT(*) as total,
-			SUM(CASE WHEN file_path IS NOT NULL AND file_path != '' THEN 1 ELSE 0 END) as with_file
+			SUM(CASE WHEN file_path IS NOT NULL AND TRIM(file_path) != '' THEN 1 ELSE 0 END) as with_file
 		FROM arsip WHERE deleted_at IS NULL`).Scan(&totals)
 	pct := float64(0)
 	if totals.Total > 0 {
@@ -1264,16 +1295,66 @@ func (a *App) GetDashboardExtras() map[string]interface{} {
 	}
 
 	// ── Box stats (record center inventory) ──
+	// Box = lokasi_arsips yang namanya mengandung "Box". Kategori dihitung
+	// dari arsip di dalamnya memakai RELASI jenis_arsip_id (bukan teks
+	// jenis_arsip yang bisa tertinggal dari migrasi lama).
+	type rcBox struct {
+		Nama  string
+		Total int64
+		Spj   int64
+		Non   int64
+		Dig   int64
+	}
+	var boxes []rcBox
+	db.Raw(`
+		SELECT l.nama_lokasi AS nama,
+			COUNT(a.id) total,
+			COALESCE(SUM(CASE WHEN j.kode_jenis = 'SPJ' THEN 1 ELSE 0 END), 0) spj,
+			COALESCE(SUM(CASE WHEN j.kode_jenis IN ('NON_SPJ','Non SPJ') THEN 1 ELSE 0 END), 0) non,
+			COALESCE(SUM(CASE WHEN a.file_path IS NOT NULL AND TRIM(a.file_path) != '' THEN 1 ELSE 0 END), 0) dig
+		FROM lokasi_arsips l
+		LEFT JOIN arsip a ON a.lokasi_arsip_id = l.id AND a.deleted_at IS NULL
+		LEFT JOIN jenis_arsip j ON j.id = a.jenis_arsip_id
+		WHERE l.deleted_at IS NULL
+		GROUP BY l.id, l.nama_lokasi`).Scan(&boxes)
+
+	listAll := []string{}
+	listMurniSpj := []string{}
+	listMurniNonSpj := []string{}
+	listCampuran := []string{}
+	var totalBox, digitalBox int64
+	for _, b := range boxes {
+		if !strings.Contains(strings.ToUpper(b.Nama), "BOX") {
+			continue
+		}
+		totalBox++
+		listAll = append(listAll, b.Nama)
+		if b.Dig > 0 {
+			digitalBox++
+		}
+		switch klasifikasiBox(b.Total, b.Spj, b.Non) {
+		case "spj":
+			listMurniSpj = append(listMurniSpj, b.Nama)
+		case "non":
+			listMurniNonSpj = append(listMurniNonSpj, b.Nama)
+		case "campuran":
+			listCampuran = append(listCampuran, b.Nama)
+		}
+	}
+	boxPct := float64(0)
+	if totalBox > 0 {
+		boxPct = float64(digitalBox) / float64(totalBox) * 100
+	}
 	out["boxStats"] = map[string]interface{}{
-		"totalRcBoxes":     0,
-		"boxMurniSpj":      0,
-		"boxMurniNonSpj":   0,
-		"boxCampuran":      0,
-		"rcDigitalPercent": 0,
-		"listAll":          []string{},
-		"listMurniSpj":     []string{},
-		"listMurniNonSpj":  []string{},
-		"listCampuran":     []string{},
+		"totalRcBoxes":     totalBox,
+		"boxMurniSpj":      len(listMurniSpj),
+		"boxMurniNonSpj":   len(listMurniNonSpj),
+		"boxCampuran":      len(listCampuran),
+		"rcDigitalPercent": boxPct,
+		"listAll":          listAll,
+		"listMurniSpj":     listMurniSpj,
+		"listMurniNonSpj":  listMurniNonSpj,
+		"listCampuran":     listCampuran,
 	}
 
 	// ── Forecast: 6-month linear regression on monthly archive growth ──
