@@ -92,7 +92,7 @@ const App: React.FC = () => {
   const renderBody = () => {
     switch (page) {
       case 'dashboard':
-        return <Dashboard status={status} userName={profile?.name ?? 'Pengguna'} />;
+        return <Dashboard status={status} userName={profile?.name ?? 'Pengguna'} onNavigate={(p) => setPage(p)} />;
       case 'arsip':
         return <ArsipPage />;
       case 'peminjaman':

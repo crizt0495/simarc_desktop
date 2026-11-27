@@ -1,0 +1,76 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   DASHBOARD — penyesuaian kerapian di atas design system enterprise.css.
+   Semua warna memakai token tema sehingga tetap benar di mode terang/gelap.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.dashboard-page .dashboard-header { margin-bottom: 1.1rem; }
+
+/* Kartu KPI: tinggi seragam dan label chip tidak meluber. */
+.dashboard-page .stat-card { height: 100%; }
+.dashboard-page .stat-card-chip {
+  max-width: 62%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dashboard-page .stat-card-value { font-size: 1.7rem; }
+@media (min-width: 1400px) {
+  .dashboard-page .stat-card-value { font-size: 1.85rem; }
+}
+
+/* Grafik dan inventaris box sejajar, tanpa jarak ganda antar kartu. */
+.dashboard-page .dashboard-lower-grid > [class*="col-"] > .card { margin-bottom: 0; }
+.dashboard-page .chart-card-body,
+.dashboard-page .box-stats-body { padding: 0.85rem 1rem 1rem; }
+.dashboard-page .chart-wrap { height: 280px; }
+.dashboard-page .chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 100%;
+  font-size: 0.78rem;
+  color: var(--nb-ink-4);
+}
+.dashboard-page .chart-empty i { font-size: 1.6rem; color: var(--nb-ink-5); }
+.dashboard-page .box-stats-grid { align-content: start; }
+.dashboard-page .box-stat-digital { cursor: default; }
+.dashboard-page .dash-box-total { cursor: pointer; }
+.dashboard-page .box-stats-footer { margin-top: 0.7rem; padding-top: 0.6rem; }
+.dashboard-page .box-stats-footer i { margin-right: 0.25rem; color: var(--nb-primary); }
+
+/* Daftar box di modal: rapi, aman untuk daftar panjang. */
+.dashboard-page .sm-box-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+.dashboard-page .sm-box-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.1rem;
+  font-size: 0.8rem;
+  color: var(--nb-ink-2);
+  border-bottom: 1px solid var(--nb-border-light);
+}
+.dashboard-page .sm-box-item:last-child { border-bottom: 0; }
+.dashboard-page .sm-box-item span { overflow-wrap: anywhere; }
+.dashboard-page .sm-btn i { margin-right: 0.3rem; }
+
+/* Aktivitas terbaru. */
+.dashboard-page .dash-activity-card { margin-top: 0; }
+.dashboard-page .dash-activity-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.dashboard-page .dash-activity-actions .btn i { margin-left: 0.35rem; }
+.dashboard-page .dash-activity-card .table thead th { white-space: nowrap; }
+.dashboard-page .dash-activity-card .table td { vertical-align: middle; }
+.dashboard-page .dash-activity-card .empty-state { padding: 2rem 1rem; }
+
+@media (max-width: 991.98px) {
+  .dashboard-page .chart-wrap { height: 240px; }
+}
